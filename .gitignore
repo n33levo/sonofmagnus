@@ -62,3 +62,5 @@ htmlcov/
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb
+
+**.pem

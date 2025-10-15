@@ -8,6 +8,7 @@ Hard positions include:
 """
 
 import argparse
+import io
 import json
 import random
 
@@ -57,45 +58,64 @@ def extract_hard_positions(
 
     print(f"Extracting hard positions from {pgn_path}...")
 
-    with open(pgn_path) as f:
-        while games_processed < max_games and len(positions) < max_positions:
-            game = chess.pgn.read_game(f)
-            if game is None:
-                break
+    def game_iterator():
+        if pgn_path.endswith(".zst"):
+            import zstandard as zstd
 
-            # Check Elo
-            white_elo = int(game.headers.get("WhiteElo", 0))
-            black_elo = int(game.headers.get("BlackElo", 0))
-            avg_elo = (white_elo + black_elo) / 2
+            with open(pgn_path, "rb") as fh:
+                dctx = zstd.ZstdDecompressor()
+                with dctx.stream_reader(fh) as reader:
+                    text_stream = io.TextIOWrapper(reader, encoding="utf-8", errors="ignore")
+                    while True:
+                        game = chess.pgn.read_game(text_stream)
+                        if game is None:
+                            break
+                        yield game
+        else:
+            with open(pgn_path, encoding="utf-8", errors="ignore") as fh:
+                while True:
+                    game = chess.pgn.read_game(fh)
+                    if game is None:
+                        break
+                    yield game
 
-            if avg_elo < min_elo:
+    for game in game_iterator():
+        if games_processed >= max_games or len(positions) >= max_positions:
+            break
+
+        # Check Elo
+        white_elo = int(game.headers.get("WhiteElo", 0))
+        black_elo = int(game.headers.get("BlackElo", 0))
+        avg_elo = (white_elo + black_elo) / 2
+
+        if avg_elo < min_elo:
+            continue
+
+        games_processed += 1
+
+        # Traverse game
+        board = game.board()
+        for move in game.mainline_moves():
+            # Skip early opening
+            if board.fullmove_number < 10:
+                board.push(move)
                 continue
 
-            games_processed += 1
+            # Check if position is "hard"
+            if is_tactical(board) or is_complex(board) or is_endgame(board):
+                positions.append({
+                    "fen": board.fen(),
+                    "tags": {
+                        "tactical": is_tactical(board),
+                        "complex": is_complex(board),
+                        "endgame": is_endgame(board),
+                    }
+                })
 
-            # Traverse game
-            board = game.board()
-            for move in game.mainline_moves():
-                # Skip early opening
-                if board.fullmove_number < 10:
-                    board.push(move)
-                    continue
+            board.push(move)
 
-                # Check if position is "hard"
-                if is_tactical(board) or is_complex(board) or is_endgame(board):
-                    positions.append({
-                        "fen": board.fen(),
-                        "tags": {
-                            "tactical": is_tactical(board),
-                            "complex": is_complex(board),
-                            "endgame": is_endgame(board),
-                        }
-                    })
-
-                board.push(move)
-
-            if games_processed % 100 == 0:
-                print(f"  Processed {games_processed} games, found {len(positions)} hard positions")
+        if games_processed % 100 == 0:
+            print(f"  Processed {games_processed} games, found {len(positions)} hard positions")
 
     # Shuffle and limit
     random.shuffle(positions)

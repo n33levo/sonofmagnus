@@ -35,6 +35,7 @@ def label_position(
     depth: int = 14,
     time_limit: float = 0.1,
     top_k: int = 5,
+    include_q_values: bool = False,
 ) -> dict:
     """
     Generate engine labels for a position.
@@ -45,18 +46,27 @@ def label_position(
         depth: Search depth
         time_limit: Time limit in seconds
         top_k: Number of top moves to include
+        include_q_values: If True, include Q-values for all legal moves
 
     Returns:
         Dictionary with:
             - fen: Position FEN
             - move_probs: Top-k moves with normalized scores
             - value: Position evaluation in [-1, 1]
+            - q_values: (optional) Q-value for each legal move as UCI dict
     """
+    # Get all legal moves if we need Q-values
+    if include_q_values:
+        legal_moves = list(board.legal_moves)
+        multipv_count = min(len(legal_moves), 500)  # Cap for performance
+    else:
+        multipv_count = top_k
+
     # Run multipv analysis
     info = engine.analyse(
         board,
         chess.engine.Limit(depth=depth, time=time_limit),
-        multipv=top_k,
+        multipv=multipv_count,
     )
 
     # Extract move scores
@@ -78,7 +88,7 @@ def label_position(
     import math
     import numpy as np
 
-    cps = np.array([cp for _, cp in move_scores], dtype=np.float32)
+    cps = np.array([cp for _, cp in move_scores[:top_k]], dtype=np.float32)
     # Temperature scaling
     cps = cps / 100.0  # Scale down
     cps = cps - np.max(cps)  # Numerical stability
@@ -87,18 +97,31 @@ def label_position(
 
     move_probs = {
         move.uci(): float(prob)
-        for (move, _), prob in zip(move_scores, probs)
+        for (move, _), prob in zip(move_scores[:top_k], probs)
     }
 
     # Position value (from best move score)
     best_cp = move_scores[0][1]
     value = centipawns_to_value(best_cp)
 
-    return {
+    result = {
         "fen": board.fen(),
         "move_probs": move_probs,
         "value": value,
     }
+
+    # Add Q-values for all evaluated moves
+    if include_q_values:
+        q_values = {}
+        for move, cp in move_scores:
+            # Convert centipawns to win probability [0, 1]
+            # Using sigmoid: Q = 1 / (1 + exp(-cp/400))
+            q_val = 1.0 / (1.0 + math.exp(-cp / 400.0))
+            q_values[move.uci()] = float(q_val)
+
+        result["q_values"] = q_values
+
+    return result
 
 
 def label_positions_from_file(
@@ -109,6 +132,7 @@ def label_positions_from_file(
     time_limit: float = 0.1,
     top_k: int = 5,
     max_positions: Optional[int] = None,
+    include_q_values: bool = False,
 ):
     """
     Label positions from input JSONL file.
@@ -121,10 +145,13 @@ def label_positions_from_file(
         time_limit: Time limit per position
         top_k: Number of top moves
         max_positions: Maximum positions to label
+        include_q_values: Include Q-values for all legal moves
     """
     # Initialize engine
     engine = chess.engine.SimpleEngine.popen_uci(engine_path)
     print(f"Loaded engine: {engine_path}")
+    if include_q_values:
+        print("  Q-value mode enabled (slower but higher quality)")
 
     # Process positions
     count = 0
@@ -152,6 +179,7 @@ def label_positions_from_file(
                     depth=depth,
                     time_limit=time_limit,
                     top_k=top_k,
+                    include_q_values=include_q_values,
                 )
 
                 fout.write(json.dumps(label) + "\n")
@@ -180,6 +208,7 @@ def main():
     parser.add_argument("--topk", type=int, default=5, help="Number of top moves")
     parser.add_argument("--max", type=int, help="Max positions to label")
     parser.add_argument("--preset", type=str, choices=["fast", "deep"], help="Preset config")
+    parser.add_argument("--q-values", action="store_true", help="Include Q-values for all legal moves")
     args = parser.parse_args()
 
     # Apply presets
@@ -196,6 +225,7 @@ def main():
     print(f"  Depth: {args.depth}")
     print(f"  Time: {args.time}s")
     print(f"  Top-K: {args.topk}")
+    print(f"  Q-values: {args.q_values}")
 
     label_positions_from_file(
         input_path=args.fens,
@@ -205,6 +235,7 @@ def main():
         time_limit=args.time,
         top_k=args.topk,
         max_positions=args.max,
+        include_q_values=args.q_values,
     )
 
 

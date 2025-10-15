@@ -19,7 +19,7 @@ import torch
 from torch.utils.data import Dataset, IterableDataset
 
 from chessio.encode import encode_board
-from chessio.policy_map import build_policy_target, build_policy_distribution
+from chessio.policy_map import build_policy_target, build_policy_distribution, build_q_value_target
 
 
 def mirror_move(move: chess.Move) -> chess.Move:
@@ -109,11 +109,27 @@ class ChessPositionDataset(Dataset):
         if augment:
             value_target = -value_target
 
-        return {
+        result = {
             "board_tensor": torch.from_numpy(board_tensor),
             "policy_target": torch.from_numpy(policy_target),
             "value_target": torch.tensor(value_target, dtype=torch.float32),
         }
+
+        # Q-value target (optional)
+        if "q_values" in item:
+            q_value_dict = {}
+            for uci, q_val in item["q_values"].items():
+                move_obj = chess.Move.from_uci(uci)
+                if augment:
+                    move_obj = mirror_move(move_obj)
+                    # Mirror Q-value: Q'(m) = 1 - Q(m)
+                    q_val = 1.0 - q_val
+                q_value_dict[move_obj] = q_val
+
+            q_value_target = build_q_value_target(q_value_dict, board)
+            result["q_value_target"] = torch.from_numpy(q_value_target)
+
+        return result
 
 
 class PGNStreamDataset(IterableDataset):

@@ -27,13 +27,23 @@ from train.dataset import ChessPositionDataset
 
 class ChessLoss(nn.Module):
     """
-    Combined policy + value loss.
+    Combined policy + value + Q-value loss.
 
-    Loss = CE(policy) + lambda * MSE(value)
+    Loss = alpha * CE(policy) + beta * MSE(Q) + gamma * MSE(value)
+
+    Q-value loss trains the policy head to predict win probabilities
+    for all legal moves, not just the best move.
     """
 
-    def __init__(self, value_weight: float = 0.25):
+    def __init__(
+        self,
+        policy_weight: float = 1.0,
+        q_value_weight: float = 0.0,
+        value_weight: float = 0.25,
+    ):
         super().__init__()
+        self.policy_weight = policy_weight
+        self.q_value_weight = q_value_weight
         self.value_weight = value_weight
 
     def forward(
@@ -42,16 +52,18 @@ class ChessLoss(nn.Module):
         value_pred: torch.Tensor,
         policy_target: torch.Tensor,
         value_target: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        q_value_target: torch.Tensor | None = None,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
         """
         Args:
             policy_logits: (B, 8, 8, 73) predicted logits
             value_pred: (B, 1) predicted values
             policy_target: (B, 8, 8, 73) target distribution
             value_target: (B,) target values
+            q_value_target: (B, 8, 8, 73) Q-values for all moves (optional)
 
         Returns:
-            (total_loss, policy_loss, value_loss)
+            (total_loss, policy_loss, q_loss, value_loss)
         """
         # Policy loss (cross-entropy)
         # Flatten spatial and action dimensions
@@ -63,14 +75,33 @@ class ChessLoss(nn.Module):
         log_probs = F.log_softmax(policy_logits_flat, dim=1)
         policy_loss = -(policy_target_flat * log_probs).sum(dim=1).mean()
 
+        # Q-value loss (MSE over all legal moves)
+        q_loss = torch.tensor(0.0, device=policy_logits.device)
+        if q_value_target is not None and self.q_value_weight > 0:
+            # Convert policy logits to Q-value predictions via softmax
+            # Q-values are win probabilities in [0, 1]
+            q_pred = torch.sigmoid(policy_logits)  # (B, 8, 8, 73)
+
+            # Mask: only compute loss on positions with valid Q-targets
+            # (Q-targets are -999 for illegal moves)
+            q_mask = (q_value_target > -900).float()  # (B, 8, 8, 73)
+
+            # MSE loss only on legal moves
+            q_diff = (q_pred - q_value_target) ** 2
+            q_loss = (q_diff * q_mask).sum() / (q_mask.sum() + 1e-8)
+
         # Value loss (MSE)
         value_pred = value_pred.squeeze(1)  # (B,)
         value_loss = F.mse_loss(value_pred, value_target)
 
         # Combined loss
-        total_loss = policy_loss + self.value_weight * value_loss
+        total_loss = (
+            self.policy_weight * policy_loss +
+            self.q_value_weight * q_loss +
+            self.value_weight * value_loss
+        )
 
-        return total_loss, policy_loss, value_loss
+        return total_loss, policy_loss, q_loss, value_loss
 
 
 def train_epoch(
@@ -93,6 +124,7 @@ def train_epoch(
 
     total_loss = 0.0
     total_policy_loss = 0.0
+    total_q_loss = 0.0
     total_value_loss = 0.0
     num_batches = 0
 
@@ -102,6 +134,9 @@ def train_epoch(
         board_tensor = batch["board_tensor"].to(device)
         policy_target = batch["policy_target"].to(device)
         value_target = batch["value_target"].to(device)
+        q_value_target = batch.get("q_value_target")
+        if q_value_target is not None:
+            q_value_target = q_value_target.to(device)
 
         optimizer.zero_grad()
 
@@ -109,8 +144,8 @@ def train_epoch(
         if use_amp:
             with autocast(dtype=dtype):
                 policy_logits, value_pred = model(board_tensor)
-                loss, policy_loss, value_loss = loss_fn(
-                    policy_logits, value_pred, policy_target, value_target
+                loss, policy_loss, q_loss, value_loss = loss_fn(
+                    policy_logits, value_pred, policy_target, value_target, q_value_target
                 )
 
             # Backward with gradient scaling
@@ -119,20 +154,22 @@ def train_epoch(
             scaler.update()
         else:
             policy_logits, value_pred = model(board_tensor)
-            loss, policy_loss, value_loss = loss_fn(
-                policy_logits, value_pred, policy_target, value_target
+            loss, policy_loss, q_loss, value_loss = loss_fn(
+                policy_logits, value_pred, policy_target, value_target, q_value_target
             )
             loss.backward()
             optimizer.step()
 
         total_loss += loss.item()
         total_policy_loss += policy_loss.item()
+        total_q_loss += q_loss.item()
         total_value_loss += value_loss.item()
         num_batches += 1
 
     return {
         "loss": total_loss / num_batches,
         "policy_loss": total_policy_loss / num_batches,
+        "q_loss": total_q_loss / num_batches,
         "value_loss": total_value_loss / num_batches,
     }
 
@@ -140,12 +177,15 @@ def train_epoch(
 def main():
     parser = argparse.ArgumentParser(description="Train chess neural network")
     parser.add_argument("--config", type=str, required=True, help="Config file (main.yaml/mini.yaml)")
-    parser.add_argument("--data", type=str, required=True, help="Training data JSONL")
+    parser.add_argument("--data", type=str, required=True, help="Training data JSONL (or comma-separated list)")
+    parser.add_argument("--data-weights", type=str, help="Comma-separated weights for multi-dataset mixing")
     parser.add_argument("--val-data", type=str, help="Validation data JSONL")
     parser.add_argument("--epochs", type=int, default=2, help="Number of epochs")
     parser.add_argument("--batch-size", type=int, default=256, help="Batch size")
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
-    parser.add_argument("--value-weight", type=float, default=0.25, help="Value loss weight")
+    parser.add_argument("--policy-weight", type=float, default=1.0, help="Policy loss weight (alpha)")
+    parser.add_argument("--q-value-weight", type=float, default=0.0, help="Q-value loss weight (beta)")
+    parser.add_argument("--value-weight", type=float, default=0.25, help="Value loss weight (gamma)")
     parser.add_argument("--amp", type=str, choices=["bf16", "fp16", "none"], default="bf16", help="AMP dtype")
     parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
     parser.add_argument("--ckpt-dir", type=str, default="ckpts", help="Checkpoint directory")
@@ -178,7 +218,7 @@ def main():
     start_epoch = 0
     if args.resume:
         print(f"Resuming from {args.resume}")
-        checkpoint = torch.load(args.resume)
+        checkpoint = torch.load(args.resume, map_location="cpu")
         model.load_state_dict(checkpoint["model_state_dict"])
         start_epoch = checkpoint.get("epoch", 0) + 1
 
@@ -193,7 +233,7 @@ def main():
         train_dataset,
         batch_size=args.batch_size,
         shuffle=True,
-        num_workers=4,
+        num_workers=0 if args.device in ("cpu", "mps") else 4,
         pin_memory=True,
     )
 
@@ -204,7 +244,7 @@ def main():
             val_dataset,
             batch_size=args.batch_size,
             shuffle=False,
-            num_workers=4,
+            num_workers=0 if args.device in ("cpu", "mps") else 4,
         )
 
     # Create optimizer and scheduler
@@ -214,7 +254,11 @@ def main():
     )
 
     # Loss function
-    loss_fn = ChessLoss(value_weight=args.value_weight)
+    loss_fn = ChessLoss(
+        policy_weight=args.policy_weight,
+        q_value_weight=args.q_value_weight,
+        value_weight=args.value_weight,
+    )
 
     # Training loop
     for epoch in range(start_epoch, args.epochs):
@@ -234,13 +278,15 @@ def main():
 
         print(f"  Loss: {metrics['loss']:.4f}")
         print(f"  Policy Loss: {metrics['policy_loss']:.4f}")
+        if args.q_value_weight > 0:
+            print(f"  Q-value Loss: {metrics['q_loss']:.4f}")
         print(f"  Value Loss: {metrics['value_loss']:.4f}")
         print(f"  Time: {epoch_time:.1f}s")
 
         # Validation
         if val_loader:
             model.eval()
-            val_metrics = {"loss": 0.0, "policy_loss": 0.0, "value_loss": 0.0}
+            val_metrics = {"loss": 0.0, "policy_loss": 0.0, "q_loss": 0.0, "value_loss": 0.0}
             num_batches = 0
 
             with torch.no_grad():
@@ -248,14 +294,18 @@ def main():
                     board_tensor = batch["board_tensor"].to(args.device)
                     policy_target = batch["policy_target"].to(args.device)
                     value_target = batch["value_target"].to(args.device)
+                    q_value_target = batch.get("q_value_target")
+                    if q_value_target is not None:
+                        q_value_target = q_value_target.to(args.device)
 
                     policy_logits, value_pred = model(board_tensor)
-                    loss, policy_loss, value_loss = loss_fn(
-                        policy_logits, value_pred, policy_target, value_target
+                    loss, policy_loss, q_loss, value_loss = loss_fn(
+                        policy_logits, value_pred, policy_target, value_target, q_value_target
                     )
 
                     val_metrics["loss"] += loss.item()
                     val_metrics["policy_loss"] += policy_loss.item()
+                    val_metrics["q_loss"] += q_loss.item()
                     val_metrics["value_loss"] += value_loss.item()
                     num_batches += 1
 

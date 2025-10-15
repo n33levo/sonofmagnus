@@ -9,6 +9,8 @@ import ast
 import sys
 from pathlib import Path
 
+import pytest
+
 
 def check_file_for_engine_imports(file_path: Path) -> list[str]:
     """
@@ -62,8 +64,7 @@ def test_play_module_no_search():
     play_dir = project_root / "play"
 
     if not play_dir.exists():
-        print(f"✗ play/ directory not found at {play_dir}")
-        return False
+        pytest.fail(f"play/ directory not found at {play_dir}")
 
     all_errors = []
 
@@ -73,13 +74,10 @@ def test_play_module_no_search():
         all_errors.extend(errors)
 
     if all_errors:
-        print(f"✗ Found {len(all_errors)} forbidden imports:")
-        for error in all_errors:
-            print(f"  {error}")
-        return False
-    else:
-        print(f"✓ No chess.engine imports found in play/ module")
-        return True
+        error_list = "\n".join(all_errors)
+        pytest.fail(f"Forbidden chess.engine imports detected:\n{error_list}")
+
+    print(f"✓ No chess.engine imports found in play/ module")
 
 
 def test_train_module_allows_search():
@@ -90,8 +88,7 @@ def test_train_module_allows_search():
     distill_file = project_root / "train" / "distill_labeler.py"
 
     if not distill_file.exists():
-        print(f"  Warning: {distill_file} not found")
-        return True
+        pytest.skip(f"{distill_file} not found; skipping chess.engine allowance check")
 
     with open(distill_file) as f:
         content = f.read()
@@ -99,12 +96,12 @@ def test_train_module_allows_search():
     # Should have chess.engine import
     has_engine = "chess.engine" in content or "import chess.engine" in content
 
-    if has_engine:
-        print("✓ train/distill_labeler.py correctly uses chess.engine for offline labeling")
-    else:
-        print("  Note: train/distill_labeler.py doesn't import chess.engine (may not be implemented yet)")
+    assert has_engine, (
+        "train/distill_labeler.py should import chess.engine for offline labeling. "
+        "Add `import chess.engine` or equivalent."
+    )
 
-    return True
+    print("✓ train/distill_labeler.py correctly uses chess.engine for offline labeling")
 
 
 def test_io_model_no_search():
@@ -124,13 +121,10 @@ def test_io_model_no_search():
             all_errors.extend(errors)
 
     if all_errors:
-        print(f"✗ Found {len(all_errors)} forbidden imports:")
-        for error in all_errors:
-            print(f"  {error}")
-        return False
-    else:
-        print(f"✓ No chess.engine imports found in io/ and model/")
-        return True
+        error_list = "\n".join(all_errors)
+        pytest.fail(f"Forbidden chess.engine imports detected:\n{error_list}")
+
+    print(f"✓ No chess.engine imports found in io/ and model/")
 
 
 def run_all_tests():

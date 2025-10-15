@@ -40,11 +40,17 @@ data/*.jsonl
 data/*.json
 ckpts/*.pt
 out/*.onnx
+data/twic
 
 # But keep directories and examples
 !data/.gitkeep
 !ckpts/.gitkeep
 !out/.gitkeep
+
+# Documentation (working notes)
+plan.md
+plan_upgrade.md
+UPGRADE_IMPLEMENTATION_GUIDE.md
 
 # Logs
 *.log

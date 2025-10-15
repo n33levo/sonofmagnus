@@ -223,6 +223,30 @@ def build_policy_distribution(move_probs: dict[chess.Move, float], board: chess.
     return policy
 
 
+def build_q_value_target(q_values: dict[chess.Move, float], board: chess.Board) -> np.ndarray:
+    """
+    Build Q-value targets for all legal moves.
+
+    Args:
+        q_values: Dictionary mapping moves to Q-values (win probabilities [0, 1])
+        board: Current board state
+
+    Returns:
+        numpy array of shape (8, 8, 73) with Q-values, -999 for illegal moves
+    """
+    q_target = np.full((8, 8, 73), -999.0, dtype=np.float32)
+    for move, q_val in q_values.items():
+        try:
+            from_sq, plane = move_to_policy_index(move, board)
+            rank = chess.square_rank(from_sq)
+            file = chess.square_file(from_sq)
+            q_target[rank, file, plane] = q_val
+        except ValueError:
+            # Skip invalid moves
+            continue
+    return q_target
+
+
 def test_round_trip():
     """Test that move encoding/decoding is bijective."""
     board = chess.Board()

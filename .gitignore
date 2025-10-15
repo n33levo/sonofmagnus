@@ -48,9 +48,9 @@ data/twic
 !out/.gitkeep
 
 # Documentation (working notes)
-plan.md
 plan_upgrade.md
 UPGRADE_IMPLEMENTATION_GUIDE.md
+plan_or.md
 
 # Logs
 *.log

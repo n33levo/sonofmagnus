@@ -1,0 +1,38 @@
+# Mini model configuration (~2-4M params)
+# Target: Knight's Edge track (≤10 MB with INT8 quantization)
+
+model_size: mini
+input_channels: 18
+hidden_channels: 64
+num_blocks: 8
+num_groups: 8
+
+# Training
+batch_size: 256
+learning_rate: 0.001
+value_weight: 0.25
+epochs_bc: 2
+epochs_distill: 2
+epochs_dagger: 1
+
+# Data
+min_elo: 1800
+sample_rate: 0.1
+midgame_only: true
+
+# Distillation (use stronger labels to compensate for smaller model)
+engine_depth_fast: 14
+engine_depth_deep: 20
+engine_time_fast: 0.1
+engine_time_deep: 1.0
+top_k_moves: 8
+
+# Self-play
+selfplay_games: 1000
+selfplay_temperature: 0.6
+
+# Export (must use INT8 quantization to meet 10 MB limit)
+export_fp16: true
+quantize_int8: true
+size_limit_mb: 10.0
+target_latency_ms: 50

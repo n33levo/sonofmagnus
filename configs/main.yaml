@@ -1,0 +1,36 @@
+# Main model configuration (~6-8M params)
+# Target: Queen's Crown track (best overall strength)
+
+model_size: main
+input_channels: 18
+hidden_channels: 128
+num_blocks: 12
+num_groups: 8
+
+# Training
+batch_size: 256
+learning_rate: 0.001
+value_weight: 0.25
+epochs_bc: 2
+epochs_distill: 1
+epochs_dagger: 1
+
+# Data
+min_elo: 1800
+sample_rate: 0.1
+midgame_only: true
+
+# Distillation
+engine_depth_fast: 12
+engine_depth_deep: 18
+engine_time_fast: 0.05
+engine_time_deep: 0.5
+top_k_moves: 5
+
+# Self-play
+selfplay_games: 2000
+selfplay_temperature: 0.6
+
+# Export
+export_fp16: true
+target_latency_ms: 100

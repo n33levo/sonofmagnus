@@ -162,7 +162,7 @@ python -m pipelines.phase_b_pipeline \
 
 ---
 
-## 📊 Performance Analysis
+## Performance Analysis
 
 ### Training Progression
 
@@ -199,7 +199,7 @@ python -m pipelines.phase_b_pipeline \
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 

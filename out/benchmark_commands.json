@@ -1,0 +1,10 @@
+{
+  "source_commit": "c48c8b469a02246db8f0c3aa1f1a387e56243afd",
+  "commands": [
+    ".venv/bin/python -m eval.arena --a ckpts/bt3.pb.gz --b stockfish --stockfish-elo 2650 --move-time 0.05 --time-control 60+0.5 --games 100 --openings data/arena_openings.fen --out out/bt3_sf2650_clocked.json",
+    ".venv/bin/python -m eval.latency --ckpt ckpts/bt3.pb.gz --pgn out/bt3_sf2650_clocked.pgn --backend metal --out out/bt3_game_latency_metal.json",
+    ".venv/bin/python -m eval.latency --ckpt ckpts/bt3.pb.gz --pgn out/bt3_sf2650_clocked.pgn --backend blas --out out/bt3_game_latency_cpu.json",
+    ".venv/bin/python -m pytest -q"
+  ],
+  "protocol": "Frozen openings, paired colours, Stockfish reset before every game; fixed 50 ms opponent move cap with 60+0.5 clocks. Strength setting is not an absolute rating anchor."
+}

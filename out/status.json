@@ -38,8 +38,12 @@
       "total": 2000,
       "mean_kl_divergence": 1.1807706072458302
     },
-    "match": "bt3_sf2650_openings.json",
-    "latency": "policy_latency.json"
+    "match": "bt3_sf2650_clocked.json",
+    "latency": {
+      "clocked_match": "bt3_sf2650_clocked.json",
+      "back_to_back_metal": "bt3_game_latency_metal.json",
+      "back_to_back_cpu": "bt3_game_latency_cpu.json"
+    }
   },
   "compact_policy": {
     "checkpoint": "mini_distill/latest.pt",
@@ -55,17 +59,34 @@
     "The 70M human, 2.5M all-legal-move engine labels and 1M self-play training datasets have not been reproduced.",
     "The claimed ablation Elo gains and A100 training-time/AMP speedup figures have not been verified.",
     "The 5,000-master-game opening benchmark has not been reproduced.",
-    "The novelty claim is unestablished; ChessBench explicitly studied action-value prediction.",
-    "The README sigmoid percentages and Q range are inconsistent; a proposed factual patch awaits clarification."
+    "The under-20 ms GPU target was not met in the clocked match: move-selection p95 was 36.27 ms, versus 17.72 ms in back-to-back sampling.",
+    "The historical first-application claim conflicts with ChessBench, which explicitly studied action-value prediction.",
+    "The stated sigmoid formula yields 56.2% at 100 cp and 73.1% at 400 cp in [0, 1]; its contradictory numerical/range claims cannot all be satisfied. The owner requested unchanged claims."
   ],
   "references": {
     "ChessBench": "https://arxiv.org/abs/2402.04494",
-    "FIDE title regulations": "https://handbook.fide.com/chapter/B012024"
+    "FIDE title regulations": "https://handbook.fide.com/chapter/B012024",
+    "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 35,
+    "local_tests": 39,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
-    "selfplay_batch_smoke_positions": 1024
+    "selfplay_batch_smoke_positions": 1024,
+    "linux_ci": {
+      "passed": 38,
+      "skipped_optional_weights": 1,
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38090022925",
+      "source_commit": "c48c8b469a02246db8f0c3aa1f1a387e56243afd"
+    },
+    "clocked_match": {
+      "games": 100,
+      "legal_plies_reviewed": 9163,
+      "engine_moves": 4600,
+      "neural_forward_calls": 4600,
+      "time_forfeits": 0,
+      "illegal_moves": 0,
+      "pgn_outcomes_verified": true
+    }
   }
 }

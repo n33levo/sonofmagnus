@@ -22,6 +22,12 @@ from train.distill_labeler import cp_to_q_value, label_position
 from train.train import ChessLoss, train_epoch
 
 
+def run_cli(args):
+    result = subprocess.run(args, capture_output=True, text=True)
+    assert result.returncode == 0, result.stdout + result.stderr
+    return result
+
+
 def write_rows(path, rows):
     path.write_text(''.join(json.dumps(row) + '\n' for row in rows))
     return str(path)
@@ -176,9 +182,9 @@ def test_finetune_runs_additional_epochs(tmp_path):
     data = write_rows(tmp_path / 'rows.jsonl', [row] * 2)
     initial = tmp_path / 'initial.pt'
     torch.save({'config': config, 'epoch': 9, 'model_state_dict': ChessNet(hidden_channels=16, num_blocks=1).state_dict()}, initial)
-    subprocess.run([sys.executable, '-m', 'train.train', '--config', str(path), '--data', data,
+    run_cli([sys.executable, '-m', 'train.train', '--config', str(path), '--data', data,
                     '--epochs', '1', '--batch-size', '2', '--device', 'cpu', '--amp', 'none',
-                    '--resume', str(initial), '--ckpt-dir', str(tmp_path / 'ckpts')], check=True, capture_output=True)
+                    '--resume', str(initial), '--ckpt-dir', str(tmp_path / 'ckpts')])
     checkpoint = torch.load(tmp_path / 'ckpts/latest.pt', weights_only=True)
     assert checkpoint['epoch'] == 10
     assert checkpoint['metrics']['train']['samples'] == 2
@@ -284,18 +290,18 @@ def test_pipeline_a_b_c_smoke(tmp_path):
     ckpts = tmp_path / 'ckpts'
     common = ['--config', str(config), '--ckpt-dir', str(ckpts), '--device', 'cpu', '--amp', 'none',
               '--batch-size', '2', '--epochs', '1', '--skip-tests', '--skip-puzzles', '--skip-agreement']
-    subprocess.run([sys.executable, '-m', 'pipelines.phase_a_pipeline', '--dataset-path', data,
-                    '--skip-download', *common], check=True, capture_output=True)
+    run_cli([sys.executable, '-m', 'pipelines.phase_a_pipeline', '--dataset-path', data,
+                    '--skip-download', *common])
     latest = ckpts / 'latest.pt'
     assert torch.load(latest, weights_only=True)['epoch'] == 0
-    subprocess.run([sys.executable, '-m', 'pipelines.phase_b_pipeline', '--labels-path', data,
-                    '--q-values', *common], check=True, capture_output=True)
+    run_cli([sys.executable, '-m', 'pipelines.phase_b_pipeline', '--labels-path', data,
+                    '--q-values', *common])
     assert torch.load(latest, weights_only=True)['epoch'] == 1
     import shutil
     if shutil.which('stockfish'):
-        subprocess.run([sys.executable, '-m', 'pipelines.phase_c_pipeline', '--selfplay-path', str(tmp_path / 'selfplay.jsonl'),
+        run_cli([sys.executable, '-m', 'pipelines.phase_c_pipeline', '--selfplay-path', str(tmp_path / 'selfplay.jsonl'),
                         '--labels-path', str(tmp_path / 'labels.jsonl'), '--games', '1', '--max-moves', '2',
-                        '--max-label-positions', '2', '--selfplay-device', 'cpu', *common], check=True, capture_output=True)
+                        '--max-label-positions', '2', '--selfplay-device', 'cpu', *common])
         assert torch.load(latest, weights_only=True)['epoch'] == 2
 
 
@@ -408,3 +414,58 @@ def test_clock_forfeit_is_draw_when_opponent_cannot_mate(tmp_path):
         result = play_match(a, b, num_games=2, openings=[fen], clock_seconds=.1, pgn_path=path)
     assert result['draws'] == 2
     assert path.read_text().count('time_forfeit') == 2
+
+
+def test_local_pipeline_uses_the_active_python(tmp_path):
+    from pipelines.run import main
+    data = write_rows(tmp_path / 'rows.jsonl', [{'fen': chess.STARTING_FEN, 'move': 'e2e4'}])
+    arguments = ['phase-a', '--dataset-path', data, '--skip-download', '--skip-tests', '--skip-puzzles', '--skip-agreement']
+    with patch('sys.argv', arguments), patch('pipelines.run.PipelineRunner.run') as run:
+        main('A')
+    assert run.call_args_list[0].args[0][0] == sys.executable
+
+
+def test_remote_training_keeps_local_validation_on_active_python(tmp_path):
+    from pipelines.run import main
+    data = write_rows(tmp_path / 'rows.jsonl', [{'fen': chess.STARTING_FEN, 'move': 'e2e4'}])
+    arguments = ['phase-a', '--dataset-path', data, '--skip-download', '--skip-puzzles', '--skip-agreement',
+                 '--train-remote', '--ssh-host', 'host', '--ssh-user', 'user', '--remote-workdir', '/remote/chess']
+    with patch('sys.argv', arguments), patch('pipelines.run.PipelineRunner.run') as run, \
+         patch('pipelines.run.PipelineRunner.sync_repository'), patch('pipelines.run.PipelineRunner.sync_to_remote'), \
+         patch('pipelines.run.PipelineRunner.fetch_from_remote'):
+        main('A')
+    assert run.call_args_list[0].args[0][0] == '.venv/bin/python'
+    assert run.call_args_list[0].kwargs['remote'] is True
+    assert run.call_args_list[1].args[0][0] == sys.executable
+
+
+def test_latency_benchmark_retains_history_and_counts_forwards(tmp_path):
+    import chess.pgn
+    from eval.latency import benchmark, sample_positions
+    game = chess.pgn.Game()
+    board, node = game.board(), game
+    for uci in ['e2e4', 'e7e5', 'g1f3', 'b8c6']:
+        move = board.parse_uci(uci)
+        node = node.add_variation(move)
+        board.push(move)
+    path = tmp_path / 'games.pgn'
+    path.write_text(str(game) + '\n')
+    boards = sample_positions(path, count=10)
+    assert [len(b.move_stack) for b in boards] == [0, 1, 2, 3]
+    before = [b.fen() for b in boards]
+    runner = ChessRunner(CountingModel(), device='cpu')
+    result = benchmark(runner, boards, runs=4, warmup=1)
+    assert result['neural_forward_calls'] == 5
+    assert 0 < result['p50_ms'] <= result['p95_ms']
+    assert [b.fen() for b in boards] == before
+
+
+def test_arena_records_neural_calls_and_rejects_invalid_controls():
+    a, b = [ChessRunner(CountingModel(), device='cpu') for _ in range(2)]
+    result = play_match(a, b, num_games=2, max_plies=2)
+    assert result['neural_forward_calls_a'] == result['moves_a'] == 2
+    assert result['neural_forward_calls_b'] == result['moves_b'] == 2
+    for kwargs in ({'clock_seconds': -1}, {'clock_seconds': float('nan')}, {'increment': -1},
+                   {'openings': ['8/8/8/8/8/8/8/8 w - - 0 1']}):
+        with pytest.raises(ValueError):
+            play_match(a, b, num_games=2, **kwargs)

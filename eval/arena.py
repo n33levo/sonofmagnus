@@ -10,7 +10,6 @@ import chess.engine
 import chess.pgn
 import numpy as np
 
-from model import load_model
 from play.runner import load_runner
 
 
@@ -78,9 +77,14 @@ def play_match(runner_a, runner_b, num_games=100, time_control=.2, openings=None
         raise ValueError('Use a positive even game count for colour-swapped opening pairs')
     if max_plies <= 0:
         raise ValueError('max_plies must be positive')
+    if (clock_seconds is not None and (not math.isfinite(clock_seconds) or clock_seconds <= 0)) or not math.isfinite(increment) or increment < 0:
+        raise ValueError('Clock must be positive and increment nonnegative')
     np.random.seed(seed)
     openings = openings or [chess.STARTING_FEN]
+    if any(not chess.Board(fen).is_valid() for fen in openings):
+        raise ValueError('Invalid opening position')
     scores, latencies = [], [[], []]
+    forward_start = [getattr(runner, 'forward_calls', None) for runner in (runner_a, runner_b)]
     pgn_file = Path(pgn_path).open('w') if pgn_path else None
     try:
         for game_idx in range(num_games):
@@ -138,6 +142,9 @@ def play_match(runner_a, runner_b, num_games=100, time_control=.2, openings=None
     summary = match_summary(scores)
     for idx, name in enumerate(('a', 'b')):
         summary[f'latency_{name}_ms'] = {f'p{q}': float(np.percentile(latencies[idx], q)) for q in (50, 95, 99)} if latencies[idx] else {}
+        summary[f'moves_{name}'] = len(latencies[idx])
+        if forward_start[idx] is not None:
+            summary[f'neural_forward_calls_{name}'] = (runner_a, runner_b)[idx].forward_calls - forward_start[idx]
     summary.update(seed=seed, max_plies=max_plies, clock_seconds=clock_seconds, increment=increment,
                    openings_sha256=hashlib.sha256('\n'.join(openings).encode()).hexdigest())
     return summary
@@ -173,6 +180,7 @@ def main():
                        stockfish_move_time=args.move_time, rating_pool='local engine match; not FIDE or Lichess Elo')
         if isinstance(b, StockfishRunner):
             results['opponent_engine'] = b.engine.id
+            results['engine_reset_between_games'] = True
         out.write_text(json.dumps(results, indent=2) + '\n')
         print(json.dumps(results, indent=2))
     finally:

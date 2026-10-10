@@ -7,7 +7,6 @@ from pathlib import Path
 
 import chess
 
-from model import load_model
 from play.runner import load_runner
 
 

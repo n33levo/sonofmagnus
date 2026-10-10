@@ -1,4 +1,5 @@
 import argparse
+import sys
 from pathlib import Path
 
 from pipelines.utils import PipelineRunner, SSHConfig
@@ -6,7 +7,8 @@ from pipelines.utils import PipelineRunner, SSHConfig
 
 def main(phase):
     parser = argparse.ArgumentParser(description=f'Phase {phase}')
-    parser.add_argument('--python', default='.venv/bin/python')
+    parser.add_argument('--python', default=sys.executable)
+    parser.add_argument('--remote-python', default='.venv/bin/python')
     parser.add_argument('--config', default='configs/main.yaml')
     parser.add_argument('--device', default='auto')
     parser.add_argument('--batch-size', type=int)
@@ -57,7 +59,7 @@ def main(phase):
     remote = any((args.train_remote, args.curate_remote, args.label_remote, args.selfplay_remote))
     if remote and not all((args.ssh_host, args.ssh_user, args.remote_workdir)):
         parser.error('Remote stages require --ssh-host, --ssh-user and --remote-workdir')
-    runner = PipelineRunner(python=args.python, ssh=SSHConfig(args.ssh_host, args.ssh_user,
+    runner = PipelineRunner(python=args.remote_python, ssh=SSHConfig(args.ssh_host, args.ssh_user,
                            args.ssh_key, args.remote_workdir) if remote else None)
     if remote:
         runner.sync_repository()
@@ -69,7 +71,7 @@ def main(phase):
         if remote:
             for path in inputs:
                 runner.sync_to_remote(Path(path))
-        runner.run([args.python, '-m', module, *map(str, flags)], remote=remote)
+        runner.run([args.remote_python if remote else args.python, '-m', module, *map(str, flags)], remote=remote)
         if remote:
             for path in outputs:
                 runner.fetch_from_remote(Path(path), Path(path))

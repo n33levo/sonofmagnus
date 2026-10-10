@@ -30,6 +30,7 @@ class ChessRunner:
             temperature_opening, temperature_midgame, temperature_endgame)
         self.move_timeout_ms = move_timeout_ms
         self.last_latency_ms = 0.
+        self.forward_calls = 0
 
     def get_temperature(self, move_number):
         return self.temp_opening if move_number <= 10 else self.temp_midgame if move_number <= 30 else self.temp_endgame
@@ -39,6 +40,7 @@ class ChessRunner:
         tensor = torch.from_numpy(encode_board_batch(boards)).to(self.device)
         tensor = tensor.to(next(self.model.parameters()).dtype)
         logits, value = self.model(tensor)
+        self.forward_calls += 1
         if not torch.isfinite(value).all():
             raise ValueError('Non-finite value output')
         logits, value = logits.float().cpu().numpy(), value.float().cpu().numpy().reshape(-1)

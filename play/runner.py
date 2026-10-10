@@ -10,6 +10,11 @@ from model import load_model, resolve_device
 
 
 def load_runner(path, config='main', device='auto', backend='auto'):
+    if str(path).endswith('.mlx'):
+        from play.mlx import MlxRunner
+        if device not in ('auto', 'mps', 'gpu'):
+            raise ValueError('MLX serving uses the Apple GPU; use ONNX or the BLAS adapter for CPU inference')
+        return MlxRunner(path)
     if str(path).endswith('.onnx'):
         from play.onnx import OnnxRunner
         return OnnxRunner(path)
@@ -54,7 +59,7 @@ class ChessRunner:
         return get_legal_move_probs(logits, board)
 
     def select_move(self, board, temperature=None, deterministic=False):
-        if board.is_game_over(claim_draw=True):
+        if board.is_game_over():
             return None
         start = time.perf_counter()
         logits, _ = self.policy(board)

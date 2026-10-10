@@ -10,6 +10,7 @@ import chess.pgn
 import numpy as np
 
 from play.runner import load_runner
+from model.artifacts import artifact_info
 
 
 def sample_positions(pgn_path, count=200, seed=0):
@@ -70,10 +71,10 @@ def main():
     args = parser.parse_args()
     results = benchmark(load_runner(args.ckpt, device=args.device, backend=args.backend),
                         sample_positions(args.pgn, args.runs, args.seed), args.runs, args.warmup)
-    results.update(checkpoint=args.ckpt, model_bytes=Path(args.ckpt).stat().st_size, seed=args.seed)
-    for name, path in (('model', args.ckpt), ('pgn', args.pgn)):
-        with open(path, 'rb') as stream:
-            results[name + '_sha256'] = hashlib.file_digest(stream, 'sha256').hexdigest()
+    artifact = artifact_info(args.ckpt)
+    results.update(checkpoint=args.ckpt, model_bytes=artifact['model_bytes'], model_sha256=artifact['sha256'], seed=args.seed)
+    with open(args.pgn, 'rb') as stream:
+        results['pgn_sha256'] = hashlib.file_digest(stream, 'sha256').hexdigest()
     Path(args.out).write_text(json.dumps(results, indent=2) + '\n')
     print(json.dumps(results, indent=2))
 

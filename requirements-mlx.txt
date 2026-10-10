@@ -1,0 +1,2 @@
+-r requirements-metal.txt
+mlx==0.32.3; sys_platform == 'darwin' and platform_machine == 'arm64'

@@ -22,6 +22,15 @@ from train.distill_labeler import cp_to_q_value, label_position
 from train.train import ChessLoss, train_epoch
 
 
+def test_main_preset_fits_the_six_million_parameter_budget():
+    import yaml
+    from model import create_model, create_model_main
+    from pathlib import Path
+    config = yaml.safe_load(Path('configs/main.yaml').read_text())
+    counts = [create_model(config).get_num_params(), create_model('main').get_num_params(), create_model_main().get_num_params()]
+    assert counts == [5827283] * 3
+
+
 def run_cli(args):
     result = subprocess.run(args, capture_output=True, text=True)
     assert result.returncode == 0, result.stdout + result.stderr
@@ -129,8 +138,13 @@ def test_one_forward_per_move_and_no_board_mutation():
     assert runner.select_move(board, deterministic=True) in board.legal_moves
     assert model.calls == 1
     assert board.fen() == before
+    for move in ['g1f3', 'g8f6', 'f3g1', 'f6g8'] * 2:
+        board.push_uci(move)
+    assert board.can_claim_threefold_repetition() and not board.is_game_over()
+    assert runner.select_move(board, deterministic=True) in board.legal_moves
+    assert model.calls == 2
     assert runner.select_move(chess.Board('7k/5Q2/6K1/8/8/8/8/8 b - - 0 1')) is None
-    assert model.calls == 1
+    assert model.calls == 2
 
 
 class ScriptRunner:

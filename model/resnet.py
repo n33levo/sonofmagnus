@@ -74,7 +74,7 @@ class ChessResNet(nn.Module):
 def create_resnet_main(input_channels: int = 18) -> ChessResNet:
     return ChessResNet(
         input_channels=input_channels,
-        hidden_channels=128,
+        hidden_channels=160,
         num_blocks=12,
         num_groups=8,
     )

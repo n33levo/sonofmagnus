@@ -76,12 +76,16 @@ class ChessPositionDataset(Dataset):
     def __getstate__(self):
         return {**self.__dict__, 'stream': None}
 
-    def __getitem__(self, idx):
+    def read_row(self, idx):
         if self.stream is None:
             self.stream = self.data_path.open('rb')
         self.stream.seek(self.offsets[idx])
         item = json.loads(self.stream.readline())
         item['weight'] = item.get('weight', 1.) * self.weight
+        return item
+
+    def __getitem__(self, idx):
+        item = self.read_row(idx)
         return position_sample(item, self.augment and random.random() < 0.5)
 
 

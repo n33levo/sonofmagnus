@@ -11,7 +11,7 @@ def resolve_device(device="auto"):
 
 
 def create_model(config):
-    defaults = {"main": (128, 12), "mini": (64, 8)}
+    defaults = {"main": (160, 12), "mini": (64, 8)}
     if isinstance(config, str):
         config = {"model_size": config}
     channels, blocks = defaults[config.get("model_size", "main")]
@@ -64,7 +64,7 @@ class ChessNet(nn.Module):
 def create_model_main(input_channels: int = 18) -> ChessNet:
     return ChessNet(
         input_channels=input_channels,
-        hidden_channels=128,
+        hidden_channels=160,
         num_blocks=12,
         num_groups=8,
     )

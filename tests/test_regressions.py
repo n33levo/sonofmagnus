@@ -398,3 +398,13 @@ def test_selfplay_batches_positions_without_lookahead(tmp_path):
     for row in rows:
         assert chess.Move.from_uci(row['move']) in chess.Board(row['fen']).legal_moves
     assert len({row['game_id'] for row in rows}) == 4
+
+
+def test_clock_forfeit_is_draw_when_opponent_cannot_mate(tmp_path):
+    fen = '7k/8/8/8/8/8/8/1R5K w - - 0 1'
+    a, b = ScriptRunner(['b1b2']), ScriptRunner(['b1b2'])
+    path = tmp_path / 'flags.pgn'
+    with patch('eval.arena.time.perf_counter', side_effect=[0., 1., 2., 3.]):
+        result = play_match(a, b, num_games=2, openings=[fen], clock_seconds=.1, pgn_path=path)
+    assert result['draws'] == 2
+    assert path.read_text().count('time_forfeit') == 2

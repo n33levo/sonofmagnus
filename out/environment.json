@@ -1,0 +1,40 @@
+{
+  "date": "2026-10-10",
+  "hardware": "Apple M4, 10 GPU cores, 16 GB unified memory",
+  "os": "macOS-26.3.1-arm64-arm-64bit",
+  "torch": "2.14.1",
+  "data": {
+    "puzzles_holdout.jsonl": {
+      "sha256": "88299ef468ca752777945bce0a635976522af6d9a431d31b3a8ad1b21b0048f3",
+      "records": 1000
+    },
+    "endgame_holdout.jsonl": {
+      "sha256": "c0662a2de81255a193b6b8f2b35d1ecf30dbcc9a85abd2ba0307cc38e849da0a",
+      "records": 200
+    },
+    "eval_train.jsonl": {
+      "sha256": "253d11f601b2540a53cf5eaf4c674c62d34c71736bef37f6174c01b6ebc0a51d",
+      "records": 18000
+    },
+    "eval_holdout.jsonl": {
+      "sha256": "d0d3d38197f5813765d75f4eda77fa2583b176af37f85e8b8ac8c35a6ca3afc1",
+      "records": 2000
+    },
+    "arena_openings.fen": {
+      "sha256": "2ac6430f7aa6d2c0a1fc9dae6877b8deee02d7eddb93d8385769109b6040a997",
+      "records": 100
+    },
+    "q_full_train.jsonl": {
+      "sha256": "9952f56a04392e35d51450900f3f7fe91d6f7d9729ce9124a87e97169404a10e",
+      "records": 100
+    },
+    "stockfish_holdout.jsonl": {
+      "sha256": "0af73b599e4ad501024ee0d5db55305169f020027c4ee9a0be60bd3b9b977962",
+      "records": 2000,
+      "engine": "Stockfish 17.1",
+      "depth": 14,
+      "multipv": 1,
+      "time_cap": null
+    }
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "1800": {
+    "correct": 46,
+    "total": 79,
+    "accuracy": 0.5822784810126582
+  },
+  "1500": {
+    "correct": 53,
+    "total": 74,
+    "accuracy": 0.7162162162162162
+  },
+  "2800": {
+    "correct": 1,
+    "total": 34,
+    "accuracy": 0.029411764705882353
+  },
+  "2000": {
+    "correct": 27,
+    "total": 50,
+    "accuracy": 0.54
+  },
+  "1900": {
+    "correct": 36,
+    "total": 71,
+    "accuracy": 0.5070422535211268
+  },
+  "2100": {
+    "correct": 24,
+    "total": 79,
+    "accuracy": 0.3037974683544304
+  },
+  "1700": {
+    "correct": 28,
+    "total": 56,
+    "accuracy": 0.5
+  },
+  "1600": {
+    "correct": 43,
+    "total": 70,
+    "accuracy": 0.6142857142857143
+  },
+  "2600": {
+    "correct": 9,
+    "total": 54,
+    "accuracy": 0.16666666666666666
+  },
+  "2400": {
+    "correct": 14,
+    "total": 88,
+    "accuracy": 0.1590909090909091
+  },
+  "2500": {
+    "correct": 8,
+    "total": 58,
+    "accuracy": 0.13793103448275862
+  },
+  "2300": {
+    "correct": 17,
+    "total": 57,
+    "accuracy": 0.2982456140350877
+  },
+  "2200": {
+    "correct": 21,
+    "total": 64,
+    "accuracy": 0.328125
+  },
+  "2700": {
+    "correct": 12,
+    "total": 147,
+    "accuracy": 0.08163265306122448
+  },
+  "3000": {
+    "correct": 0,
+    "total": 2,
+    "accuracy": 0.0
+  },
+  "2900": {
+    "correct": 0,
+    "total": 16,
+    "accuracy": 0.0
+  },
+  "3100": {
+    "correct": 0,
+    "total": 1,
+    "accuracy": 0.0
+  },
+  "overall": {
+    "correct": 339,
+    "total": 1000,
+    "accuracy": 0.339
+  },
+  "protocol": "complete_line"
+}

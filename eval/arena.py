@@ -127,7 +127,9 @@ def play_match(runner_a, runner_b, num_games=100, time_control=.2, openings=None
             scores.append(white_score if a_white else 1-white_score)
             game.headers.update(Result=result, Termination=reason)
             if pgn_file:
-                print(game, file=pgn_file, end='\n\n')
+                if game_idx:
+                    print(file=pgn_file)
+                print(game, file=pgn_file)
                 pgn_file.flush()
             print(f'Game {game_idx+1}/{num_games}: {result} ({reason})', flush=True)
     finally:

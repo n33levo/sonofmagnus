@@ -1,0 +1,12 @@
+{
+  "file_size_mb": 0.958066,
+  "size_ok": true,
+  "mean_latency_ms": 0.7785057951696217,
+  "p50_latency_ms": 0.7086665136739612,
+  "p95_latency_ms": 0.988202099688351,
+  "p99_latency_ms": 1.7121981759555698,
+  "latency_ok": true,
+  "provider": "CPUExecutionProvider",
+  "runs": 100,
+  "threads": 4
+}

@@ -1,0 +1,53 @@
+{
+  "games": 40,
+  "wins_a": 37,
+  "wins_b": 0,
+  "draws": 3,
+  "score_a": 0.9625,
+  "score_pair_bootstrap_95": [
+    0.925,
+    1.0
+  ],
+  "score_wilson_95": [
+    0.8526549430962813,
+    0.991292358097106
+  ],
+  "elo_difference": 563.7477881811278,
+  "score_hoeffding_95": [
+    0.6588192690458474,
+    1.0
+  ],
+  "elo_difference_hoeffding_95": [
+    114.31271902205128,
+    null
+  ],
+  "elo_difference_pair_bootstrap_95": [
+    436.4321877389331,
+    null
+  ],
+  "latency_a_ms": {
+    "p50": 21.647291956469417,
+    "p95": 35.73662496637553,
+    "p99": 37.75110878050325
+  },
+  "latency_b_ms": {
+    "p50": 51.0542499832809,
+    "p95": 53.31890034722164,
+    "p99": 54.54136219341308
+  },
+  "seed": 0,
+  "max_plies": 400,
+  "clock_seconds": null,
+  "increment": 0.0,
+  "openings_sha256": "b1791d7fc9ae3d38966568c257ffb3a02cbf8394cdb4805bc70f64fc3c0b6879",
+  "a": "ckpts/bt3.pb.gz",
+  "b": "stockfish",
+  "stockfish_elo_setting": 2500,
+  "stockfish_move_time": 0.05,
+  "rating_pool": "local engine match; not FIDE or Lichess Elo",
+  "opponent_engine": {
+    "name": "Stockfish 17.1",
+    "author": "the Stockfish developers (see AUTHORS file)"
+  },
+  "engine_reset_between_games": false
+}

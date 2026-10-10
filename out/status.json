@@ -1,0 +1,71 @@
+{
+  "objective_status": "incomplete",
+  "strong_policy": {
+    "checkpoint": "bt3.pb.gz",
+    "architecture": "pretrained LC0 transformer",
+    "model_bytes": 190937780,
+    "puzzle_bands": {
+      "1500": {
+        "correct": 194,
+        "total": 200,
+        "accuracy": 0.97
+      },
+      "1800": {
+        "correct": 171,
+        "total": 200,
+        "accuracy": 0.855
+      },
+      "2100": {
+        "correct": 167,
+        "total": 200,
+        "accuracy": 0.835
+      },
+      "2400": {
+        "correct": 110,
+        "total": 200,
+        "accuracy": 0.55
+      },
+      "2700": {
+        "correct": 75,
+        "total": 200,
+        "accuracy": 0.375
+      }
+    },
+    "agreement_stockfish_depth_14": {
+      "top1_agreement": 0.63,
+      "top3_agreement": 0.891,
+      "top5_agreement": 0.951,
+      "total": 2000,
+      "mean_kl_divergence": 1.1807706072458302
+    },
+    "match": "bt3_sf2650_openings.json",
+    "latency": "policy_latency.json"
+  },
+  "compact_policy": {
+    "checkpoint": "mini_distill/latest.pt",
+    "architecture": "trained compact ResNet",
+    "deployment": "mini_int8_deployment.json",
+    "agreement": "mini_int8_agreement.json",
+    "playing_strength": "not established"
+  },
+  "remaining": [
+    "One compact model has not met both the strength and size targets.",
+    "No FIDE or Lichess rating has been established; Stockfish UCI_Elo settings are not either rating pool.",
+    "The native ResNet has not met the advertised agreement, puzzle or Elo targets.",
+    "The 70M human, 2.5M all-legal-move engine labels and 1M self-play training datasets have not been reproduced.",
+    "The claimed ablation Elo gains and A100 training-time/AMP speedup figures have not been verified.",
+    "The 5,000-master-game opening benchmark has not been reproduced.",
+    "The novelty claim is unestablished; ChessBench explicitly studied action-value prediction.",
+    "The README sigmoid percentages and Q range are inconsistent; a proposed factual patch awaits clarification."
+  ],
+  "references": {
+    "ChessBench": "https://arxiv.org/abs/2402.04494",
+    "FIDE title regulations": "https://handbook.fide.com/chapter/B012024"
+  },
+  "validation": {
+    "local_tests": 35,
+    "training_device": "Apple M4 Metal (MPS)",
+    "full_legal_move_labels": 100,
+    "selfplay_batch_smoke_positions": 1024
+  }
+}

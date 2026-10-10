@@ -1,120 +1,63 @@
-"""
-Searchless self-play for DAgger-style data collection.
-
-Plays games using current policy and logs visited positions (FENs)
-for later relabeling with teacher (engine).
-"""
-
 import argparse
 import json
 from pathlib import Path
 
 import chess
-import torch
 
-from play.runner import ChessRunner
-from model import create_model_main, create_model_mini
+from play.runner import load_runner
 
 
-def play_selfplay_game(
-    runner: ChessRunner,
-    max_moves: int = 200,
-) -> list[str]:
-    """
-    Play a self-play game and collect visited FENs.
-
-    Args:
-        runner: ChessRunner instance
-        max_moves: Maximum moves before draw
-
-    Returns:
-        List of FEN strings visited during the game
-    """
+def play_selfplay_game(runner, max_moves=400):
     board = chess.Board()
     fens = []
-
-    while not board.is_game_over() and len(fens) < max_moves:
-        # Record position before move
+    while not board.is_game_over(claim_draw=True) and len(fens) < max_moves:
         fens.append(board.fen())
-
-        # Select and make move
-        move = runner.select_move(board)
-        board.push(move)
-
+        board.push(runner.select_move(board))
     return fens
 
 
-def run_selfplay(
-    model_path: str,
-    output_path: str,
-    num_games: int = 100,
-    config: str = "main",
-    device: str = "cpu",
-    max_moves: int = 200,
-):
-    """
-    Run self-play games and save visited positions.
-
-    Args:
-        model_path: Path to trained model checkpoint
-        output_path: Output JSONL file for FENs
-        num_games: Number of games to play
-        config: Model config (main/mini)
-        device: Device to use
-        max_moves: Max moves per game
-    """
-    # Load model
-    if config == "main":
-        model = create_model_main()
-    else:
-        model = create_model_mini()
-
-    print(f"Loading checkpoint from {model_path}")
-    checkpoint = torch.load(model_path, map_location=device)
-    model.load_state_dict(checkpoint["model_state_dict"])
-
-    # Create runner
-    runner = ChessRunner(model, device=device)
-
-    # Play games and collect FENs
-    all_fens = []
-    print(f"Playing {num_games} self-play games...")
-
-    for game_idx in range(num_games):
-        fens = play_selfplay_game(runner, max_moves=max_moves)
-        all_fens.extend(fens)
-
-        if (game_idx + 1) % 10 == 0:
-            print(f"  Completed {game_idx + 1}/{num_games} games ({len(all_fens)} positions)")
-
-    # Write FENs to file
-    with open(output_path, "w") as f:
-        for fen in all_fens:
-            f.write(json.dumps({"fen": fen}) + "\n")
-
-    print(f"\nCollected {len(all_fens)} positions from {num_games} games")
-    print(f"Saved to {output_path}")
+def run_selfplay(model_path, output_path, num_games=100, config='main', device='auto', max_moves=400, batch_size=64):
+    from chessio.mask import sample_legal_move
+    if num_games <= 0 or max_moves <= 0 or batch_size <= 0:
+        raise ValueError('Games, moves and batch size must be positive')
+    runner = load_runner(model_path, config, device)
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    count = 0
+    with output.open('w') as stream:
+        for start in range(0, num_games, batch_size):
+            boards = [chess.Board() for _ in range(min(batch_size, num_games - start))]
+            plies = [0] * len(boards)
+            while True:
+                active = [idx for idx, board in enumerate(boards)
+                          if plies[idx] < max_moves and not board.is_game_over(claim_draw=True)]
+                if not active:
+                    break
+                predictions = runner.batch_policy([boards[idx] for idx in active])
+                for idx, (logits, value) in zip(active, predictions):
+                    board = boards[idx]
+                    move = sample_legal_move(logits, board, runner.get_temperature(board.fullmove_number))
+                    stream.write(json.dumps({'fen': board.fen(), 'game_id': f'selfplay-{start + idx}',
+                                             'move': move.uci(), 'predicted_value': value}) + '\n')
+                    board.push(move)
+                    plies[idx] += 1
+                    count += 1
+            print(f'{start + len(boards)} games, {count} positions', flush=True)
+    print(f'Self-play: {count} positions -> {output}')
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Self-play data collection")
-    parser.add_argument("--ckpt", type=str, required=True, help="Model checkpoint")
-    parser.add_argument("--out", type=str, required=True, help="Output JSONL file")
-    parser.add_argument("--games", type=int, default=100, help="Number of games")
-    parser.add_argument("--config", type=str, choices=["main", "mini"], default="main")
-    parser.add_argument("--device", type=str, default="cpu")
-    parser.add_argument("--max-moves", type=int, default=200, help="Max moves per game")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--ckpt', required=True)
+    parser.add_argument('--out', required=True)
+    parser.add_argument('--games', type=int, default=100)
+    parser.add_argument('--config', choices=['main', 'mini'], default='main')
+    parser.add_argument('--device', default='auto')
+    parser.add_argument('--max-moves', type=int, default=400)
+    parser.add_argument('--batch-size', type=int, default=64)
     args = parser.parse_args()
-
-    run_selfplay(
-        model_path=args.ckpt,
-        output_path=args.out,
-        num_games=args.games,
-        config=args.config,
-        device=args.device,
-        max_moves=args.max_moves,
-    )
+    run_selfplay(args.ckpt, args.out, args.games, args.config, args.device, args.max_moves, args.batch_size)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

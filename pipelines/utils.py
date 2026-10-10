@@ -61,7 +61,11 @@ class PipelineRunner:
         if remote:
             if self.ssh is None:
                 raise RuntimeError("Remote execution requested but SSH config is missing.")
+            cmd = [','.join(str(Path(part).relative_to(Path.cwd())) if Path(part).is_absolute()
+                   and Path(part).is_relative_to(Path.cwd()) else part for part in token.split(',')) for token in cmd]
             remote_cmd = shlex_join(cmd)
+            if env:
+                remote_cmd = "env " + shlex_join([f"{key}={value}" for key, value in env.items()]) + " " + remote_cmd
             pieces: list[str] = ["ssh"]
             if self.ssh.key:
                 pieces.extend(["-i", self.ssh.key])
@@ -90,7 +94,7 @@ class PipelineRunner:
     def _rsync_base(self) -> list[str]:
         cmd: list[str] = ["rsync", "-azP"]
         if self.ssh and self.ssh.key:
-            cmd.extend(["-e", f"ssh -i {self.ssh.key}"])
+            cmd.extend(["-e", f"ssh -i {shlex.quote(self.ssh.key)}"])
         return cmd
 
     def sync_to_remote(self, local_path: Path) -> None:
@@ -98,7 +102,8 @@ class PipelineRunner:
         if not local_path.exists():
             raise FileNotFoundError(local_path)
 
-        remote_dir = Path(ssh.workdir) / local_path.parent
+        local_relative = local_path.resolve().relative_to(Path.cwd())
+        remote_dir = Path(ssh.workdir) / local_relative.parent
         mkdir_cmd: list[str] = ["ssh"]
         if ssh.key:
             mkdir_cmd.extend(["-i", ssh.key])
@@ -108,17 +113,29 @@ class PipelineRunner:
 
         rsync_cmd = self._rsync_base()
         rsync_cmd.append(str(local_path))
-        rsync_cmd.append(f"{ssh.spec()}:{remote_dir}/")
+        rsync_cmd.append(f"{ssh.spec()}:{shlex.quote(str(remote_dir))}/")
         subprocess.run(rsync_cmd, check=True)
 
     def fetch_from_remote(self, remote_relative: Path, destination: Path) -> None:
         ssh = self._ensure_ssh()
         destination.parent.mkdir(parents=True, exist_ok=True)
+        if remote_relative.is_absolute():
+            remote_relative = remote_relative.relative_to(Path.cwd())
         remote_path = Path(ssh.workdir) / remote_relative
         rsync_cmd = self._rsync_base()
-        rsync_cmd.append(f"{ssh.spec()}:{remote_path}")
+        rsync_cmd.append(f"{ssh.spec()}:{shlex.quote(str(remote_path))}")
         rsync_cmd.append(str(destination))
         subprocess.run(rsync_cmd, check=True)
+
+    def sync_repository(self):
+        ssh = self._ensure_ssh()
+        self.sync_to_remote(Path("requirements.txt"))
+        cmd = self._rsync_base()
+        for path in (".git", ".venv", "data", "ckpts", "out", "__pycache__", ".pytest_cache"):
+            cmd += ["--exclude", path]
+        subprocess.run([*cmd, "./", f"{ssh.spec()}:{shlex.quote(ssh.workdir)}/"], check=True)
+        self.run(["python3", "-m", "venv", ".venv"], remote=True)
+        self.run([self.python, "-m", "pip", "install", "-r", "requirements.txt"], remote=True)
 
 
 def ensure_paths(*paths: Path) -> None:

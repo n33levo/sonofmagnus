@@ -1,17 +1,32 @@
-"""
-Complete chess neural network model (policy + value).
-"""
-
 import torch
 import torch.nn as nn
 from model.resnet import ChessResNet, create_resnet_main, create_resnet_mini
 from model.heads import ChessHeads
 
 
+def resolve_device(device="auto"):
+    if device == "auto":
+        device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+    return torch.device(device)
+
+
+def create_model(config):
+    defaults = {"main": (128, 12), "mini": (64, 8)}
+    if isinstance(config, str):
+        config = {"model_size": config}
+    channels, blocks = defaults[config.get("model_size", "main")]
+    return ChessNet(config.get("input_channels", 18), config.get("hidden_channels", channels),
+                    config.get("num_blocks", blocks), config.get("num_groups", 8))
+
+
+def load_model(path, config="main"):
+    checkpoint = torch.load(path, map_location="cpu", weights_only=True)
+    model = create_model(checkpoint.get("config", config))
+    model.load_state_dict(checkpoint["model_state_dict"])
+    return model.eval()
+
+
 class ChessNet(nn.Module):
-    """
-    Complete chess network with ResNet backbone and policy+value heads.
-    """
 
     def __init__(
         self,
@@ -30,32 +45,23 @@ class ChessNet(nn.Module):
         )
 
         self.heads = ChessHeads(hidden_channels=hidden_channels, num_groups=num_groups)
+        self.q_head = nn.Conv2d(hidden_channels, 73, 1)
 
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
-        """
-        Forward pass.
-
-        Args:
-            x: Board encoding of shape (B, input_channels, 8, 8)
-
-        Returns:
-            Tuple of (policy_logits, value):
-                - policy_logits: shape (B, 8, 8, 73)
-                - value: shape (B, 1) in range [-1, 1]
-        """
+    def forward(self, x: torch.Tensor):
         features = self.backbone(x)
         policy, value = self.heads(features)
         return policy, value
 
+    def forward_with_q(self, x):
+        features = self.backbone(x)
+        policy, value = self.heads(features)
+        return policy, value, self.q_head(features).permute(0, 2, 3, 1)
+
     def get_num_params(self) -> int:
-        """Get the number of trainable parameters."""
         return sum(p.numel() for p in self.parameters() if p.requires_grad)
 
 
 def create_model_main(input_channels: int = 18) -> ChessNet:
-    """
-    Create main model configuration (~6-8M params).
-    """
     return ChessNet(
         input_channels=input_channels,
         hidden_channels=128,
@@ -65,9 +71,6 @@ def create_model_main(input_channels: int = 18) -> ChessNet:
 
 
 def create_model_mini(input_channels: int = 18) -> ChessNet:
-    """
-    Create mini model configuration (~2-4M params for ≤10 MB target).
-    """
     return ChessNet(
         input_channels=input_channels,
         hidden_channels=64,
@@ -83,31 +86,3 @@ __all__ = [
     'ChessResNet',
     'ChessHeads',
 ]
-
-
-if __name__ == "__main__":
-    print("Testing complete ChessNet model...")
-
-    # Main config
-    model_main = create_model_main()
-    print(f"\nMain model:")
-    print(f"  Parameters: {model_main.get_num_params():,}")
-
-    # Mini config
-    model_mini = create_model_mini()
-    print(f"\nMini model:")
-    print(f"  Parameters: {model_mini.get_num_params():,}")
-
-    # Forward pass
-    batch_size = 2
-    x = torch.randn(batch_size, 18, 8, 8)
-
-    print(f"\nForward pass test (batch_size={batch_size})...")
-    with torch.no_grad():
-        policy, value = model_main(x)
-
-    print(f"  Policy shape: {policy.shape}")
-    print(f"  Value shape: {value.shape}")
-    print(f"  Value range: [{value.min().item():.3f}, {value.max().item():.3f}]")
-
-    print("\n✓ ChessNet tests passed!")

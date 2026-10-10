@@ -1,181 +1,105 @@
-"""
-Puzzle evaluation for chess model.
-
-Tests tactical strength on Lichess puzzles.
-"""
-
 import argparse
+import csv
+import io
 import json
 from collections import defaultdict
+from pathlib import Path
 
 import chess
-import torch
 
-from play.runner import ChessRunner
-from model import create_model_main, create_model_mini
+from model import load_model
+from play.runner import load_runner
 
 
-def solve_puzzle(
-    runner: ChessRunner,
-    fen: str,
-    solution_moves: list[str],
-    max_attempts: int = 3,
-) -> bool:
-    """
-    Attempt to solve a puzzle.
+def puzzle_moves(puzzle):
+    moves = puzzle.get('moves', puzzle.get('Moves'))
+    return moves.split() if isinstance(moves, str) else moves
 
-    Args:
-        runner: ChessRunner instance
-        fen: Starting FEN
-        solution_moves: List of UCI moves (alternating player/opponent)
-        max_attempts: Number of attempts per position
 
-    Returns:
-        True if puzzle solved correctly
-    """
+def solve_puzzle(runner, fen, solution_moves, max_attempts=1, first_move_only=False):
+    if max_attempts != 1:
+        raise ValueError('Puzzle evaluation uses exactly one deterministic attempt')
     board = chess.Board(fen)
-
-    # Solution alternates: opponent's setup move, our response, opponent, our response...
-    # For puzzles, we typically need to find the first move in the solution
-    our_moves = solution_moves[::2]  # Even indices are "our" moves
-
-    for i, our_move_uci in enumerate(our_moves):
-        solution_move = chess.Move.from_uci(our_move_uci)
-
-        # Try multiple times (temperature sampling)
-        solved = False
-        for attempt in range(max_attempts):
-            predicted_move = runner.select_move(board, deterministic=(attempt == 0))
-
-            if predicted_move == solution_move:
-                solved = True
-                break
-
-        if not solved:
-            return False
-
-        # Make our move and opponent's response (if any)
-        board.push(solution_move)
-
-        # Make opponent's move if exists
-        if i * 2 + 1 < len(solution_moves):
-            opponent_move = chess.Move.from_uci(solution_moves[i * 2 + 1])
-            board.push(opponent_move)
-
+    if len(solution_moves) < 2 or len(solution_moves) % 2:
+        raise ValueError('Lichess puzzles need a setup move and at least one response')
+    for idx, uci in enumerate(solution_moves):
+        expected = chess.Move.from_uci(uci)
+        if expected not in board.legal_moves:
+            raise ValueError(f'Illegal puzzle solution: {uci} at {board.fen()}')
+        # Lichess stores the opponent setup first, followed by the solver response.
+        if idx % 2 == 1:
+            predicted = runner.select_move(board, deterministic=True)
+            if predicted != expected:
+                if predicted not in board.legal_moves:
+                    return False
+                alternative = board.copy()
+                alternative.push(predicted)
+                return alternative.is_checkmate()
+            if first_move_only:
+                return True
+        board.push(expected)
     return True
 
 
-def evaluate_puzzles(
-    model_path: str,
-    puzzles_path: str,
-    config: str = "main",
-    device: str = "cpu",
-    max_puzzles: int = None,
-) -> dict:
-    """
-    Evaluate model on puzzle dataset.
-
-    Args:
-        model_path: Path to model checkpoint
-        puzzles_path: Path to puzzles JSONL
-        config: Model config
-        device: Device
-        max_puzzles: Max puzzles to evaluate
-
-    Returns:
-        Dictionary with accuracy by rating bucket
-    """
-    # Load model
-    if config == "main":
-        model = create_model_main()
+def read_puzzles(path):
+    path = Path(path)
+    raw = path.open('rb')
+    if path.suffix == '.zst':
+        import zstandard
+        stream = io.TextIOWrapper(zstandard.ZstdDecompressor().stream_reader(raw), encoding='utf-8')
     else:
-        model = create_model_mini()
+        stream = io.TextIOWrapper(raw, encoding='utf-8')
+    with raw, stream:
+        if '.csv' in path.suffixes:
+            yield from csv.DictReader(stream)
+        else:
+            for line in stream:
+                if line.strip():
+                    yield json.loads(line)
 
-    checkpoint = torch.load(model_path, map_location=device)
-    model.load_state_dict(checkpoint["model_state_dict"])
 
-    runner = ChessRunner(model, device=device)
-
-    # Load puzzles
-    puzzles = []
-    with open(puzzles_path) as f:
-        for i, line in enumerate(f):
-            if max_puzzles and i >= max_puzzles:
-                break
-            puzzles.append(json.loads(line))
-
-    print(f"Evaluating on {len(puzzles)} puzzles...")
-
-    # Evaluate
-    by_rating = defaultdict(lambda: {"correct": 0, "total": 0})
-
-    for i, puzzle in enumerate(puzzles):
-        fen = puzzle["fen"]
-        solution = puzzle["moves"]  # List of UCI moves
-        rating = puzzle.get("rating", 1500)
-
-        # Bucket by rating
-        rating_bucket = (rating // 100) * 100
-
-        solved = solve_puzzle(runner, fen, solution)
-
-        by_rating[rating_bucket]["total"] += 1
-        if solved:
-            by_rating[rating_bucket]["correct"] += 1
-
-        if (i + 1) % 100 == 0:
-            print(f"  Evaluated {i + 1}/{len(puzzles)} puzzles...")
-
-    # Compute accuracies
-    results = {}
-    total_correct = 0
-    total_count = 0
-
-    for bucket in sorted(by_rating.keys()):
-        stats = by_rating[bucket]
-        accuracy = stats["correct"] / stats["total"]
-        results[bucket] = {
-            "accuracy": accuracy,
-            "correct": stats["correct"],
-            "total": stats["total"],
-        }
-        total_correct += stats["correct"]
-        total_count += stats["total"]
-
-    overall_accuracy = total_correct / total_count if total_count > 0 else 0.0
-    results["overall"] = {
-        "accuracy": overall_accuracy,
-        "correct": total_correct,
-        "total": total_count,
-    }
-
+def evaluate_runner(runner, puzzles_path, max_puzzles=None, first_move_only=False):
+    buckets = defaultdict(lambda: {'correct': 0, 'total': 0})
+    total = 0
+    for puzzle in read_puzzles(puzzles_path):
+        if max_puzzles is not None and total >= max_puzzles:
+            break
+        rating = int(puzzle.get('rating', puzzle.get('Rating', 1500)))
+        key = (rating // 100) * 100
+        solved = solve_puzzle(runner, puzzle.get('fen', puzzle.get('FEN')),
+                              puzzle_moves(puzzle), first_move_only=first_move_only)
+        buckets[key]['correct'] += solved
+        buckets[key]['total'] += 1
+        total += 1
+    if not total:
+        raise ValueError('Empty puzzle dataset')
+    results = {key: {**stats, 'accuracy': stats['correct'] / stats['total']} for key, stats in buckets.items()}
+    correct = sum(s['correct'] for s in buckets.values())
+    results['overall'] = {'correct': correct, 'total': total, 'accuracy': correct / total}
+    results['protocol'] = 'first_response' if first_move_only else 'complete_line'
     return results
 
 
+def evaluate_puzzles(model_path, puzzles_path, config='main', device='auto', max_puzzles=None):
+    return evaluate_runner(load_runner(model_path, config, device), puzzles_path, max_puzzles)
+
+
 def main():
-    parser = argparse.ArgumentParser(description="Evaluate on puzzles")
-    parser.add_argument("--ckpt", type=str, required=True, help="Model checkpoint")
-    parser.add_argument("--puzzles", type=str, required=True, help="Puzzles JSONL")
-    parser.add_argument("--config", type=str, choices=["main", "mini"], default="main")
-    parser.add_argument("--device", type=str, default="cpu")
-    parser.add_argument("--max", type=int, help="Max puzzles to evaluate")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--ckpt', required=True)
+    parser.add_argument('--puzzles', required=True)
+    parser.add_argument('--config', choices=['main', 'mini'], default='main')
+    parser.add_argument('--device', default='auto')
+    parser.add_argument('--max', type=int)
+    parser.add_argument('--first-move-only', action='store_true')
+    parser.add_argument('--out')
     args = parser.parse_args()
-
-    results = evaluate_puzzles(
-        model_path=args.ckpt,
-        puzzles_path=args.puzzles,
-        config=args.config,
-        device=args.device,
-        max_puzzles=args.max,
-    )
-
-    print("\nPuzzle Results:")
-    print(f"Overall: {results['overall']['accuracy']:.2%} ({results['overall']['correct']}/{results['overall']['total']})")
-    print("\nBy rating:")
-    for bucket in sorted(k for k in results.keys() if k != "overall"):
-        stats = results[bucket]
-        print(f"  {bucket}-{bucket+99}: {stats['accuracy']:.2%} ({stats['correct']}/{stats['total']})")
+    runner = load_runner(args.ckpt, args.config, args.device)
+    results = evaluate_runner(runner, args.puzzles, args.max, args.first_move_only)
+    print(json.dumps(results, indent=2))
+    if args.out:
+        Path(args.out).write_text(json.dumps(results, indent=2) + '\n')
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

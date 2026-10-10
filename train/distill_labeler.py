@@ -1,243 +1,101 @@
-"""
-Engine distillation labeler using Stockfish.
-
-IMPORTANT: This module uses chess.engine (Stockfish) but is ONLY for
-offline training data generation. It is NEVER called during play/inference.
-
-Generates:
-- Top-k move distributions from engine analysis
-- Position values (centipawns -> normalized)
-"""
-
 import argparse
 import json
+import math
 from pathlib import Path
-from typing import Optional
 
 import chess
 import chess.engine
-from tqdm import tqdm
+import numpy as np
 
 
-def centipawns_to_value(cp: int) -> float:
-    """
-    Convert centipawns to value in [-1, 1].
-
-    Uses tanh scaling: value = tanh(cp / 400)
-    """
-    import math
-    return math.tanh(cp / 400.0)
+def cp_to_q_value(cp):
+    z = cp / 400.
+    return 1. / (1. + math.exp(-z)) if z >= 0 else math.exp(z) / (1. + math.exp(z))
 
 
-def label_position(
-    board: chess.Board,
-    engine: chess.engine.SimpleEngine,
-    depth: int = 14,
-    time_limit: float = 0.1,
-    top_k: int = 5,
-    include_q_values: bool = False,
-) -> dict:
-    """
-    Generate engine labels for a position.
+def centipawns_to_value(cp):
+    return 2 * cp_to_q_value(cp) - 1
 
-    Args:
-        board: Position to analyze
-        engine: Stockfish engine
-        depth: Search depth
-        time_limit: Time limit in seconds
-        top_k: Number of top moves to include
-        include_q_values: If True, include Q-values for all legal moves
 
-    Returns:
-        Dictionary with:
-            - fen: Position FEN
-            - move_probs: Top-k moves with normalized scores
-            - value: Position evaluation in [-1, 1]
-            - q_values: (optional) Q-value for each legal move as UCI dict
-    """
-    # Get all legal moves if we need Q-values
+def label_position(board, engine, depth=14, time_limit=.1, top_k=5, include_q_values=False):
+    legal = set(board.legal_moves)
+    if not legal:
+        raise ValueError('Cannot label a terminal position')
+    infos = engine.analyse(board, chess.engine.Limit(depth=depth, time=time_limit or None),
+                           multipv=len(legal) if include_q_values else min(top_k, len(legal)))
+    scored = []
+    for info in infos:
+        if not info.get('pv'):
+            continue
+        move = info['pv'][0]
+        cp = info['score'].pov(board.turn).score(mate_score=10000)
+        if move not in legal or cp is None:
+            raise ValueError('Engine returned an invalid label')
+        scored.append((move, cp, info.get('depth', 0)))
+    scored.sort(key=lambda item: item[1], reverse=True)
+    if not scored or (include_q_values and {m for m, _, _ in scored} != legal):
+        raise ValueError('Engine did not label every requested legal move')
+    scores = np.array([cp for _, cp, _ in scored[:top_k]], dtype=np.float64) / 100.
+    probs = np.exp(scores - scores.max())
+    probs /= probs.sum()
+    result = {'fen': board.fen(), 'move_probs': {m.uci(): float(p) for (m, _, _), p in zip(scored, probs)},
+              'value': centipawns_to_value(scored[0][1]),
+              'label_depth_min': min(d for _, _, d in scored), 'label_depth_max': max(d for _, _, d in scored)}
     if include_q_values:
-        legal_moves = list(board.legal_moves)
-        multipv_count = min(len(legal_moves), 500)  # Cap for performance
-    else:
-        multipv_count = top_k
-
-    # Run multipv analysis
-    info = engine.analyse(
-        board,
-        chess.engine.Limit(depth=depth, time=time_limit),
-        multipv=multipv_count,
-    )
-
-    # Extract move scores
-    move_scores = []
-    for pv_info in info:
-        move = pv_info["pv"][0]
-        score = pv_info["score"].relative
-
-        # Convert score to centipawns
-        if score.is_mate():
-            # Mate scores: very high value
-            cp = 10000 if score.mate() > 0 else -10000
-        else:
-            cp = score.score()
-
-        move_scores.append((move, cp))
-
-    # Normalize to probabilities using softmax over centipawns
-    import math
-    import numpy as np
-
-    cps = np.array([cp for _, cp in move_scores[:top_k]], dtype=np.float32)
-    # Temperature scaling
-    cps = cps / 100.0  # Scale down
-    cps = cps - np.max(cps)  # Numerical stability
-    exp_cps = np.exp(cps)
-    probs = exp_cps / np.sum(exp_cps)
-
-    move_probs = {
-        move.uci(): float(prob)
-        for (move, _), prob in zip(move_scores[:top_k], probs)
-    }
-
-    # Position value (from best move score)
-    best_cp = move_scores[0][1]
-    value = centipawns_to_value(best_cp)
-
-    result = {
-        "fen": board.fen(),
-        "move_probs": move_probs,
-        "value": value,
-    }
-
-    # Add Q-values for all evaluated moves
-    if include_q_values:
-        q_values = {}
-        for move, cp in move_scores:
-            # Convert centipawns to win probability [0, 1]
-            # Using sigmoid: Q = 1 / (1 + exp(-cp/400))
-            q_val = 1.0 / (1.0 + math.exp(-cp / 400.0))
-            q_values[move.uci()] = float(q_val)
-
-        result["q_values"] = q_values
-
+        result['q_values'] = {m.uci(): cp_to_q_value(cp) for m, cp, _ in scored}
     return result
 
 
-def label_positions_from_file(
-    input_path: str,
-    output_path: str,
-    engine_path: str = "stockfish",
-    depth: int = 14,
-    time_limit: float = 0.1,
-    top_k: int = 5,
-    max_positions: Optional[int] = None,
-    include_q_values: bool = False,
-):
-    """
-    Label positions from input JSONL file.
-
-    Args:
-        input_path: Input JSONL with FENs
-        output_path: Output JSONL with labels
-        engine_path: Path to Stockfish binary
-        depth: Search depth
-        time_limit: Time limit per position
-        top_k: Number of top moves
-        max_positions: Maximum positions to label
-        include_q_values: Include Q-values for all legal moves
-    """
-    # Initialize engine
-    engine = chess.engine.SimpleEngine.popen_uci(engine_path)
-    print(f"Loaded engine: {engine_path}")
-    if include_q_values:
-        print("  Q-value mode enabled (slower but higher quality)")
-
-    # Process positions
+def label_positions_from_file(input_path, output_path, engine_path='stockfish', depth=14,
+                              time_limit=.1, top_k=5, max_positions=None, include_q_values=False):
+    if Path(input_path).resolve() == Path(output_path).resolve():
+        raise ValueError('Input and output must differ')
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary = output.with_suffix('.tmp')
     count = 0
-    with open(input_path) as fin, open(output_path, "w") as fout:
-        for line in tqdm(fin, desc="Labeling positions"):
-            if max_positions and count >= max_positions:
-                break
-
-            item = json.loads(line)
-            fen = item.get("fen", item.get("position"))
-
-            if not fen:
-                continue
-
-            board = chess.Board(fen)
-
-            # Skip terminal positions
-            if board.is_game_over():
-                continue
-
-            try:
-                label = label_position(
-                    board=board,
-                    engine=engine,
-                    depth=depth,
-                    time_limit=time_limit,
-                    top_k=top_k,
-                    include_q_values=include_q_values,
-                )
-
-                fout.write(json.dumps(label) + "\n")
+    try:
+        with chess.engine.SimpleEngine.popen_uci(engine_path) as engine, open(input_path) as source, temporary.open('w') as out:
+            engine.configure({'Threads': 1, 'Hash': 128})
+            for line in source:
+                if max_positions is not None and count >= max_positions:
+                    break
+                item = json.loads(line)
+                board = chess.Board(item.get('fen', item.get('position')))
+                if board.is_game_over(claim_draw=True):
+                    continue
+                label = label_position(board, engine, depth, time_limit, top_k, include_q_values)
+                out.write(json.dumps({**item, **label}) + '\n')
                 count += 1
-
                 if count % 100 == 0:
-                    fout.flush()
-
-            except Exception as e:
-                print(f"Error labeling {fen}: {e}")
-                continue
-
-    engine.quit()
-    print(f"\nLabeled {count} positions -> {output_path}")
+                    print(f'Labeled {count} positions', flush=True)
+        if not count:
+            raise ValueError('No positions labeled')
+        temporary.replace(output)
+    finally:
+        temporary.unlink(missing_ok=True)
+    print(f'Labeled {count} positions -> {output}')
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Generate engine labels for training (OFFLINE ONLY)"
-    )
-    parser.add_argument("--fens", type=str, required=True, help="Input JSONL with FENs")
-    parser.add_argument("--out", type=str, required=True, help="Output JSONL with labels")
-    parser.add_argument("--engine", type=str, default="stockfish", help="Stockfish binary path")
-    parser.add_argument("--depth", type=int, default=14, help="Search depth")
-    parser.add_argument("--time", type=float, default=0.1, help="Time limit per position")
-    parser.add_argument("--topk", type=int, default=5, help="Number of top moves")
-    parser.add_argument("--max", type=int, help="Max positions to label")
-    parser.add_argument("--preset", type=str, choices=["fast", "deep"], help="Preset config")
-    parser.add_argument("--q-values", action="store_true", help="Include Q-values for all legal moves")
+    parser = argparse.ArgumentParser(description='Offline Stockfish labels')
+    parser.add_argument('--fens', required=True)
+    parser.add_argument('--out', required=True)
+    parser.add_argument('--engine', default='stockfish')
+    parser.add_argument('--depth', type=int, default=14)
+    parser.add_argument('--time', type=float, default=.1, help='0 means no time cap')
+    parser.add_argument('--topk', type=int, default=5)
+    parser.add_argument('--max', type=int)
+    parser.add_argument('--preset', choices=['fast', 'deep'])
+    parser.add_argument('--q-values', action='store_true')
     args = parser.parse_args()
-
-    # Apply presets
-    if args.preset == "fast":
-        args.depth = 12
-        args.time = 0.05
-        args.topk = 5
-    elif args.preset == "deep":
-        args.depth = 18
-        args.time = 0.5
-        args.topk = 12
-
-    print(f"Labeling config:")
-    print(f"  Depth: {args.depth}")
-    print(f"  Time: {args.time}s")
-    print(f"  Top-K: {args.topk}")
-    print(f"  Q-values: {args.q_values}")
-
-    label_positions_from_file(
-        input_path=args.fens,
-        output_path=args.out,
-        engine_path=args.engine,
-        depth=args.depth,
-        time_limit=args.time,
-        top_k=args.topk,
-        max_positions=args.max,
-        include_q_values=args.q_values,
-    )
+    if args.preset:
+        args.depth, args.time, args.topk = (12, .05, 5) if args.preset == 'fast' else (18, .5, 12)
+    if args.topk <= 0 or args.depth <= 0 or args.time < 0:
+        parser.error('Depth and topk must be positive; time must be nonnegative')
+    label_positions_from_file(args.fens, args.out, args.engine, args.depth, args.time,
+                              args.topk, args.max, args.q_values)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

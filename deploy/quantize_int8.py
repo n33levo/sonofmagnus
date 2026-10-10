@@ -1,83 +1,77 @@
-"""
-INT8 quantization for ONNX models.
-
-Reduces model size for Knight's Edge track (≤10 MB requirement).
-"""
-
 import argparse
+import json
+import tempfile
 from pathlib import Path
 
+import chess
+import numpy as np
 import onnx
-from onnxruntime.quantization import quantize_dynamic, QuantType
+import onnxruntime as ort
+from onnxruntime.quantization import CalibrationDataReader, QuantFormat, QuantType, quantize_static
+from onnxruntime.quantization.shape_inference import quant_pre_process
+
+from chessio.encode import encode_board
 
 
-def quantize_model(
-    input_path: str,
-    output_path: str,
-    weight_type: str = "int8",
-):
-    """
-    Quantize ONNX model to INT8.
+class BoardCalibration(CalibrationDataReader):
+    def __init__(self, path, limit=1000):
+        self.boards = []
+        with open(path) as stream:
+            for line in stream:
+                if len(self.boards) >= limit:
+                    break
+                self.boards.append(encode_board(chess.Board(json.loads(line)['fen']))[None])
+        if not self.boards:
+            raise ValueError('Empty calibration set')
+        self.rewind()
 
-    Args:
-        input_path: Input ONNX model
-        output_path: Output quantized ONNX model
-        weight_type: Weight quantization type (int8/uint8)
-    """
-    print(f"Loading model from {input_path}")
+    def get_next(self):
+        board = next(self.iterator, None)
+        return None if board is None else {'board': board}
 
-    # Get input size
-    input_size_mb = Path(input_path).stat().st_size / (1024 * 1024)
-    print(f"Input size: {input_size_mb:.2f} MB")
+    def rewind(self):
+        self.iterator = iter(self.boards)
 
-    # Quantize
-    print(f"Quantizing to {weight_type.upper()}...")
 
-    quant_type = QuantType.QInt8 if weight_type == "int8" else QuantType.QUInt8
-
-    quantize_dynamic(
-        model_input=input_path,
-        model_output=output_path,
-        weight_type=quant_type,
-    )
-
-    # Verify
-    print("Verifying quantized model...")
-    onnx_model = onnx.load(output_path)
-    onnx.checker.check_model(onnx_model)
-
-    # Get output size
-    output_size_mb = Path(output_path).stat().st_size / (1024 * 1024)
-    compression_ratio = input_size_mb / output_size_mb if output_size_mb > 0 else 0
-
-    print(f"\n✓ Quantization successful!")
-    print(f"  Output: {output_path}")
-    print(f"  Size: {output_size_mb:.2f} MB")
-    print(f"  Compression: {compression_ratio:.2f}x")
-
-    if output_size_mb > 10.0:
-        print(f"\n⚠ WARNING: Model size {output_size_mb:.2f} MB exceeds 10 MB limit for Knight's Edge!")
-    else:
-        print(f"\n✓ Model meets ≤10 MB requirement for Knight's Edge")
+def quantize_model(input_path, output_path, weight_type='int8', calibration_data=None):
+    if calibration_data is None:
+        raise ValueError('Convolution INT8 quantization requires --calibration-data')
+    model = onnx.load(input_path)
+    if model.graph.input[0].type.tensor_type.elem_type != onnx.TensorProto.FLOAT:
+        raise ValueError('Quantize an FP32 export, not FP16')
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    calibration = BoardCalibration(calibration_data)
+    with tempfile.TemporaryDirectory() as directory:
+        prepared = str(Path(directory) / 'prepared.onnx')
+        quant_pre_process(input_path, prepared)
+        quantize_static(prepared, str(output), calibration, quant_format=QuantFormat.QDQ,
+                        activation_type=QuantType.QUInt8,
+                        weight_type=QuantType.QInt8 if weight_type == 'int8' else QuantType.QUInt8,
+                        per_channel=True, op_types_to_quantize=['Conv', 'MatMul', 'Gemm'])
+    onnx.checker.check_model(onnx.load(output))
+    baseline = ort.InferenceSession(str(input_path), providers=['CPUExecutionProvider'])
+    quantized = ort.InferenceSession(str(output), providers=['CPUExecutionProvider'])
+    errors = []
+    for board in calibration.boards[:20]:
+        reference = baseline.run(None, {'board': board})
+        actual = quantized.run(None, {'board': board})
+        if not all(np.isfinite(value).all() for value in actual):
+            raise FloatingPointError('Quantized model produced non-finite output')
+        errors.append(float(np.abs(reference[0] - actual[0]).max()))
+    print(f'INT8: {output.stat().st_size / 1e6:.2f} MB; max calibration logit error {max(errors):.4f}')
+    return {'size_mb': output.stat().st_size / 1e6, 'max_calibration_logit_error': max(errors)}
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Quantize ONNX model to INT8")
-    parser.add_argument("--in", dest="input", type=str, required=True, help="Input ONNX model")
-    parser.add_argument("--out", type=str, required=True, help="Output quantized ONNX model")
-    parser.add_argument("--weight-type", type=str, choices=["int8", "uint8"], default="int8")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--in', '--model', dest='input', required=True)
+    parser.add_argument('--out', required=True)
+    parser.add_argument('--weight-type', choices=['int8', 'uint8'], default='int8')
+    parser.add_argument('--calibration-data', required=True)
     args = parser.parse_args()
-
-    # Create output directory
-    output_dir = Path(args.out).parent
-    output_dir.mkdir(exist_ok=True, parents=True)
-
-    quantize_model(
-        input_path=args.input,
-        output_path=args.out,
-        weight_type=args.weight_type,
-    )
+    quantize_model(args.input, args.out, args.weight_type, args.calibration_data)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

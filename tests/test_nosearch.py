@@ -111,7 +111,7 @@ def test_io_model_no_search():
     project_root = Path(__file__).parent.parent
     all_errors = []
 
-    for module_dir in ["io", "model"]:
+    for module_dir in ["chessio", "model"]:
         module_path = project_root / module_dir
         if not module_path.exists():
             continue
@@ -146,7 +146,7 @@ def run_all_tests():
     print()
 
     print("="*60)
-    if all(results):
+    if all(result is None for result in results):
         print("✓ ALL NO-SEARCH COMPLIANCE TESTS PASSED")
         print("="*60)
         return 0

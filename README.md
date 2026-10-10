@@ -205,8 +205,8 @@ python -m pipelines.phase_b_pipeline \
 
 ```bash
 # Clone repository
-git clone https://github.com/yourusername/searchless-chess
-cd searchless-chess
+git clone https://github.com/n33levo/sonofmagnus
+cd sonofmagnus
 
 # Install dependencies
 pip install -r requirements.txt
@@ -216,11 +216,23 @@ python -m pytest tests/ -v
 ```
 
 **Requirements:**
-- Python 3.10+
-- PyTorch 2.0+ (CUDA 11.8+ recommended)
+- Python 3.12+
+- PyTorch 2.6+ (CUDA or Apple Metal for GPU training)
 - python-chess
 - ONNX Runtime
 - Stockfish 16+ (for offline labeling only)
+
+### Pretrained policy on Apple Metal
+
+```bash
+pip install -r requirements-metal.txt
+python -m scripts.fetch_pretrained --network bt3
+python -m play.runner --ckpt ckpts/bt3.pb.gz
+# UCI interface for a chess GUI:
+python -m play.uci --ckpt ckpts/bt3.pb.gz
+```
+
+The optional pretrained policy uses LC0's transformer weights and C++ Metal evaluator. The compact ResNet training path is independent. Sources and checksums are in `ckpts/pretrained.json`.
 
 ### Training from Scratch
 
@@ -573,7 +585,7 @@ python -m pipelines.phase_b_pipeline \
 python -m deploy.export_onnx \
   --ckpt ckpts/latest.pt \
   --out model.onnx \
-  --opset 14
+  --opset 18
 
 # Quantize to INT8 (3-4× smaller, minimal Elo loss)
 python -m deploy.quantize_int8 \
@@ -699,11 +711,11 @@ python -m eval.arena \
 
 ### Technical Stack
 
-- **PyTorch 2.0+**: Neural network training
+- **PyTorch 2.6+**: Neural network training
 - **python-chess**: Chess logic and legal move generation
 - **ONNX Runtime**: Model deployment
 - **NumPy**: Numerical operations
-- **Rich**: Terminal UI for training progress
+- **JSON Lines**: Appendable training and evaluation records
 
 ---
 

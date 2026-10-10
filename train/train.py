@@ -1,340 +1,171 @@
-"""
-Training loop with Automatic Mixed Precision (AMP).
-
-Features:
-- Combined policy (CE) + value (MSE) loss
-- AMP with bf16/fp16
-- Cosine LR schedule
-- Checkpointing
-- Rich progress logging
-"""
-
 import argparse
+import json
+import random
 import time
 from pathlib import Path
 
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
-from torch.cuda.amp import autocast, GradScaler
+from torch.utils.data import ConcatDataset, DataLoader
 import yaml
-from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
 
-from model import create_model_main, create_model_mini
+from model import create_model, resolve_device
 from train.dataset import ChessPositionDataset
 
 
 class ChessLoss(nn.Module):
-    """
-    Combined policy + value + Q-value loss.
-
-    Loss = alpha * CE(policy) + beta * MSE(Q) + gamma * MSE(value)
-
-    Q-value loss trains the policy head to predict win probabilities
-    for all legal moves, not just the best move.
-    """
-
-    def __init__(
-        self,
-        policy_weight: float = 1.0,
-        q_value_weight: float = 0.0,
-        value_weight: float = 0.25,
-    ):
+    def __init__(self, policy_weight=1., q_value_weight=0., value_weight=.25):
         super().__init__()
-        self.policy_weight = policy_weight
-        self.q_value_weight = q_value_weight
-        self.value_weight = value_weight
+        self.policy_weight, self.q_value_weight, self.value_weight = policy_weight, q_value_weight, value_weight
 
-    def forward(
-        self,
-        policy_logits: torch.Tensor,
-        value_pred: torch.Tensor,
-        policy_target: torch.Tensor,
-        value_target: torch.Tensor,
-        q_value_target: torch.Tensor | None = None,
-    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        """
-        Args:
-            policy_logits: (B, 8, 8, 73) predicted logits
-            value_pred: (B, 1) predicted values
-            policy_target: (B, 8, 8, 73) target distribution
-            value_target: (B,) target values
-            q_value_target: (B, 8, 8, 73) Q-values for all moves (optional)
-
-        Returns:
-            (total_loss, policy_loss, q_loss, value_loss)
-        """
-        # Policy loss (cross-entropy)
-        # Flatten spatial and action dimensions
-        B = policy_logits.shape[0]
-        policy_logits_flat = policy_logits.reshape(B, -1)  # (B, 8*8*73)
-        policy_target_flat = policy_target.reshape(B, -1)  # (B, 8*8*73)
-
-        # Cross-entropy with soft targets
-        log_probs = F.log_softmax(policy_logits_flat, dim=1)
-        policy_loss = -(policy_target_flat * log_probs).sum(dim=1).mean()
-
-        # Q-value loss (MSE over all legal moves)
-        q_loss = torch.tensor(0.0, device=policy_logits.device)
-        if q_value_target is not None and self.q_value_weight > 0:
-            # Convert policy logits to Q-value predictions via softmax
-            # Q-values are win probabilities in [0, 1]
-            q_pred = torch.sigmoid(policy_logits)  # (B, 8, 8, 73)
-
-            # Mask: only compute loss on positions with valid Q-targets
-            # (Q-targets are -999 for illegal moves)
-            q_mask = (q_value_target > -900).float()  # (B, 8, 8, 73)
-
-            # MSE loss only on legal moves
-            q_diff = (q_pred - q_value_target) ** 2
-            q_loss = (q_diff * q_mask).sum() / (q_mask.sum() + 1e-8)
-
-        # Value loss (MSE)
-        value_pred = value_pred.squeeze(1)  # (B,)
-        value_loss = F.mse_loss(value_pred, value_target)
-
-        # Combined loss
-        total_loss = (
-            self.policy_weight * policy_loss +
-            self.q_value_weight * q_loss +
-            self.value_weight * value_loss
-        )
-
-        return total_loss, policy_loss, q_loss, value_loss
+    def forward(self, policy_logits, value_pred, policy_target, value_target,
+                q_value_target=None, legal_mask=None, weights=None, value_mask=None, q_logits=None):
+        batch = policy_logits.shape[0]
+        logits, targets = policy_logits.float().reshape(batch, -1), policy_target.reshape(batch, -1)
+        if legal_mask is not None:
+            logits = logits.masked_fill(legal_mask.reshape(batch, -1) == 0, torch.finfo(logits.dtype).min)
+        weights = torch.ones(batch, device=logits.device) if weights is None else weights
+        policy_rows = -(targets * F.log_softmax(logits, dim=1)).sum(1)
+        policy_loss = (policy_rows * weights).sum() / weights.sum()
+        q_loss = logits.new_zeros(())
+        if q_value_target is not None and self.q_value_weight:
+            valid = q_value_target >= 0
+            # A separate head keeps absolute outcome calibration independent of policy log-odds.
+            prediction = torch.sigmoid((policy_logits if q_logits is None else q_logits).float())
+            q_targets = torch.where(valid, q_value_target, prediction.detach())
+            counts = valid.reshape(batch, -1).sum(1)
+            q_rows = ((prediction - q_targets).square()).reshape(batch, -1).sum(1) / counts.clamp_min(1)
+            q_weights = weights * (counts > 0)
+            q_loss = (q_rows * q_weights).sum() / q_weights.sum().clamp_min(1e-8)
+        value_rows = (value_pred.float().reshape(-1) - value_target).square()
+        value_weights = weights if value_mask is None else weights * value_mask
+        value_loss = (value_rows * value_weights).sum() / value_weights.sum().clamp_min(1e-8)
+        total = self.policy_weight * policy_loss + self.q_value_weight * q_loss + self.value_weight * value_loss
+        return total, policy_loss, q_loss, value_loss
 
 
-def train_epoch(
-    model: nn.Module,
-    dataloader: DataLoader,
-    optimizer: torch.optim.Optimizer,
-    loss_fn: ChessLoss,
-    device: str,
-    use_amp: bool = True,
-    amp_dtype: str = "bf16",
-) -> dict:
-    """
-    Train for one epoch.
-
-    Returns:
-        Dictionary with metrics
-    """
-    model.train()
-    scaler = GradScaler() if use_amp else None
-
-    total_loss = 0.0
-    total_policy_loss = 0.0
-    total_q_loss = 0.0
-    total_value_loss = 0.0
-    num_batches = 0
-
-    dtype = torch.bfloat16 if amp_dtype == "bf16" else torch.float16
-
+def train_epoch(model, dataloader, optimizer, loss_fn, device, use_amp=True,
+                amp_dtype='bf16', scheduler=None, scaler=None):
+    training = optimizer is not None
+    model.train(training)
+    device = torch.device(device)
+    dtype = torch.bfloat16 if amp_dtype == 'bf16' else torch.float16
+    amp = use_amp and device.type in ('cuda', 'mps')
+    if scaler is None:
+        scaler = torch.amp.GradScaler(device.type, init_scale=1024 if device.type == 'mps' else 65536,
+                                      enabled=amp and dtype == torch.float16)
+    totals = np.zeros(4)
+    correct, count = 0, 0
     for batch in dataloader:
-        board_tensor = batch["board_tensor"].to(device)
-        policy_target = batch["policy_target"].to(device)
-        value_target = batch["value_target"].to(device)
-        q_value_target = batch.get("q_value_target")
-        if q_value_target is not None:
-            q_value_target = q_value_target.to(device)
-
-        optimizer.zero_grad()
-
-        # Forward pass with AMP
-        if use_amp:
-            with autocast(dtype=dtype):
-                policy_logits, value_pred = model(board_tensor)
-                loss, policy_loss, q_loss, value_loss = loss_fn(
-                    policy_logits, value_pred, policy_target, value_target, q_value_target
-                )
-
-            # Backward with gradient scaling
-            scaler.scale(loss).backward()
+        batch = {k: v.to(device, non_blocking=device.type == 'cuda') for k, v in batch.items()}
+        if training:
+            optimizer.zero_grad(set_to_none=True)
+        with torch.set_grad_enabled(training), torch.autocast(device.type, dtype=dtype, enabled=amp):
+            policy, value, q_logits = model.forward_with_q(batch['board_tensor'])
+            losses = loss_fn(policy, value, batch['policy_target'], batch['value_target'],
+                             batch.get('q_value_target'), batch.get('legal_mask'), batch.get('weight'),
+                             batch.get('value_mask'), q_logits)
+        if not torch.isfinite(losses[0]):
+            raise FloatingPointError('Non-finite training loss')
+        if training:
+            scaler.scale(losses[0]).backward()
+            scaler.unscale_(optimizer)
+            old_scale = scaler.get_scale()
+            nn.utils.clip_grad_norm_(model.parameters(), 1., error_if_nonfinite=not scaler.is_enabled())
             scaler.step(optimizer)
             scaler.update()
-        else:
-            policy_logits, value_pred = model(board_tensor)
-            loss, policy_loss, q_loss, value_loss = loss_fn(
-                policy_logits, value_pred, policy_target, value_target, q_value_target
-            )
-            loss.backward()
-            optimizer.step()
+            if scheduler and scaler.get_scale() >= old_scale:
+                scheduler.step()
+        n = policy.shape[0]
+        totals += np.array([loss.detach().item() for loss in losses]) * n
+        scores = policy.detach().flatten(1)
+        if 'legal_mask' in batch:
+            scores = scores.masked_fill(batch['legal_mask'].flatten(1) == 0, -torch.inf)
+        correct += (scores.argmax(1) == batch['policy_target'].flatten(1).argmax(1)).sum().item()
+        count += n
+    if not count:
+        raise ValueError('Empty training or validation dataset')
+    return {**dict(zip(('loss', 'policy_loss', 'q_loss', 'value_loss'), (totals / count).tolist())),
+            'top1': correct / count, 'samples': count}
 
-        total_loss += loss.item()
-        total_policy_loss += policy_loss.item()
-        total_q_loss += q_loss.item()
-        total_value_loss += value_loss.item()
-        num_batches += 1
 
-    return {
-        "loss": total_loss / num_batches,
-        "policy_loss": total_policy_loss / num_batches,
-        "q_loss": total_q_loss / num_batches,
-        "value_loss": total_value_loss / num_batches,
-    }
+def save_checkpoint(path, model, config, epoch, optimizer, scheduler, metrics):
+    temporary = path.with_suffix('.tmp')
+    torch.save({'epoch': epoch, 'model_state_dict': model.state_dict(), 'config': config,
+                'optimizer_state_dict': optimizer.state_dict(), 'scheduler_state_dict': scheduler.state_dict(),
+                'metrics': metrics}, temporary)
+    temporary.replace(path)
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Train chess neural network")
-    parser.add_argument("--config", type=str, required=True, help="Config file (main.yaml/mini.yaml)")
-    parser.add_argument("--data", type=str, required=True, help="Training data JSONL (or comma-separated list)")
-    parser.add_argument("--data-weights", type=str, help="Comma-separated weights for multi-dataset mixing")
-    parser.add_argument("--val-data", type=str, help="Validation data JSONL")
-    parser.add_argument("--epochs", type=int, default=2, help="Number of epochs")
-    parser.add_argument("--batch-size", type=int, default=256, help="Batch size")
-    parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate")
-    parser.add_argument("--policy-weight", type=float, default=1.0, help="Policy loss weight (alpha)")
-    parser.add_argument("--q-value-weight", type=float, default=0.0, help="Q-value loss weight (beta)")
-    parser.add_argument("--value-weight", type=float, default=0.25, help="Value loss weight (gamma)")
-    parser.add_argument("--amp", type=str, choices=["bf16", "fp16", "none"], default="bf16", help="AMP dtype")
-    parser.add_argument("--device", type=str, default="cuda" if torch.cuda.is_available() else "cpu")
-    parser.add_argument("--ckpt-dir", type=str, default="ckpts", help="Checkpoint directory")
-    parser.add_argument("--resume", type=str, help="Resume from checkpoint")
-    parser.add_argument("--max-samples", type=int, help="Max training samples")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--config', required=True)
+    parser.add_argument('--data', required=True)
+    parser.add_argument('--data-weights')
+    parser.add_argument('--val-data')
+    parser.add_argument('--epochs', type=int, default=2)
+    parser.add_argument('--batch-size', type=int)
+    parser.add_argument('--lr', type=float)
+    parser.add_argument('--policy-weight', type=float, default=1.)
+    parser.add_argument('--q-value-weight', type=float, default=0.)
+    parser.add_argument('--value-weight', type=float, default=.25)
+    parser.add_argument('--amp', choices=['bf16', 'fp16', 'none'], default='none')
+    parser.add_argument('--device', default='auto')
+    parser.add_argument('--ckpt-dir', default='ckpts')
+    parser.add_argument('--resume', help='Initial weights; --epochs is the number of additional epochs')
+    parser.add_argument('--max-samples', type=int)
+    parser.add_argument('--seed', type=int, default=0)
     args = parser.parse_args()
-
-    # Create checkpoint directory
-    ckpt_dir = Path(args.ckpt_dir)
-    ckpt_dir.mkdir(exist_ok=True, parents=True)
-
-    # Load config
-    with open(args.config) as f:
-        config = yaml.safe_load(f)
-
-    print(f"Config: {config}")
-    print(f"Device: {args.device}")
-    print(f"AMP: {args.amp}")
-
-    # Create model
-    if config["model_size"] == "main":
-        model = create_model_main(input_channels=config["input_channels"])
-    else:
-        model = create_model_mini(input_channels=config["input_channels"])
-
-    model = model.to(args.device)
-    print(f"Model parameters: {model.get_num_params():,}")
-
-    # Load checkpoint if resuming
-    start_epoch = 0
+    if args.epochs <= 0:
+        parser.error('--epochs must be positive')
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.set_num_threads(4)
+    config = yaml.safe_load(Path(args.config).read_text())
+    device = resolve_device(args.device)
+    model = create_model(config).to(device)
+    start = 0
     if args.resume:
-        print(f"Resuming from {args.resume}")
-        checkpoint = torch.load(args.resume, map_location="cpu")
-        model.load_state_dict(checkpoint["model_state_dict"])
-        start_epoch = checkpoint.get("epoch", 0) + 1
-
-    # Create datasets
-    train_dataset = ChessPositionDataset(
-        args.data,
-        augment=True,
-        max_samples=args.max_samples,
-    )
-
-    train_loader = DataLoader(
-        train_dataset,
-        batch_size=args.batch_size,
-        shuffle=True,
-        num_workers=0 if args.device in ("cpu", "mps") else 4,
-        pin_memory=True,
-    )
-
-    val_loader = None
-    if args.val_data:
-        val_dataset = ChessPositionDataset(args.val_data, augment=False)
-        val_loader = DataLoader(
-            val_dataset,
-            batch_size=args.batch_size,
-            shuffle=False,
-            num_workers=0 if args.device in ("cpu", "mps") else 4,
-        )
-
-    # Create optimizer and scheduler
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=1e-4)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=args.epochs * len(train_loader)
-    )
-
-    # Loss function
-    loss_fn = ChessLoss(
-        policy_weight=args.policy_weight,
-        q_value_weight=args.q_value_weight,
-        value_weight=args.value_weight,
-    )
-
-    # Training loop
-    for epoch in range(start_epoch, args.epochs):
-        print(f"\nEpoch {epoch + 1}/{args.epochs}")
-
-        start_time = time.time()
-        metrics = train_epoch(
-            model=model,
-            dataloader=train_loader,
-            optimizer=optimizer,
-            loss_fn=loss_fn,
-            device=args.device,
-            use_amp=(args.amp != "none"),
-            amp_dtype=args.amp,
-        )
-        epoch_time = time.time() - start_time
-
-        print(f"  Loss: {metrics['loss']:.4f}")
-        print(f"  Policy Loss: {metrics['policy_loss']:.4f}")
-        if args.q_value_weight > 0:
-            print(f"  Q-value Loss: {metrics['q_loss']:.4f}")
-        print(f"  Value Loss: {metrics['value_loss']:.4f}")
-        print(f"  Time: {epoch_time:.1f}s")
-
-        # Validation
-        if val_loader:
-            model.eval()
-            val_metrics = {"loss": 0.0, "policy_loss": 0.0, "q_loss": 0.0, "value_loss": 0.0}
-            num_batches = 0
-
-            with torch.no_grad():
-                for batch in val_loader:
-                    board_tensor = batch["board_tensor"].to(args.device)
-                    policy_target = batch["policy_target"].to(args.device)
-                    value_target = batch["value_target"].to(args.device)
-                    q_value_target = batch.get("q_value_target")
-                    if q_value_target is not None:
-                        q_value_target = q_value_target.to(args.device)
-
-                    policy_logits, value_pred = model(board_tensor)
-                    loss, policy_loss, q_loss, value_loss = loss_fn(
-                        policy_logits, value_pred, policy_target, value_target, q_value_target
-                    )
-
-                    val_metrics["loss"] += loss.item()
-                    val_metrics["policy_loss"] += policy_loss.item()
-                    val_metrics["q_loss"] += q_loss.item()
-                    val_metrics["value_loss"] += value_loss.item()
-                    num_batches += 1
-
-            val_metrics = {k: v / num_batches for k, v in val_metrics.items()}
-            print(f"  Val Loss: {val_metrics['loss']:.4f}")
-
-        # Save checkpoint
-        ckpt_path = ckpt_dir / f"epoch_{epoch + 1}.pt"
-        torch.save({
-            "epoch": epoch,
-            "model_state_dict": model.state_dict(),
-            "optimizer_state_dict": optimizer.state_dict(),
-            "train_loss": metrics["loss"],
-            "config": config,
-        }, ckpt_path)
-        print(f"  Saved checkpoint: {ckpt_path}")
-
-        # Update scheduler
-        scheduler.step()
-
-    # Save final model
-    final_path = ckpt_dir / "latest.pt"
-    torch.save({
-        "epoch": args.epochs - 1,
-        "model_state_dict": model.state_dict(),
-        "config": config,
-    }, final_path)
-    print(f"\nTraining complete! Final model: {final_path}")
+        checkpoint = torch.load(args.resume, map_location='cpu', weights_only=True)
+        model.load_state_dict(checkpoint['model_state_dict'])
+        start = checkpoint.get('epoch', -1) + 1
+    paths = args.data.split(',')
+    weights = [float(w) for w in args.data_weights.split(',')] if args.data_weights else [1.] * len(paths)
+    if len(weights) != len(paths) or any(not np.isfinite(w) or w <= 0 for w in weights):
+        parser.error('--data-weights needs one positive finite weight per dataset')
+    datasets = [ChessPositionDataset(path, max_samples=args.max_samples) for path in paths]
+    for dataset, weight in zip(datasets, weights):
+        dataset.weight = weight
+    batch_size = args.batch_size or config.get('batch_size', 256)
+    loader = DataLoader(ConcatDataset(datasets), batch_size=batch_size, shuffle=True, pin_memory=device.type == 'cuda')
+    val_loader = DataLoader(ChessPositionDataset(args.val_data, augment=False), batch_size=batch_size) if args.val_data else None
+    if not len(loader):
+        parser.error('Empty training dataset')
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr or config.get('learning_rate', 1e-3), weight_decay=1e-4)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=args.epochs * len(loader))
+    scaler = torch.amp.GradScaler(device.type, init_scale=1024 if device.type == 'mps' else 65536,
+                                  enabled=args.amp == 'fp16' and device.type in ('cuda', 'mps'))
+    loss_fn = ChessLoss(args.policy_weight, args.q_value_weight, args.value_weight)
+    ckpt_dir = Path(args.ckpt_dir)
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+    print(f'{device}: {model.get_num_params():,} parameters, {len(loader.dataset):,} samples', flush=True)
+    with (ckpt_dir / 'train.jsonl').open('a') as log:
+        for epoch in range(start, start + args.epochs):
+            begin = time.perf_counter()
+            metrics = {'epoch': epoch + 1, 'train': train_epoch(model, loader, optimizer, loss_fn, device,
+                       args.amp != 'none', args.amp, scheduler, scaler)}
+            if val_loader:
+                metrics['validation'] = train_epoch(model, val_loader, None, loss_fn, device, False)
+            metrics['seconds'] = time.perf_counter() - begin
+            print(json.dumps(metrics), flush=True)
+            log.write(json.dumps(metrics) + '\n')
+            log.flush()
+            save_checkpoint(ckpt_dir / f'epoch_{epoch + 1}.pt', model, config, epoch, optimizer, scheduler, metrics)
+            save_checkpoint(ckpt_dir / 'latest.pt', model, config, epoch, optimizer, scheduler, metrics)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

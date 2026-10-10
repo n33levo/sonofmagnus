@@ -39,6 +39,12 @@ data/*.pgn.zst
 data/*.jsonl
 data/*.json
 ckpts/*.pt
+ckpts/*.pb.gz
+ckpts/*/*.pt
+ckpts/*/*.jsonl
+data/*.zst
+data/*.csv
+data/*.fen
 out/*.onnx
 data/twic
 
@@ -70,3 +76,5 @@ htmlcov/
 *.ipynb
 
 **.pem
+
+out/*.onnx.data

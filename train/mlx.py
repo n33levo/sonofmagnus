@@ -170,6 +170,7 @@ def main():
     metadata.update(student_source=artifact_info(args.student), teacher_source=artifact_info(args.teacher) if teacher else None,
                     training_data=artifact_info(args.data), seed=args.seed, learning_rate=args.lr,
                     training_epochs=args.epochs, training_samples=len(dataset), trainable_scalars=sum(p.size for p in parameters.values()),
+                    training_epochs_completed=0,
                     objective=f'Quality-weighted {1-args.teacher_weight:g} label policy, {args.teacher_weight:g} teacher policy, 0.25 teacher WDL CE plus centred-value MSE',
                     training_device=str(mx.default_device()), teacher_temperature=args.teacher_temperature, mode=args.mode,
                     master_dtype='float32', compute_dtype='float16' if args.amp == 'fp16' else 'float32',
@@ -241,6 +242,8 @@ def main():
             temporary = out / 'weights.tmp.safetensors'
             mx.save_safetensors(str(temporary), output_weights)
             temporary.replace(out / 'weights.safetensors')
+            metadata['training_epochs_completed'] = epoch + 1
+            (out / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
             print(json.dumps(metrics), flush=True)
     if artifact_info(args.data) != metadata['training_data']:
         raise ValueError('Training data changed during the run')

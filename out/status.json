@@ -55,7 +55,7 @@
   "remaining": [
     "One compact model has not met the strength and size targets together.",
     "The native ResNet has not met the advertised agreement, puzzle or Elo targets.",
-    "The 70M human and 2.5M full-action corpora are collected; their full training runs and the 1M self-play corpus remain incomplete.",
+    "The 70M human and 2.5M full-action corpora are collected; full training remains incomplete. The 1M self-play corpus is independently replayed; 150000 selected positions are being relabeled.",
     "The five master-opening agreement targets were missed in the complete 5000-game benchmark.",
     "The ablation Elo gains, A100 training time and 3\u20134x AMP speedup remain unverified.",
     "The 185M policy exceeds the 20ms GPU target during real games.",
@@ -68,15 +68,15 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 106,
+    "local_tests": 109,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
-      "passed": 89,
+      "passed": 90,
       "skipped_optional": 17,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38130712704",
-      "source_commit": "f8e74fa"
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38131516131",
+      "source_commit": "2422430"
     },
     "clocked_match": {
       "games": 100,
@@ -378,7 +378,7 @@
     "evidence": "human_corpus_70m.json",
     "holdout_filter": "Earlier tests excluded during collection; later depth-conditioned test must be excluded during training",
     "retained_training_rows": 41765559,
-    "training_status": "Native two-epoch run began; temporarily stopped while compact training and evaluation use the GPU"
+    "training_status": "Native two-epoch GPU training resumed; short validation jobs may temporarily pause it"
   },
   "engine_corpus": {
     "status": "2.5M collected and every row independently validated; training not complete",
@@ -503,7 +503,7 @@
       "model_bytes": 8282021,
       "latency_p95_ms": 2.25795833976008,
       "evidence": "cnn6m_selected_cpu_deployment.json",
-      "rating_status": "Not separately rated; quantization Elo loss remains unmeasured"
+      "rating_status": "1000 paired games measured 30.65 Elo loss, bootstrap95 [11.47,50.03]; not separately rated"
     },
     "fresh_puzzles": {
       "rating_stratified": "cnn6m_selected_puzzles_final3000.json",
@@ -521,7 +521,19 @@
       "training_job": "geometry_training_job.json",
       "trainable_scalars": 5626355,
       "floating_stored_scalars": 5675507,
-      "status": "Initialization and CPU deployment verified; two-epoch GPU training queued; no strength gain established"
+      "status": "Two epochs and 100-game comparison complete; no statistically established strength gain",
+      "training": "geometry_cnn_training.json",
+      "result": "geometry_vs_selected100.json",
+      "review": "geometry_vs_selected100_review.json",
+      "wins": 40,
+      "draws": 29,
+      "losses": 31,
+      "relative_elo": 31.354042247812043,
+      "paired_bootstrap_95": [
+        -27.85437125655777,
+        92.45553015463469
+      ],
+      "in_game_gpu_p95_ms": 9.423455927753821
     },
     "quantization_match": {
       "games": 1000,
@@ -596,6 +608,15 @@
     "review": "selfplay_1m_review.json",
     "neural_calls": 64165,
     "selected_positions": 150000,
-    "selection": "selfplay_150k_selection.json"
+    "selection": "selfplay_150k_selection.json",
+    "continuous_refill": {
+      "positions": 8192,
+      "neural_batches": 256,
+      "mean_inputs_per_batch": 32,
+      "earlier_1m_mean_inputs_per_batch": 15.584820384945063,
+      "review": "selfplay_refill8192_review.json",
+      "evidence": "selfplay_refill8192.json",
+      "controlled_time_speedup": "not measured"
+    }
   }
 }

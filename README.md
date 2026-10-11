@@ -22,7 +22,9 @@ Parameter labels are rounded; export manifests record exact stored scalar counts
 
 The pool uses published CCRL Blitz ratings as reference points. Its **local Elo estimate** uses different hardware and clocks; it is not an official CCRL, FIDE or Lichess rating. Intervals condition on fixed anchors and exclude those systematic differences. In-game latency remains about **33.3 ms at p95**, above the GPU target.
 
-The original targets remain in [out/targets.json](out/targets.json); [out/status.json](out/status.json) tracks progress. The frozen 5.61M CNN measured **2124 local Elo** in [400 games](out/cnn6m_ccrl_pool), with a paired-opening 95% interval of **2040–2188**. Its CPU export is **8.28 MB**, with **2.26 ms p95** on 200 game positions. It meets deployment targets and misses the strength target; fresh complete-puzzle scores were **1232/3000** and **1136/3000**. We collected **70M human positions** and **2.5M distinct full-action labels**; full training is unfinished. The [5000-master-game test](out/bt4_openings5000.json) measured 50–66% exact opening agreement, below the targets.
+The frozen 5.61M CNN measured **2124 local Elo** in [400 games](out/cnn6m_ccrl_pool), with a paired-opening 95% interval of **2040–2188**. It misses the strength target; fresh puzzle scores were **1232/3000** and **1136/3000**. Its **6.54 MB** weight-only CPU export measured **1.7 Elo loss** in [1000 comparison games](out/cnn6m_weight8_1000.json), with a 95% interval of **−14.3 to +17.7** and **35.7 ms in-game p95**. Those games establish relative precision retention, not a new absolute rating.
+
+We collected **70M human positions**, **2.5M distinct full-action labels** and **1M independently replayed self-play positions**. Native training and selective relabeling are running. The [5000-master-game test](out/bt4_openings5000.json) measured 50–66% exact opening agreement, below the targets. [out/targets.json](out/targets.json) keeps the original numerical targets; [out/status.json](out/status.json) records progress.
 
 ## Run it
 
@@ -43,15 +45,6 @@ For CPU or CUDA training, install `requirements.txt`. The native ResNet uses pol
 ```sh
 python -m train.train --config configs/main.yaml --data data/train.jsonl --val-data data/validation.jsonl --epochs 3 --q-value-weight .4
 python -m play.runner --ckpt ckpts/latest.pt --deterministic
-```
-
-Compress a pretrained attention policy, retrain it, then quantize. Compression alone does not preserve strength:
-
-```sh
-python -m deploy.calibrate_mlx --model ckpts/bt3.mlx --data data/train.jsonl --out data/moments.safetensors
-python -m deploy.export_mlx --onnx ckpts/bt3.onnx --source-weights ckpts/bt3.pb.gz --rank 16 --io-rank 32 --calibration data/moments.safetensors --out ckpts/compact-init.mlx
-python -m train.mlx --student ckpts/compact-init.mlx --teacher ckpts/bt3.mlx --data data/train.jsonl --teacher-cache data/teacher.npy --out ckpts/compact.mlx
-python -m deploy.quantize_mlx --model ckpts/compact.mlx --out ckpts/compact-q8.mlx
 ```
 
 ## Check it

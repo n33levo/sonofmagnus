@@ -1,0 +1,16 @@
+{
+  "positions": 50,
+  "source": {
+    "model_bytes": 6573,
+    "sha256": "2ac6430f7aa6d2c0a1fc9dae6877b8deee02d7eddb93d8385769109b6040a997"
+  },
+  "artifact": {
+    "model_bytes": 3293,
+    "sha256": "240020e9db2814431ca1816b0f719065b6155366434ffa9d484ce1605d4485e9"
+  },
+  "source_line_range_1_based": [
+    51,
+    100
+  ],
+  "protocol": "Reserved half of the frozen ECO opening sample; each opening is used once with each colour per opponent. The earlier 50 pool openings contributed game positions to student training, so compact evaluation uses this half."
+}

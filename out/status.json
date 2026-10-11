@@ -68,15 +68,15 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 87,
+    "local_tests": 88,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
       "passed": 75,
-      "skipped_optional": 11,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38114951280",
-      "source_commit": "7e23f02"
+      "skipped_optional": 12,
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38115533804",
+      "source_commit": "81af61d"
     },
     "clocked_match": {
       "games": 100,
@@ -406,7 +406,7 @@
     "source_policy_top1": 0.517,
     "cpu_int8_bytes": 5771673,
     "cpu_int8_top1": 0.5045,
-    "status": "Three-epoch history-dropout distillation running; no compact Elo established",
+    "status": "Two CNN epochs complete; third FP16 pass failed and was not counted. Gold-priority FP32 continuation is running from epoch 2.",
     "learning_rate": 5e-05,
     "optimizer_bias_correction": true,
     "overflow_handling": "Retry unchanged batch at lower scale before optimizer update; forward failures abort",
@@ -421,6 +421,13 @@
         "cnn6m_epoch1_endgames.json"
       ]
     },
-    "next_stage": "After the third epoch, train two further passes with verified tactical labels weighted above the teacher"
+    "next_stage": "Two FP32 passes with verified tactical labels weighted above the teacher, then a frozen compact tournament",
+    "epoch2": {
+      "top1": 0.519,
+      "puzzles_complete": 415,
+      "original_endgame_point_targets_met": true,
+      "training": "cnn6m_epoch2_training.json"
+    },
+    "fp32_compute": "cnn6m_fp32_compute_probe.json: idle p95 15.24ms with FP16 stored weights"
   }
 }

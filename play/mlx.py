@@ -120,11 +120,20 @@ def fuse_attention(nodes, outputs, weights):
 class MlxRunner(ChessRunner):
     def __init__(self, directory):
         self.graph = Graph(directory)
+        metadata_path = Path(directory) / 'metadata.json'
+        metadata = json.loads(metadata_path.read_text()) if metadata_path.exists() else {}
+        precision = metadata.get('inference_dtype', 'float16')
+        if precision not in ('float16', 'float32'):
+            raise ValueError('Unsupported inference precision')
+        self.input_dtype = np.float32 if precision == 'float32' else np.float16
+        if precision == 'float32':
+            self.graph.weights = {name: value.astype(mx.float32) if mx.issubdtype(value.dtype, mx.floating) else value
+                                  for name, value in self.graph.weights.items()}
         self.temp_opening, self.temp_midgame, self.temp_endgame = .6, .4, .2
         self.last_latency_ms, self.forward_calls = 0., 0
 
     def batch_policy(self, boards):
-        tensor = mx.array(np.stack([encode_history(b) for b in boards]).astype(np.float16))
+        tensor = mx.array(np.stack([encode_history(b) for b in boards]).astype(self.input_dtype))
         policy, wdl = self.graph.run(tensor, self.graph.weights)
         mx.eval(policy, wdl)
         self.forward_calls += 1

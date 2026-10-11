@@ -2,6 +2,38 @@ import numpy as np
 import pytest
 
 
+def test_fp32_runtime_setting_keeps_half_stored_weights_safe_from_intermediate_overflow(tmp_path):
+    mx = pytest.importorskip('mlx.core')
+    import chess
+    import json
+    from play.mlx import MlxRunner
+    nodes = [['Reshape', ['board', 'shape'], ['flat'], {}],
+             ['Slice', ['flat', 'start', 'end', 'axis'], ['clock'], {}],
+             ['MatMul', ['clock', 'amplify'], ['hidden'], {}],
+             ['MatMul', ['hidden', 'policy_w'], ['policy'], {}],
+             ['MatMul', ['hidden', 'value_w'], ['value_logits'], {}],
+             ['Softmax', ['value_logits'], ['wdl'], {'axis': -1}]]
+    integer = {'shape': mx.array([-1, 7168]), 'start': mx.array([109 * 64]),
+               'end': mx.array([109 * 64 + 1]), 'axis': mx.array([1])}
+    weights = {'amplify': mx.array([[1000.]], dtype=mx.float16),
+               'policy_w': mx.full((1, 1858), 1e-5, dtype=mx.float16),
+               'value_w': mx.array([[1e-6, 0., -1e-6]], dtype=mx.float16)}
+    (tmp_path / 'graph.json').write_text(json.dumps({'inputs': ['board'], 'outputs': ['policy', 'wdl'],
+                                                   'integer_constants': list(integer), 'nodes': nodes}))
+    mx.save_safetensors(str(tmp_path / 'weights.safetensors'), {**integer, **weights})
+    board = chess.Board()
+    board.halfmove_clock = 99
+    with pytest.raises(ValueError, match='Non-finite'):
+        MlxRunner(tmp_path).policy(board)
+    (tmp_path / 'metadata.json').write_text(json.dumps({'inference_dtype': 'float32'}))
+    runner = MlxRunner(tmp_path)
+    policy, value = runner.policy(board)
+    assert runner.input_dtype == np.float32 and runner.forward_calls == 1
+    from chessio.mask import argmax_legal_move
+    assert np.isfinite(value) and argmax_legal_move(policy, board) in board.legal_moves
+    assert all(value.dtype == mx.float32 for value in runner.graph.weights.values())
+
+
 def test_verified_tactics_override_a_conflicting_teacher_without_changing_human_distillation():
     mx = pytest.importorskip('mlx.core')
     from train.mlx import losses, teacher_fractions

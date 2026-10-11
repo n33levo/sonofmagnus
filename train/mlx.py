@@ -178,6 +178,8 @@ def main():
     metadata['loss_scale_policy'] = 'Halve and retry the unchanged batch on FP16 gradient overflow, before any optimizer update'
     metadata['optimizer_bias_correction'] = True
     metadata['tactical_teacher_weight'] = args.tactical_teacher_weight
+    if args.amp == 'none' and any(node[0] == 'Conv' for node in graph.nodes):
+        metadata['inference_dtype'] = 'float32'
     metadata['objective'] += f'; verified puzzle rows use {args.tactical_teacher_weight:g} teacher policy'
     metadata['runtime_source'] = {path: artifact_info(path)['sha256'] for path in
         ('train/mlx.py', 'play/mlx.py', 'chessio/lc0.py', 'chessio/records.py', 'train/dataset.py')}

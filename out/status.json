@@ -68,7 +68,7 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 109,
+    "local_tests": 113,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
@@ -378,7 +378,15 @@
     "evidence": "human_corpus_70m.json",
     "holdout_filter": "Earlier tests excluded during collection; later depth-conditioned test must be excluded during training",
     "retained_training_rows": 41765559,
-    "training_status": "Native two-epoch GPU training resumed; short validation jobs may temporarily pause it"
+    "training_status": "Native two-epoch GPU training resumed; short validation jobs may temporarily pause it",
+    "early_checkpoint": {
+      "samples": 500224,
+      "evidence": "native_human500k_review.json",
+      "top1": 0.305,
+      "puzzles_correct": 43,
+      "puzzles_total": 1000,
+      "scope": "Partial training only; no Elo rating"
+    }
   },
   "engine_corpus": {
     "status": "2.5M collected and every row independently validated; training not complete",
@@ -587,6 +595,13 @@
         17.734601440379787
       ],
       "in_game_cpu_p95_ms": 35.663127119187266
+    },
+    "expert_training": {
+      "importer": "scripts/fetch_expert.py",
+      "smoke": "expert128_mlx_smoke.json",
+      "job": "expert_cnn_job.json",
+      "status": "Collection and independent audit precede one full expert epoch and a fixed 100-game comparison; no strength result yet",
+      "labels": "Stockfish best moves from ChessBench; tactical replay weighted three times higher"
     }
   },
   "compact_20M_packing": {

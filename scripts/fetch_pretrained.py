@@ -30,7 +30,7 @@ def fetch(name, directory='ckpts'):
     finally:
         temporary.unlink(missing_ok=True)
     output.with_suffix('.json').write_text(json.dumps({'source': url, 'sha256': digest,
-        'architecture': 'LC0 pretrained transformer; not the compact ResNet',
+        'architecture': 'LC0 residual policy/value network' if name == 't74' else 'LC0 pretrained transformer',
         'runtime_source': 'https://github.com/LeelaChessZero/lc0', 'runtime_license': 'GPL-3.0'}, indent=2) + '\n')
     print(output)
     return output

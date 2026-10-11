@@ -131,7 +131,7 @@ def main():
     parser.add_argument('--teacher-weight', type=float, default=.75, help='Policy distillation fraction; use a lower weight for verified tactical labels')
     parser.add_argument('--tactical-teacher-weight', type=float, default=.25)
     parser.add_argument('--history-dropout', type=float, default=0., help='Train the student on FEN-only inputs for this fraction; teacher retains history')
-    parser.add_argument('--mode', choices=['distill', 'policy'], default='distill', help='Distill the whole network or fit only policy heads to engine labels')
+    parser.add_argument('--mode', choices=['distill', 'policy', 'expert'], default='distill', help='Distill the network, fit policy heads, or fit the network to expert moves')
     args = parser.parse_args()
     if not 0 <= args.teacher_weight <= 1 or not 0 <= args.tactical_teacher_weight <= 1:
         parser.error('Teacher weight must be in [0, 1]')
@@ -158,7 +158,7 @@ def main():
     matrix_names = {node[1][1] for node in graph.nodes if node[0] == 'MatMul' and node[1][1] in weights}
     parameters = {name: value.astype(mx.float32) for name, value in weights.items() if (not name.startswith('/const/') or name in matrix_names) and value.size > 1
                   and name not in source_metadata.get('frozen_weights', ())
-                  and (args.mode == 'distill' or name.startswith('/policy/'))}
+                  and (args.mode != 'policy' or name.startswith('/policy/'))}
     if not parameters:
         parser.error('No trainable weights for this mode')
     frozen = {name: value for name, value in weights.items() if name not in parameters}
@@ -188,6 +188,8 @@ def main():
         ('train/mlx.py', 'play/mlx.py', 'chessio/lc0.py', 'chessio/records.py', 'train/dataset.py')}
     if args.mode == 'policy':
         metadata['objective'] = 'Legal-move cross entropy on engine labels; policy heads only'
+    elif args.mode == 'expert':
+        metadata['objective'] = 'Quality-weighted legal-move cross entropy on expert labels; whole network; no value supervision'
     (out / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
     cached = cache_teacher(teacher, dataset, args.teacher_cache, args.batch_size,
                           {'teacher': metadata['teacher_source'], 'data': metadata['training_data'], 'samples': len(dataset)}) if args.teacher_cache and teacher else None

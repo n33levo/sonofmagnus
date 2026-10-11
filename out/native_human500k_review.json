@@ -1,0 +1,15 @@
+{
+  "status": "Partial training checkpoint; not a final result or strength rating",
+  "checkpoint": "ckpts/main-human70m-500k.pt",
+  "artifact": {
+    "model_bytes": 69937575,
+    "sha256": "7aaf269809aeb1a5dc87ad20ee47a1251500c0931b5ee6eacefa39128c29b57b"
+  },
+  "training_samples": 500224,
+  "source_run": "native70m_training_input.json",
+  "agreement": "native_human500k_agreement.json",
+  "puzzles": "native_human500k_puzzles.json",
+  "top1": 0.305,
+  "puzzles_correct": 43,
+  "puzzles_total": 1000
+}

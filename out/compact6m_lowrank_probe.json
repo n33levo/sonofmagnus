@@ -1,0 +1,56 @@
+{
+  "model": {
+    "model_bytes": 12085959,
+    "sha256": "dc7e8f50d2bb04153e1a2b889bad794187fdf9148b9f0559a3998d167397894f"
+  },
+  "fused_projections": 158,
+  "same_moves": 200,
+  "positions": 200,
+  "max_logit_error": 0.0390625,
+  "max_value_error": 0.0032958984375,
+  "baseline": {
+    "runs": 200,
+    "warmup": 20,
+    "positions": 200,
+    "protocol": "full move selection, deterministic, PGN history retained",
+    "p50_ms": 15.370979032013565,
+    "p95_ms": 15.945907693821937,
+    "p99_ms": 16.263155959313732,
+    "neural_forward_calls": 220
+  },
+  "fused": {
+    "runs": 200,
+    "warmup": 20,
+    "positions": 200,
+    "protocol": "full move selection, deterministic, PGN history retained",
+    "p50_ms": 13.344541483093053,
+    "p95_ms": 14.121354446979238,
+    "p99_ms": 15.025315327802673,
+    "neural_forward_calls": 220
+  },
+  "baseline_idle": {
+    "p50_ms": 12.67939544050023,
+    "p95_ms": 16.10618388513103,
+    "p99_ms": 22.829356755828478
+  },
+  "fused_idle": {
+    "p50_ms": 13.322250044438988,
+    "p95_ms": 13.709066977025941,
+    "p99_ms": 13.846265748143196
+  },
+  "accepted": false,
+  "decision": "Keep the existing quantized MLX matrix path: it is faster than both custom kernels.",
+  "protocol_details": {
+    "history_pgn": "out/bt4_ccrl_pool/stash-20.0.1.pgn",
+    "seed": 0,
+    "runs": 200,
+    "warmup": 20,
+    "idle_runs": 40,
+    "idle_seconds": 0.25,
+    "training_paused": true,
+    "corpus_extraction_active": true
+  },
+  "runtime_source": {
+    "play/mlx.py": "af3f81aa7a15d234404c84e5909d29194b4556a6ae4a6132fe9438d30c85f30d"
+  }
+}

@@ -75,10 +75,10 @@
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
-      "passed": 55,
+      "passed": 67,
       "skipped_optional": 6,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38104153580",
-      "source_commit": "850ce5a68ff881c5ab385cf750693b7449636391"
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38106288810",
+      "source_commit": "d004414"
     },
     "clocked_match": {
       "games": 100,
@@ -283,7 +283,10 @@
         "model_bytes": 7406598,
         "sha256": "41ede51376b34c3b61ae8e3651c9b8cdaf6fdf756ff78aa054b9f924c040a50f"
       },
-      "strength_status": "Below target"
+      "strength_status": "Below target",
+      "cpu_deployment": "compact6m_epoch1_cpu_isolated.json",
+      "graph_compaction": "compact6m_cpu_graph_compaction.json",
+      "metal_q8": "compact6m_lowrank_q8_probe.json: baseline measurements"
     }
   },
   "portable_attention": {

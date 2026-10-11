@@ -57,7 +57,21 @@ def quantize_model(input_path, output_path, weight_type='int8', calibration_data
                             activation_type=QuantType.QUInt8,
                             weight_type=QuantType.QInt8 if weight_type == 'int8' else QuantType.QUInt8,
                             per_channel=True, op_types_to_quantize=['Conv', 'MatMul', 'Gemm'])
-    onnx.checker.check_model(onnx.load(output))
+    model = onnx.load(output)
+    public = {value.name for value in [*model.graph.input, *model.graph.output]}
+    names = {name for node in model.graph.node for name in [*node.input, *node.output] if name and name not in public}
+    names.update(value.name for value in model.graph.initializer if value.name not in public)
+    compact = {name: f'v{i}' for i, name in enumerate(sorted(names))}
+    for node in model.graph.node:
+        node.name = ''
+        for values in (node.input, node.output):
+            for i, name in enumerate(values):
+                values[i] = compact.get(name, name)
+    for value in model.graph.initializer:
+        value.name = compact.get(value.name, value.name)
+    model.graph.ClearField('value_info')
+    onnx.checker.check_model(model)
+    onnx.save(model, output)
     baseline = ort.InferenceSession(str(input_path), providers=['CPUExecutionProvider'])
     quantized = ort.InferenceSession(str(output), providers=['CPUExecutionProvider'])
     errors = []

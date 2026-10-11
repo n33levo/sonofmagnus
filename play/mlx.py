@@ -53,7 +53,7 @@ class Graph:
                 y = mx.conv2d(a.transpose(0, 2, 3, 1), args[1].transpose(0, 2, 3, 1),
                               stride=tuple(attrs.get('strides', [1, 1])), padding=tuple(pads[:2]),
                               dilation=tuple(attrs.get('dilations', [1, 1])), groups=attrs.get('group', 1))
-                if len(args) > 2:
+                if len(args) > 2 and args[2] is not None:
                     y = y + args[2]
                 y = y.transpose(0, 3, 1, 2)
             elif op == 'ReduceMean':

@@ -19,11 +19,13 @@ def widen(source, output, channels=160, seed=0):
     weights = mx.load(str(source / 'weights.safetensors'))
     first = next(node[1][1] for node in graph['nodes'] if node[0] == 'Conv')
     width = weights[first].shape[0]
+    if width != 128:
+        raise ValueError('This conversion supports the 128-channel LC0 residual CNN')
     if channels <= width:
         raise ValueError('The new width must exceed the source width')
     shapes = {node[1][1] for node in graph['nodes'] if node[0] in ('Reshape', 'Split') and len(node[1]) > 1}
     rng, expanded = np.random.default_rng(seed), {}
-    for name, tensor in weights.items():
+    for name, tensor in sorted(weights.items()):
         value = np.array(tensor)
         if name in graph['integer_constants']:
             if name in shapes:
@@ -56,6 +58,7 @@ def widen(source, output, channels=160, seed=0):
     metadata.update(widening_source=artifact_info(source), original_channels=width, widened_channels=channels,
                     widening_seed=seed, stored_scalars_before_quantization=count,
                     weights_and_graph_bytes=sum(path.stat().st_size for path in output.iterdir()),
+                    producer_sha256=artifact_info(__file__)['sha256'],
                     initialization='Existing paths unchanged; added features have random inputs and zero outgoing connections')
     (output / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
     return metadata

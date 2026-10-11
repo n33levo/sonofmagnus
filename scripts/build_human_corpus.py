@@ -1,14 +1,15 @@
 import argparse
 import io
 import json
+from contextlib import ExitStack
 from pathlib import Path
-import urllib.request
 
 import chess
 import chess.pgn
 import zstandard
 
 from model.artifacts import artifact_info
+from chessio.remote import RangeReader
 
 
 class Rated(chess.pgn.GameBuilder):
@@ -27,6 +28,7 @@ def main():
     parser.add_argument('--month', required=True)
     parser.add_argument('--positions', type=int, required=True)
     parser.add_argument('--out', required=True)
+    parser.add_argument('--resume', action='store_true', help='Replay and verify an interrupted output prefix')
     args = parser.parse_args()
     if args.positions <= 0:
         parser.error('Positive position count required')
@@ -45,9 +47,16 @@ def main():
     if out.exists():
         parser.error('Use a new output path to preserve the existing corpus')
     temporary = out.with_suffix(out.suffix + '.part')
+    if temporary.exists() and not args.resume:
+        parser.error('An interrupted output exists; use --resume to verify and continue it')
+    recovered = temporary.with_suffix('.recover') if temporary.exists() else temporary
     positions = games = skipped = 0
-    with urllib.request.urlopen(url, timeout=60) as response, zstandard.ZstdDecompressor().stream_reader(response) as raw, io.TextIOWrapper(raw) as stream, temporary.open('w') as saved:
-        source_headers = dict(response.headers)
+    with ExitStack() as stack:
+        previous = stack.enter_context(temporary.open()) if recovered != temporary else None
+        response = stack.enter_context(RangeReader(url))
+        raw = stack.enter_context(zstandard.ZstdDecompressor().stream_reader(response))
+        stream = stack.enter_context(io.TextIOWrapper(raw))
+        saved = stack.enter_context(recovered.open('w'))
         while positions < args.positions:
             game = chess.pgn.read_game(stream, Visitor=Rated)
             if game is None:
@@ -63,17 +72,24 @@ def main():
                 if ' '.join(fen.split()[:4]) in blocked:
                     skipped += 1
                 else:
-                    saved.write(json.dumps({'fen': fen, 'move': move.uci(), 'value': value if board.turn else -value,
-                        'game_id': game.headers['Site'], 'weight': 3. if elo >= 2600 else 2. if elo >= 2400 else 1.5 if elo >= 2200 else 1.}, separators=(',', ':')) + '\n')
+                    line = json.dumps({'fen': fen, 'move': move.uci(), 'value': value if board.turn else -value,
+                        'game_id': game.headers['Site'], 'weight': 3. if elo >= 2600 else 2. if elo >= 2400 else 1.5 if elo >= 2200 else 1.}, separators=(',', ':')) + '\n'
+                    if previous and (old := previous.readline()) and old != line:
+                        raise ValueError('Interrupted corpus does not match the source archive')
+                    saved.write(line)
                     positions += 1
                     if positions % 100000 == 0:
                         print(json.dumps({'positions': positions, 'games': games}), flush=True)
                     if positions == args.positions:
                         break
                 board.push(move)
+        if previous and previous.read(1):
+            raise ValueError('Requested corpus is shorter than the existing prefix')
+        source_headers = response.headers
     if positions != args.positions:
         raise ValueError('Archive ended before the requested position count')
-    temporary.replace(out)
+    recovered.replace(out)
+    temporary.unlink(missing_ok=True)
     out.with_suffix('.json').write_text(json.dumps({'url': url, 'source_headers': source_headers, 'license': 'CC0',
         'positions': positions, 'games': games, 'rating_range': [2000, 2800], 'time_controls': ['blitz', 'rapid'],
         'heldout_positions_skipped': skipped, 'history': 'Current-position corpus for the native 18-plane ResNet',

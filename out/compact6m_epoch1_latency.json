@@ -1,0 +1,15 @@
+{
+  "runs": 200,
+  "warmup": 20,
+  "positions": 200,
+  "protocol": "full move selection, deterministic, PGN history retained",
+  "p50_ms": 13.10956251109019,
+  "p95_ms": 15.864344383589923,
+  "p99_ms": 16.089232562808316,
+  "neural_forward_calls": 220,
+  "checkpoint": "ckpts/sonofmagnus-6M-epoch1.mlx",
+  "model_bytes": 12085959,
+  "model_sha256": "dc7e8f50d2bb04153e1a2b889bad794187fdf9148b9f0559a3998d167397894f",
+  "seed": 0,
+  "pgn_sha256": "5524a3521bdfba15f58ee9541f30cb69fae44989b8941178dd0f8ba6bb1bedd3"
+}

@@ -37,6 +37,8 @@ ENV/
 data/*.pgn
 data/*.pgn.zst
 data/*.part
+data/*.recover
+data/*.sqlite*
 data/*.jsonl
 data/*.json
 !data/arena_pool.json

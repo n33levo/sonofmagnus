@@ -1,0 +1,67 @@
+{
+  "fp16": {
+    "model_bytes": 12085959,
+    "sha256": "dc7e8f50d2bb04153e1a2b889bad794187fdf9148b9f0559a3998d167397894f"
+  },
+  "q8": {
+    "model_bytes": 7406598,
+    "sha256": "41ede51376b34c3b61ae8e3651c9b8cdaf6fdf756ff78aa054b9f924c040a50f"
+  },
+  "metadata": {
+    "source_onnx_sha256": "51124c11c80d1a844e1db08c582406fdc5dea7b72696dbc563bd48e22c8d7845",
+    "weight_bits": 16,
+    "stored_scalars_before_quantization": 5955410,
+    "weights_and_graph_bytes": 12083714,
+    "quantized_matrices": 0,
+    "low_rank_width": 16,
+    "factorized_matrices": 144,
+    "input_output_rank": 32,
+    "relative_squared_weight_error": 0.048229058188922876,
+    "compression_metric": "ridge-regularized activation error",
+    "calibration": {
+      "model_bytes": 568900751,
+      "sha256": "e35075c0e78e0bb8d59758cfa9a6087ad6672e996de7b01caf76764eb41f91b0"
+    },
+    "source_weights_sha256": "e3067757d1fc2dfc66947b21d15ace0cedf4c54254fc1de83d77c378a3e8b8e1",
+    "student_source": {
+      "model_bytes": 12084375,
+      "sha256": "f60f318184cb3fa03a1657dab1d654ee2ee8b2aab897138796c0f157ab365256"
+    },
+    "teacher_source": {
+      "model_bytes": 205113406,
+      "sha256": "d92446f5b649e8da20e82de243e1bad683ccb059ae1683f7ae6043c1d883d588"
+    },
+    "training_data": {
+      "model_bytes": 149552958,
+      "sha256": "89a4c8fdb4421d23920b7c477f2e68d7ee5fae697bd5d7477a1b93e9ff206d3b"
+    },
+    "seed": 0,
+    "learning_rate": 0.0002,
+    "training_epochs": 3,
+    "training_samples": 341010,
+    "trainable_scalars": 5955363,
+    "objective": "Quality-weighted 0.25 label policy, 0.75 teacher policy, 0.25 teacher WDL CE plus centred-value MSE",
+    "training_device": "Device(gpu, 0)",
+    "teacher_temperature": 0.25,
+    "mode": "distill",
+    "runtime_source": {
+      "train/mlx.py": "24bf6ef0e8f887903e195f0329098d8314bb17fad4ec75c447219266287729f0",
+      "play/mlx.py": "af3f81aa7a15d234404c84e5909d29194b4556a6ae4a6132fe9438d30c85f30d",
+      "chessio/lc0.py": "ae0c0807bd204ced7b4534f8e18a1191a3aec6642724133389b9a24503dba09d",
+      "chessio/records.py": "1b5e8c2f448216da8908d01692ed65ec4d5e37227f96ff25aca4818072fd3486",
+      "train/dataset.py": "8693bb8365c304f7cb31dfde1b39ff20b19162b24121e4103e5e7ba6225c22d2"
+    },
+    "training_epochs_completed": 1
+  },
+  "epochs": [
+    {
+      "loss": 1.7399938629455278,
+      "policy_loss": 1.4813290256149436,
+      "distill_loss": 1.4872515732562248,
+      "value_loss": 1.0168917187605886,
+      "epoch": 1,
+      "samples": 341010,
+      "seconds": 2835.5573311669286
+    }
+  ]
+}

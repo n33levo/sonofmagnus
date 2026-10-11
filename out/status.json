@@ -70,15 +70,15 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 55,
+    "local_tests": 66,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
-      "passed": 49,
+      "passed": 55,
       "skipped_optional": 6,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38103455480",
-      "source_commit": "6a447943462a8a5eab1ecd86dc291b6be6510d67"
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38104153580",
+      "source_commit": "850ce5a68ff881c5ab385cf750693b7449636391"
     },
     "clocked_match": {
       "games": 100,
@@ -155,7 +155,8 @@
       "served_move": "d2d4",
       "legal": true,
       "neural_forward_calls": 1
-    }
+    },
+    "focused_q_corpus_tests": 7
   },
   "metal_runtime": {
     "strong_185M": {
@@ -243,7 +244,7 @@
     "floating_stored_scalars": 5955410,
     "positions": 341010,
     "training_device": "Apple M4 Metal (MLX)",
-    "training_status": "Epoch 1 in progress; teacher cache complete",
+    "training_status": "Epoch 1 saved and evaluated; epoch 2 in progress",
     "source_identity": {
       "sources": {
         "data/compact_236k_train.jsonl": {
@@ -269,6 +270,20 @@
       "top5_agreement": 0.4,
       "total": 200,
       "mean_kl_divergence": 2.9040912513284125
+    },
+    "epoch1": {
+      "agreement": "compact6m_epoch1_agreement.json",
+      "puzzles": "compact6m_epoch1_puzzles.json",
+      "latency": "compact6m_epoch1_latency.json",
+      "fp16": {
+        "model_bytes": 12085959,
+        "sha256": "dc7e8f50d2bb04153e1a2b889bad794187fdf9148b9f0559a3998d167397894f"
+      },
+      "q8": {
+        "model_bytes": 7406598,
+        "sha256": "41ede51376b34c3b61ae8e3651c9b8cdaf6fdf756ff78aa054b9f924c040a50f"
+      },
+      "strength_status": "Below target"
     }
   },
   "portable_attention": {
@@ -291,7 +306,7 @@
     "strength": "Previous weak checkpoint; deployment path verified only"
   },
   "human_corpus": {
-    "status": "Fetching",
+    "status": "Extracting with verified replay of interrupted January/February prefixes and exact HTTP byte-range recovery",
     "sources": "2024-01 to 2024-05",
     "target_positions": 70000000,
     "min_both_ratings": 2000,
@@ -301,5 +316,15 @@
       "rapid"
     ],
     "heldout_positions_excluded": true
+  },
+  "engine_corpus": {
+    "status": "Extracting",
+    "target_positions": 2500000,
+    "minimum_depth": 12,
+    "minimum_legal_moves": 2,
+    "all_legal_moves_scored": true,
+    "distinct_positions": true,
+    "heldout_positions_excluded": true,
+    "source": "https://database.lichess.org/lichess_db_eval.jsonl.zst"
   }
 }

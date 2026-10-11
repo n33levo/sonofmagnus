@@ -68,15 +68,15 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 113,
+    "local_tests": 114,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
-      "passed": 92,
+      "passed": 96,
       "skipped_optional": 17,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38132121777",
-      "source_commit": "943e8af"
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38133947704",
+      "source_commit": "d5cba55"
     },
     "clocked_match": {
       "games": 100,
@@ -598,10 +598,11 @@
     },
     "expert_training": {
       "importer": "scripts/fetch_expert.py",
-      "smoke": "expert128_mlx_smoke.json",
+      "smoke": "expert256_mlx_smoke.json",
       "job": "expert_cnn_job.json",
-      "status": "Collection and independent audit precede one full expert epoch and a fixed 100-game comparison; no strength result yet",
-      "labels": "Stockfish best moves from ChessBench; tactical replay weighted three times higher"
+      "status": "Exact 2.5M expert moves collected; independent audit running before compact training",
+      "labels": "Stockfish best moves from ChessBench, verified tactical move replay, and masked real value replay from the validated full-action corpus",
+      "expert_positions": 2500000
     }
   },
   "compact_20M_packing": {

@@ -47,7 +47,7 @@ def teacher_fractions(rows, default=.75, tactical=.25):
                      for row in rows], dtype=mx.float32)
 
 
-def losses(graph, weights, inputs, mask, target, teacher_policy, teacher_wdl, value_weight=.25, teacher_weight=.75, sample_weight=None, amp=False):
+def losses(graph, weights, inputs, mask, target, teacher_policy, teacher_wdl, value_weight=.25, teacher_weight=.75, sample_weight=None, amp=False, value_target=None, value_mask=None):
     if amp:
         weights = {name: value.astype(mx.float16) for name, value in weights.items()}
     policy, value_logits = graph.forward(inputs, weights, raw_value=True)
@@ -66,6 +66,9 @@ def losses(graph, weights, inputs, mask, target, teacher_policy, teacher_wdl, va
         wdl = mx.exp(value_log_probs)
         value_loss = (-(teacher_wdl * value_log_probs).sum(-1) * quality).sum()
         value_loss += (mx.square(wdl[:, 0] - wdl[:, 2] - teacher_wdl[:, 0] + teacher_wdl[:, 2]) * quality).sum()
+        if value_target is not None:
+            value_quality = quality * value_mask
+            value_loss = (mx.square(wdl[:, 0] - wdl[:, 2] - value_target) * value_quality).sum() / mx.maximum(value_quality.sum(), 1e-8)
     blended_policy = (((1 - teacher_weight) * policy_rows + teacher_weight * distill_rows) * quality).sum()
     return blended_policy + value_weight * value_loss, policy_loss, distill_loss, value_loss
 
@@ -189,16 +192,17 @@ def main():
     if args.mode == 'policy':
         metadata['objective'] = 'Legal-move cross entropy on engine labels; policy heads only'
     elif args.mode == 'expert':
-        metadata['objective'] = 'Quality-weighted legal-move cross entropy on expert labels; whole network; no value supervision'
+        metadata['objective'] = 'Quality-weighted legal-move cross entropy plus masked centred-value MSE where a real value label is present; whole network'
     (out / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
     cached = cache_teacher(teacher, dataset, args.teacher_cache, args.batch_size,
                           {'teacher': metadata['teacher_source'], 'data': metadata['training_data'], 'samples': len(dataset)}) if args.teacher_cache and teacher else None
     optimizer = optim.AdamW(args.lr, weight_decay=1e-4, bias_correction=True)
     scale = metadata['loss_scale']
-    def objective(p, x, mask, target, teacher_policy, teacher_wdl, quality, teacher_fraction, loss_scale):
+    def objective(p, x, mask, target, teacher_policy, teacher_wdl, quality, teacher_fraction, value_target, value_mask, loss_scale):
         values = losses(graph, {**frozen, **p}, x, mask, target, teacher_policy, teacher_wdl,
-                        value_weight=.25 if teacher else 0., teacher_weight=teacher_fraction,
-                        sample_weight=quality, amp=args.amp == 'fp16')
+                        value_weight=.25 if teacher or args.mode == 'expert' else 0., teacher_weight=teacher_fraction,
+                        sample_weight=quality, amp=args.amp == 'fp16',
+                        value_target=value_target if args.mode == 'expert' else None, value_mask=value_mask)
         return (values[0] * loss_scale, *values[1:])
     gradient = mx.compile(mx.value_and_grad(objective))
     rng = np.random.default_rng(args.seed)
@@ -224,8 +228,13 @@ def main():
                 if args.history_dropout:
                     inputs = drop_history(inputs, rows, rng.random(len(rows)) < args.history_dropout)
                 teacher_fraction = teacher_fractions(rows, args.teacher_weight, args.tactical_teacher_weight)
+                value_target = np.array([row.get('value', 0.) for row in rows], dtype=np.float32)
+                if not np.isfinite(value_target).all() or (np.abs(value_target) > 1).any():
+                    raise ValueError('Value labels must be finite and in [-1, 1]')
+                value_mask = mx.array([float('value' in row) for row in rows])
                 values, grads, norm, scale, retries = finite_gradients(gradient, parameters,
-                    (inputs, mask, target, teacher_policy, teacher_wdl.astype(mx.float32), mx.array(quality), teacher_fraction), scale, args.amp == 'fp16')
+                    (inputs, mask, target, teacher_policy, teacher_wdl.astype(mx.float32), mx.array(quality), teacher_fraction,
+                     mx.array(value_target), value_mask), scale, args.amp == 'fp16')
                 overflow_retries += retries
                 if retries:
                     print(json.dumps({'epoch': epoch + 1, 'batch_offset': offset, 'overflow_retries': retries, 'loss_scale': scale}), flush=True)

@@ -1,8 +1,8 @@
 {
-  "status": "Waiting for the complete expert corpus",
+  "status": "Independently checking every expert position before training",
   "producer": {
-    "model_bytes": 4358,
-    "sha256": "a37da75b60addb5dd90f0a8ea71a3fd147c4e4097768a9688985227542ed9eb3"
+    "model_bytes": 5080,
+    "sha256": "2119e825d1254a70843a676b8d03da3fb09c92cc90dd87faa94ef6ee078944df"
   },
   "purpose": "Test direct expert supervision of the compact network; no strength gain assumed"
 }

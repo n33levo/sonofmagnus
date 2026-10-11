@@ -32,7 +32,8 @@ class BoardCalibration(CalibrationDataReader):
                     else:
                         lines[index] = line
         encoder = encode_history if classical else encode_board
-        self.boards = [encoder(record_board(json.loads(line)))[None] for line in lines]
+        self.positions = [record_board(json.loads(line)) for line in lines]
+        self.boards = [encoder(board)[None] for board in self.positions]
         if not self.boards:
             raise ValueError('Empty calibration set')
         self.rewind()
@@ -45,7 +46,7 @@ class BoardCalibration(CalibrationDataReader):
         self.iterator = iter(self.boards)
 
 
-def quantize_model(input_path, output_path, weight_type='int8', calibration_data=None, keep_input_and_heads=False):
+def quantize_model(input_path, output_path, weight_type='int8', calibration_data=None, keep_input_and_heads=False, keep_convs=()):
     if calibration_data is None:
         raise ValueError('INT8 conversion requires --calibration-data for validation')
     model = onnx.load(input_path)
@@ -68,6 +69,11 @@ def quantize_model(input_path, output_path, weight_type='int8', calibration_data
             excluded = [node.name for node in optimized.graph.node
                         if any(name.startswith(('/inputconv/', '/geometry/', '/policy/', '/value/')) for name in [node.name, *node.output])
                         or (node.op_type == 'Conv' and node.name == first_conv)]
+        if keep_convs:
+            convs = [node.name for node in onnx.load(prepared).graph.node if node.op_type == 'Conv']
+            if any(index < 0 or index >= len(convs) for index in keep_convs):
+                raise ValueError('Protected convolution index out of range')
+            excluded.extend(convs[index] for index in keep_convs)
         if classical and not cnn:
             # Recompute activation ranges per position: history includes the unbounded rule-50 clock.
             quantize_dynamic(prepared, str(output), weight_type=QuantType.QInt8 if weight_type == 'int8' else QuantType.QUInt8,
@@ -112,8 +118,10 @@ def main():
     parser.add_argument('--weight-type', choices=['int8', 'uint8'], default='int8')
     parser.add_argument('--calibration-data', required=True)
     parser.add_argument('--keep-input-and-heads', action='store_true', help='Spend extra bytes on FP32 input convolution and heads')
+    parser.add_argument('--keep-convs', default='', help='Comma-separated convolution indices to preserve in float')
     args = parser.parse_args()
-    quantize_model(args.input, args.out, args.weight_type, args.calibration_data, args.keep_input_and_heads)
+    quantize_model(args.input, args.out, args.weight_type, args.calibration_data, args.keep_input_and_heads,
+                   tuple(map(int, args.keep_convs.split(','))) if args.keep_convs else ())
 
 
 if __name__ == '__main__':

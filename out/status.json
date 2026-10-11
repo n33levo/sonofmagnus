@@ -68,15 +68,15 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 104,
+    "local_tests": 105,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
-      "passed": 86,
+      "passed": 87,
       "skipped_optional": 17,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38126211854",
-      "source_commit": "9a3b778"
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38126616442",
+      "source_commit": "36856ef"
     },
     "clocked_match": {
       "games": 100,
@@ -527,7 +527,31 @@
       "games": 1000,
       "distinct_opening_pairs": 500,
       "selection": "quantization_arena500_selection.json",
-      "status": "CPU float-versus-INT8 games running; relative loss not established"
+      "result": "cnn6m_quantization1000.json",
+      "review": "cnn6m_quantization1000_review.json",
+      "elo_loss": 30.65362281349799,
+      "paired_bootstrap_95": [
+        11.46953897464754,
+        50.02616338883343
+      ],
+      "status": "Complete and independently replayed; original 15\u00b110 loss claim not established"
+    },
+    "lossless_cpu_packing": {
+      "evidence": "cnn6m_lossless_packing.json",
+      "file_bytes": 6601129,
+      "raw_weight_bytes_saved": 1681440,
+      "positions_with_bit_exact_policy_and_value": 200,
+      "strength_change": "None; same quantized model"
+    },
+    "precision_allocation": {
+      "selection": "cnn6m_precision_selection.json",
+      "training_probe": "cnn6m_mixed_conv_probe.json",
+      "file_bytes": 8422614,
+      "cpu_p95_ms": 32.4885152222123,
+      "deployment": "cnn6m_precision_cpu_deployment.json",
+      "games": 1000,
+      "game_selection": "cnn6m_precision_game_selection.json",
+      "status": "New fixed comparison running; strength loss unmeasured"
     }
   },
   "compact_20M_packing": {

@@ -1,0 +1,57 @@
+{
+  "positions": 500,
+  "source_games": 5000,
+  "eligible_distinct_positions": 4062,
+  "source": {
+    "model_bytes": 3104289,
+    "sha256": "72616bc3ff7df6c4480170f33f02a3f3c3de5f300f5c9cd919d769b95236b217"
+  },
+  "artifact": {
+    "model_bytes": 33301,
+    "sha256": "edc2a223488384030a6d33d9d2eaa9ae6346f32bbc1429c8b21367ef9764d26a"
+  },
+  "seed": 20261012,
+  "plies": [
+    8,
+    24
+  ],
+  "excluded_inputs": [
+    "data/puzzles_holdout.jsonl",
+    "data/puzzles_final3000.jsonl",
+    "data/puzzles_depth3000.jsonl",
+    "data/stockfish_holdout.jsonl",
+    "data/eval_holdout.jsonl",
+    "data/endgame_holdout.jsonl"
+  ],
+  "earlier_roots": [
+    "data/arena_openings.fen",
+    "data/compact_arena_openings.fen",
+    "data/quantization_arena500.fen"
+  ],
+  "source_urls": [
+    "https://database.lichess.org/broadcast/lichess_db_broadcast_2026-09.pgn.zst",
+    "https://database.lichess.org/broadcast/lichess_db_broadcast_2026-08.pgn.zst",
+    "https://database.lichess.org/broadcast/lichess_db_broadcast_2026-07.pgn.zst",
+    "https://database.lichess.org/broadcast/lichess_db_broadcast_2026-06.pgn.zst"
+  ],
+  "license": "CC BY-SA 4.0, Lichess official broadcasts",
+  "producer": {
+    "model_bytes": 2952,
+    "sha256": "92a91a672b607c71a130fa972e3fe1509318db71e328c2c38aefacb347c7ad93"
+  },
+  "models": {
+    "ckpts/sonofmagnus-cnn6M-fp32.onnx": {
+      "model_bytes": 22474422,
+      "sha256": "e001acfaff93f80c75db09caa1b3426eb6c0ea8382ac41dc1747909ead22284c"
+    },
+    "ckpts/sonofmagnus-cnn6M-int8-late.onnx": {
+      "model_bytes": 8422614,
+      "sha256": "401ff08ad42119e31d1a5d5803f10a191d4709bf3dfcad58b28a6b8069f73b3f"
+    }
+  },
+  "precision_selection": {
+    "model_bytes": 1276,
+    "sha256": "5c34fb3c220cd1d15dcdc2c3af59c3b8a57b634d4849bf68b881f73a2e291f60"
+  },
+  "protocol": "1000 fixed games, 500 distinct roots excluding all earlier tournament roots, colour pairs, 10+0.1; relative precision loss only"
+}

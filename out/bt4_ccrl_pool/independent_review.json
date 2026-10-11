@@ -1,0 +1,56 @@
+{
+  "engine_moves": 20963,
+  "legal_plies": 41863,
+  "games": 400,
+  "matches": {
+    "stash-20.0.1": {
+      "engine_moves": 4720,
+      "legal_plies": 9410,
+      "games": 100,
+      "pgn": {
+        "model_bytes": 247313,
+        "sha256": "5524a3521bdfba15f58ee9541f30cb69fae44989b8941178dd0f8ba6bb1bedd3"
+      }
+    },
+    "stash-21.0": {
+      "engine_moves": 4817,
+      "legal_plies": 9610,
+      "games": 100,
+      "pgn": {
+        "model_bytes": 252230,
+        "sha256": "724624a2c8b75b8d7a2bc3df542f5b852bb18d332369aa558058c1becf0c6b46"
+      }
+    },
+    "weiss-1.0": {
+      "engine_moves": 6277,
+      "legal_plies": 12557,
+      "games": 100,
+      "pgn": {
+        "model_bytes": 321571,
+        "sha256": "ec0c30f043a3279630bd819c5a658c0baff4dc58cd631a54c9a31aa8651f5680"
+      }
+    },
+    "stash-25.0": {
+      "engine_moves": 5149,
+      "legal_plies": 10286,
+      "games": 100,
+      "pgn": {
+        "model_bytes": 268452,
+        "sha256": "83d16228c266592ba7ff6df4b8edfb9a132f7ef10dfee7b316b9f43a0c7e770e"
+      }
+    }
+  },
+  "model": {
+    "model_bytes": 163551053,
+    "sha256": "78cb179eca5662a4eee7c0ed3e94a50cb1eee41b860072b39ef5eeeae8a4ee39"
+  },
+  "latency_ms": {
+    "p50": 25.772,
+    "p95": 33.25979999999999,
+    "p99": 35.08238
+  },
+  "outcomes_verified": true,
+  "source_hashes_verified": true,
+  "forfeits": 0,
+  "ply_caps": 0
+}

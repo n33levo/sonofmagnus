@@ -1,0 +1,20 @@
+{
+  "initial_run": {
+    "learning_rate": 0.0002,
+    "optimizer_bias_correction": false,
+    "failure": "Non-finite gradient; static scaling and optimizer update before finite check"
+  },
+  "retry_run": {
+    "learning_rate": 0.0002,
+    "optimizer_bias_correction": false,
+    "loss_scale_retried": 256,
+    "failure": "Non-finite forward loss after parameter updates"
+  },
+  "current_run": {
+    "learning_rate": 5e-05,
+    "optimizer_bias_correction": true,
+    "loss_scale_initial": 1024,
+    "status": "Running with finite losses and gradients past 249,728 rows"
+  },
+  "fix": "Gradient checks precede optimizer updates. AMP retries the identical batch with lower scale. Bias-corrected AdamW and a smaller fine-tuning rate prevent the observed early forward instability."
+}

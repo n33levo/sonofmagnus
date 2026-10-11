@@ -1,0 +1,19 @@
+{
+  "positions": 100,
+  "same_legal_argmax": 99,
+  "max_policy_error": 0.22705078125,
+  "max_wdl_error": 0.008056640625,
+  "model": {
+    "model_bytes": 7459101,
+    "sha256": "6257c4aa06550b252065dca120342c11be478d3610a6c176ff1987ac51bb860c"
+  },
+  "reference_onnx": {
+    "model_bytes": 7590629,
+    "sha256": "ec07f007f1d4036b0da9abfddf4cef3f89168d95f06de86a0a37e0b97eb07e7f"
+  },
+  "float32_math_parity": {
+    "max_policy_error": 5.698204040527344e-05,
+    "max_wdl_error": 4.827976226806641e-06
+  },
+  "half_precision_note": "FP16 operator rounding differs from ORT fused computation; raw errors and changed argmax count are reported"
+}

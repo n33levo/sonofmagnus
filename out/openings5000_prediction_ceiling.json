@@ -1,0 +1,39 @@
+{
+  "dataset": {
+    "model_bytes": 3104289,
+    "sha256": "72616bc3ff7df6c4480170f33f02a3f3c3de5f300f5c9cd919d769b95236b217"
+  },
+  "protocol": "Family-specific oracle majority per complete history prefix. This grants more information than the 8-position encoder; it is an upper bound, not a playable engine or a test score.",
+  "openings": {
+    "King's Indian Defense": {
+      "positions": 9218,
+      "unique_prefixes": 4415,
+      "conflicting_prefixes": 286,
+      "optimistic_deterministic_ceiling": 0.8930353655890648
+    },
+    "Sicilian Defense": {
+      "positions": 53976,
+      "unique_prefixes": 24487,
+      "conflicting_prefixes": 1530,
+      "optimistic_deterministic_ceiling": 0.8707388468949162
+    },
+    "French Defense": {
+      "positions": 14950,
+      "unique_prefixes": 7249,
+      "conflicting_prefixes": 389,
+      "optimistic_deterministic_ceiling": 0.9011371237458194
+    },
+    "Ruy Lopez": {
+      "positions": 23580,
+      "unique_prefixes": 10990,
+      "conflicting_prefixes": 542,
+      "optimistic_deterministic_ceiling": 0.9088210347752332
+    },
+    "Queen's Gambit": {
+      "positions": 27188,
+      "unique_prefixes": 15590,
+      "conflicting_prefixes": 683,
+      "optimistic_deterministic_ceiling": 0.8948800941591879
+    }
+  }
+}

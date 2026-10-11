@@ -1,0 +1,50 @@
+{
+  "source": {
+    "model_bytes": 7459101,
+    "sha256": "6257c4aa06550b252065dca120342c11be478d3610a6c176ff1987ac51bb860c"
+  },
+  "widened": {
+    "model_bytes": 11251302,
+    "sha256": "b4ab70cfe3fb45b74544baff23836ae5428811b765642d54e1426c6dbcc51368"
+  },
+  "positions": 100,
+  "pgn": {
+    "model_bytes": 268452,
+    "sha256": "83d16228c266592ba7ff6df4b8edfb9a132f7ef10dfee7b316b9f43a0c7e770e"
+  },
+  "seed": 0,
+  "precision": {
+    "float32": {
+      "same_legal_argmax": 100,
+      "max_policy_error": 0.00011467933654785156,
+      "max_wdl_error": 5.27501106262207e-06
+    },
+    "float16": {
+      "same_legal_argmax": 100,
+      "max_policy_error": 0.03759765625,
+      "max_wdl_error": 0.0001220703125
+    }
+  },
+  "warm": {
+    "runs": 200,
+    "warmup": 20,
+    "positions": 100,
+    "protocol": "full move selection, deterministic, PGN history retained",
+    "p50_ms": 9.560833568684757,
+    "p95_ms": 12.151541997445747,
+    "p99_ms": 12.357052802108225,
+    "neural_forward_calls": 220
+  },
+  "idle": {
+    "runs": 100,
+    "gap_ms": 250,
+    "p50_ms": 12.186187435872853,
+    "p95_ms": 13.386073225410655,
+    "p99_ms": 14.412296582013385
+  },
+  "runtime_source": {
+    "deploy/widen_mlx.py": "e539150864f0d7353cc53cbb7577b3ecb0ccef22663e09f10462e3bdd1037d3e",
+    "play/mlx.py": "1f09db96a473081f4a97ecbebacb32e3befcf037fbbf83367c1b1f526f7941f0",
+    "chessio/lc0.py": "ae0c0807bd204ced7b4534f8e18a1191a3aec6642724133389b9a24503dba09d"
+  }
+}

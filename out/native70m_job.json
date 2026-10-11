@@ -1,0 +1,30 @@
+{
+  "status": "41,765,559 rows indexed; 25,600 rows processed before temporary stop for compact GPU training",
+  "human_command": [
+    ".venv/bin/python",
+    "-m",
+    "train.train",
+    "--config",
+    "configs/main.yaml",
+    "--batch-size",
+    "512",
+    "--workers",
+    "4",
+    "--amp",
+    "fp16",
+    "--device",
+    "mps",
+    "--exclude-data",
+    "data/puzzles_holdout.jsonl,data/puzzles_final3000.jsonl,data/puzzles_depth3000.jsonl,data/stockfish_holdout.jsonl,data/eval_holdout.jsonl,data/endgame_holdout.jsonl",
+    "--checkpoint-every",
+    "500000",
+    "--data",
+    "data/human_2024-01_15m.jsonl,data/human_2024-02_15m.jsonl,data/human_2024-03_15m.jsonl,data/human_2024-04_15m.jsonl,data/human_2024-05_10m.jsonl",
+    "--tier-sampling",
+    "--epochs",
+    "2",
+    "--ckpt-dir",
+    "ckpts/main-human70m"
+  ],
+  "gpu_queue": "Wait for compact curriculum and 1M self-play; do not overlap GPU jobs"
+}

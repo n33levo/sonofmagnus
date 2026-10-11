@@ -1,0 +1,28 @@
+{
+  "positions": 2500000,
+  "source_records_scanned": 86337635,
+  "heldout_positions_excluded": 244,
+  "duplicates_excluded": 0,
+  "depth_min": 12,
+  "legal_moves_min": 2,
+  "source": "https://database.lichess.org/lichess_db_eval.jsonl.zst",
+  "source_headers": {
+    "Server": "nginx",
+    "Date": "Sun, 11 Oct 2026 02:42:43 GMT",
+    "Content-Type": "application/octet-stream",
+    "Content-Length": "22423777007",
+    "Last-Modified": "Fri, 02 Oct 2026 20:16:33 GMT",
+    "Connection": "close",
+    "ETag": "\"6ac01121-5388faeef\"",
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+    "X-Frame-Options": "DENY",
+    "Accept-Ranges": "bytes"
+  },
+  "license": "CC0",
+  "score_perspective": "White source scores converted to side-to-move",
+  "source_engine_version": "Not recorded by the public archive",
+  "artifact": {
+    "model_bytes": 798798634,
+    "sha256": "831dd3e9e197f2ee5fb61c4d5c322c30fcc8c0b9f37369cf0d7a06f56abfe390"
+  }
+}

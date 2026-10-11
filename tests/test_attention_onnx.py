@@ -5,9 +5,24 @@ import numpy as np
 import onnx
 from onnx import helper, numpy_helper, TensorProto
 
-from deploy.quantize_int8 import quantize_model
+from deploy.quantize_int8 import quantize_model, BoardCalibration
 from deploy.size_latency_check import check_model
 from play.runner import load_runner
+
+
+def test_calibration_samples_the_population_reproducibly_instead_of_the_prefix(tmp_path):
+    path = tmp_path / 'calibration.jsonl'
+    board = chess.Board()
+    rows = []
+    for clock in range(100):
+        board.halfmove_clock = clock
+        rows.append(json.dumps({'fen': board.fen()}))
+    path.write_text('\n'.join(rows) + '\n')
+    first, second = BoardCalibration(path, limit=10), BoardCalibration(path, limit=10)
+    assert len(first.boards) == 10
+    for a, b in zip(first.boards, second.boards):
+        np.testing.assert_array_equal(a, b)
+    assert max(float(board[0, 17].min()) for board in first.boards) > .5
 
 
 def test_classical_int8_runs_on_cpu_and_retains_legal_history(tmp_path):

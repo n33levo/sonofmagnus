@@ -1,0 +1,21 @@
+{
+  "runs": 200,
+  "warmup": 20,
+  "positions": 100,
+  "protocol": "full move selection, deterministic, PGN history retained",
+  "p50_ms": 4.122416430618614,
+  "p95_ms": 7.9577934520784765,
+  "p99_ms": 8.042417410761118,
+  "neural_forward_calls": 220,
+  "model": {
+    "model_bytes": 7459101,
+    "sha256": "6257c4aa06550b252065dca120342c11be478d3610a6c176ff1987ac51bb860c"
+  },
+  "idle_gap_ms": 250,
+  "idle_runs": 100,
+  "idle": {
+    "p50_ms": 10.257729038130492,
+    "p95_ms": 11.406257702037692,
+    "p99_ms": 13.165957748424265
+  }
+}

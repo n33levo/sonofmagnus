@@ -14,7 +14,7 @@ class OnnxRunner(ChessRunner):
         self.session = ort.InferenceSession(str(path), options, providers=['CPUExecutionProvider'])
         specification = self.session.get_inputs()[0]
         if specification.shape[1:] not in ([18, 8, 8], [112, 8, 8]):
-            raise ValueError('Expected an 18-plane native or 112-plane classical attention input')
+            raise ValueError('Expected an 18-plane native or 112-plane classical LC0 input')
         self.classical = specification.shape[1] == 112
         self.input_name = specification.name
         self.dtype = np.float16 if specification.type == 'tensor(float16)' else np.float32

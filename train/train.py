@@ -62,7 +62,7 @@ class ChessLoss(nn.Module):
 
 
 def train_epoch(model, dataloader, optimizer, loss_fn, device, use_amp=True,
-                amp_dtype='bf16', scheduler=None, scaler=None):
+                amp_dtype='bf16', scheduler=None, scaler=None, checkpoint=None, checkpoint_every=1_000_000):
     training = optimizer is not None
     model.train(training)
     device = torch.device(device)
@@ -73,6 +73,7 @@ def train_epoch(model, dataloader, optimizer, loss_fn, device, use_amp=True,
                                       enabled=amp and dtype == torch.float16)
     totals = np.zeros(4)
     correct, count = 0, 0
+    next_checkpoint = checkpoint_every
     for batch in dataloader:
         batch = {k: v.to(device, non_blocking=device.type == 'cuda') for k, v in batch.items()}
         if training:
@@ -100,6 +101,9 @@ def train_epoch(model, dataloader, optimizer, loss_fn, device, use_amp=True,
             scores = scores.masked_fill(batch['legal_mask'].flatten(1) == 0, -torch.inf)
         correct += (scores.argmax(1) == batch['policy_target'].flatten(1).argmax(1)).sum().item()
         count += n
+        if training and checkpoint and count >= next_checkpoint:
+            checkpoint(count)
+            next_checkpoint += checkpoint_every
         if training and count % (n * 50) == 0:
             print(json.dumps({'samples': count, 'loss': float(totals[0] / count), 'top1': correct / count}), flush=True)
     if not count:
@@ -126,6 +130,8 @@ def main():
     parser.add_argument('--val-data')
     parser.add_argument('--epochs', type=int, default=2)
     parser.add_argument('--batch-size', type=int)
+    parser.add_argument('--workers', type=int, default=0)
+    parser.add_argument('--checkpoint-every', type=int, default=1_000_000)
     parser.add_argument('--lr', type=float)
     parser.add_argument('--policy-weight', type=float, default=1.)
     parser.add_argument('--q-value-weight', type=float, default=0.)
@@ -137,8 +143,8 @@ def main():
     parser.add_argument('--max-samples', type=int)
     parser.add_argument('--seed', type=int, default=0)
     args = parser.parse_args()
-    if args.epochs <= 0:
-        parser.error('--epochs must be positive')
+    if args.epochs <= 0 or args.workers < 0 or args.checkpoint_every <= 0:
+        parser.error('Positive epochs/checkpoint interval and nonnegative workers required')
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
@@ -163,7 +169,9 @@ def main():
         dataset.weight = weight
     batch_size = args.batch_size or config.get('batch_size', 256)
     combined = ConcatDataset(datasets)
-    loader = DataLoader(combined, batch_size=batch_size, sampler=ShuffledPositions(len(combined)), pin_memory=device.type == 'cuda')
+    loader = DataLoader(combined, batch_size=batch_size, sampler=ShuffledPositions(len(combined)),
+                        pin_memory=device.type == 'cuda', num_workers=args.workers,
+                        persistent_workers=args.workers > 0, multiprocessing_context='spawn' if args.workers else None)
     val_loader = DataLoader(ChessPositionDataset(args.val_data, augment=False), batch_size=batch_size) if args.val_data else None
     if not len(loader):
         parser.error('Empty training dataset')
@@ -182,14 +190,18 @@ def main():
                      for path, dataset in zip(paths, datasets)},
         'initial_checkpoint': artifact_info(args.resume) if args.resume else None,
         'runtime_source': {path: artifact_info(path)['sha256'] for path in
-            ('train/train.py', 'train/dataset.py', 'model/resnet.py', 'model/heads.py', 'model/__init__.py')}}
+            ('train/train.py', 'train/dataset.py', 'chessio/records.py', 'chessio/encode.py', 'chessio/policy_map.py',
+             'chessio/mask.py', 'model/resnet.py', 'model/heads.py', 'model/__init__.py')}}
     (ckpt_dir / f'run_{start + 1}.json').write_text(json.dumps(provenance, indent=2) + '\n')
     print(f'{device}: {model.get_num_params():,} parameters, {len(loader.dataset):,} samples', flush=True)
     with (ckpt_dir / 'train.jsonl').open('a') as log:
         for epoch in range(start, start + args.epochs):
             begin = time.perf_counter()
+            def progress(samples):
+                save_checkpoint(ckpt_dir / 'progress.pt', model, config, epoch - 1, optimizer, scheduler,
+                                {'partial_epoch': epoch + 1, 'samples': samples})
             metrics = {'epoch': epoch + 1, 'train': train_epoch(model, loader, optimizer, loss_fn, device,
-                       args.amp != 'none', args.amp, scheduler, scaler)}
+                       args.amp != 'none', args.amp, scheduler, scaler, progress, args.checkpoint_every)}
             if val_loader:
                 metrics['validation'] = train_epoch(model, val_loader, None, loss_fn, device, False)
             metrics['seconds'] = time.perf_counter() - begin

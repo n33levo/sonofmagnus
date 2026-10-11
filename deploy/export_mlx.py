@@ -59,7 +59,7 @@ def export_graph(path, directory, bits=16, source_weights=None, rank=None, calib
             raise ValueError('Only classical LC0 input is supported')
     model = onnx.load(path)
     if model.graph.input[0].type.tensor_type.shape.dim[1].dim_value != 112:
-        raise ValueError('This exporter supports classical LC0 attention networks')
+        raise ValueError('This exporter supports classical LC0 networks')
     outputs = [n.name for n in model.graph.output if n.name.endswith(('/policy', '/wdl'))]
     if len(outputs) != 2:
         raise ValueError('Expected policy and WDL outputs')
@@ -70,7 +70,8 @@ def export_graph(path, directory, bits=16, source_weights=None, rank=None, calib
             needed.update(node.input)
     nodes.reverse()
     supported = {'MatMul', 'Add', 'Mul', 'Reshape', 'Transpose', 'Shape', 'Slice', 'Concat',
-                 'Expand', 'Sigmoid', 'Softplus', 'Tanh', 'Relu', 'LayerNormalization', 'Softmax', 'Gather', 'Split'}
+                 'Expand', 'Sigmoid', 'Softplus', 'Tanh', 'Relu', 'LayerNormalization', 'Softmax', 'Gather', 'Split',
+                 'Conv', 'ReduceMean'}
     if missing := {node.op_type for node in nodes} - supported:
         raise ValueError(f'Unsupported MLX operations: {missing}')
     values = {w.name: numpy_helper.to_array(w) for w in model.graph.initializer if w.name in needed}

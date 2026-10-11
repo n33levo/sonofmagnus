@@ -6,6 +6,7 @@ from pathlib import Path
 import chess
 
 from play.runner import load_runner
+from model.artifacts import artifact_info
 
 
 def evaluate_endgames(runner, labels_path):
@@ -41,7 +42,12 @@ def main():
     parser.add_argument('--device', default='auto')
     parser.add_argument('--out')
     args = parser.parse_args()
+    model, dataset = artifact_info(args.ckpt), artifact_info(args.labels)
     results = evaluate_endgames(load_runner(args.ckpt, device=args.device), args.labels)
+    if model != artifact_info(args.ckpt) or dataset != artifact_info(args.labels):
+        raise ValueError('Endgame artifacts changed during evaluation')
+    results.update(model=model, dataset=dataset, runtime_source={path: artifact_info(path)['sha256'] for path in
+        ('eval/endgames.py', 'play/runner.py', 'play/mlx.py', 'chessio/lc0.py')})
     print(json.dumps(results, indent=2))
     if args.out:
         Path(args.out).write_text(json.dumps(results, indent=2) + '\n')

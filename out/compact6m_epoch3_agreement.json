@@ -1,0 +1,22 @@
+{
+  "top1_agreement": 0.416,
+  "top3_agreement": 0.709,
+  "top5_agreement": 0.828,
+  "total": 2000,
+  "mean_kl_divergence": 1.902112997034246,
+  "model": {
+    "model_bytes": 12086347,
+    "sha256": "858daacb1348506d782fd0e9161cd4b36f373376c08cef89a26a96f2971a1447"
+  },
+  "dataset": {
+    "model_bytes": 640134,
+    "sha256": "0af73b599e4ad501024ee0d5db55305169f020027c4ee9a0be60bd3b9b977962"
+  },
+  "runtime_source": {
+    "eval/agree.py": "ddd9fb38b61962f7216fd9c09d3a6154fa2fca22998a90de331b7befd6a235f5",
+    "play/runner.py": "ef8525978d52b9d53df7fbd7f07844eb41333246ef86e47b2a23d76e0f828d16",
+    "play/mlx.py": "1f09db96a473081f4a97ecbebacb32e3befcf037fbbf83367c1b1f526f7941f0",
+    "chessio/records.py": "71012e224301603d7f32e73ff06d0317846c72b8c2103ee76cd7291d7755cb9e",
+    "chessio/lc0.py": "ae0c0807bd204ced7b4534f8e18a1191a3aec6642724133389b9a24503dba09d"
+  }
+}

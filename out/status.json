@@ -53,16 +53,14 @@
     "playing_strength": "not established"
   },
   "remaining": [
-    "One compact model has not met both the strength and size targets.",
-    "No FIDE or Lichess rating has been established; Stockfish UCI_Elo settings are not either rating pool.",
+    "One compact model has not met the strength and size targets together.",
     "The native ResNet has not met the advertised agreement, puzzle or Elo targets.",
-    "The 70M human, 2.5M all-legal-move engine labels and 1M self-play training datasets have not been reproduced.",
-    "The claimed ablation Elo gains and A100 training-time/AMP speedup figures have not been verified.",
-    "The 5,000-master-game opening benchmark has not been reproduced.",
-    "The under-20 ms GPU target was not met in the clocked match: move-selection p95 was 36.27 ms, versus 17.72 ms in back-to-back sampling.",
-    "The historical first-application claim conflicts with ChessBench, which explicitly studied action-value prediction.",
-    "The 185M policy still exceeds the 20 ms GPU limit during real games; its isolated benchmark is faster.",
-    "The new 6.67M attention policy fits the byte budget but does not meet puzzle or agreement targets."
+    "The 70M human and 2.5M full-action corpora are collected; their full training runs and the 1M self-play corpus remain incomplete.",
+    "The five master-opening agreement targets were missed in the complete 5000-game benchmark.",
+    "The ablation Elo gains, A100 training time and 3\u20134x AMP speedup remain unverified.",
+    "The 185M policy exceeds the 20ms GPU target during real games.",
+    "No official FIDE or Lichess rating is established; the verified Elo is conditional on the local engine pool.",
+    "The historical and mathematical conflicts are listed in targets.json; implementation cannot change those facts."
   ],
   "references": {
     "ChessBench": "https://arxiv.org/abs/2402.04494",
@@ -70,15 +68,15 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 76,
+    "local_tests": 86,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
-      "passed": 69,
+      "passed": 71,
       "skipped_optional": 7,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38108257147",
-      "source_commit": "417e6ad"
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38110639766",
+      "source_commit": "484d287"
     },
     "clocked_match": {
       "games": 100,
@@ -175,6 +173,11 @@
         0.5
       ],
       "full_line_holdout_exclusion": true
+    },
+    "adaptive_amp": {
+      "overflow_regression": true,
+      "parameters_unchanged_during_retry": true,
+      "scale_1024_to_512_verified": true
     }
   },
   "metal_runtime": {
@@ -263,7 +266,7 @@
     "floating_stored_scalars": 5955410,
     "positions": 341010,
     "training_device": "Apple M4 Metal (MLX)",
-    "training_status": "Epoch 2 saved and tested; epoch 3 in progress, temporarily paused for 5000-game opening benchmark",
+    "training_status": "All three transformer epochs complete and tested; still below the strength targets",
     "source_identity": {
       "sources": {
         "data/compact_236k_train.jsonl": {
@@ -321,6 +324,14 @@
       "top1": 0.3985,
       "puzzles_complete": 294,
       "strength_status": "Below targets"
+    },
+    "epoch3": {
+      "agreement": "compact6m_epoch3_agreement.json",
+      "puzzles": "compact6m_epoch3_puzzles.json",
+      "endgames": "compact6m_epoch3_endgames.json",
+      "top1": 0.416,
+      "puzzles_complete": 318,
+      "strength_status": "Below targets"
     }
   },
   "portable_attention": {
@@ -343,7 +354,7 @@
     "strength": "Previous weak checkpoint; deployment path verified only"
   },
   "human_corpus": {
-    "status": "January to April complete; May extracting; no 70M training result yet",
+    "status": "70M collected; training not complete",
     "sources": "2024-01 to 2024-05",
     "target_positions": 70000000,
     "min_both_ratings": 2000,
@@ -353,22 +364,51 @@
       "rapid"
     ],
     "heldout_positions_excluded": true,
-    "completed_positions": 60000000,
+    "completed_positions": 70000000,
     "completed_months": [
       "2024-01",
       "2024-02",
       "2024-03",
-      "2024-04"
-    ]
+      "2024-04",
+      "2024-05"
+    ],
+    "evidence": "human_corpus_70m.json",
+    "holdout_filter": "Earlier tests excluded during collection; later depth-conditioned test must be excluded during training",
+    "retained_training_rows": 41765559,
+    "training_status": "Native two-epoch run began; temporarily stopped while compact training and evaluation use the GPU"
   },
   "engine_corpus": {
-    "status": "Extracting",
+    "status": "2.5M collected and every row independently validated; training not complete",
     "target_positions": 2500000,
     "minimum_depth": 12,
     "minimum_legal_moves": 2,
     "all_legal_moves_scored": true,
     "distinct_positions": true,
     "heldout_positions_excluded": true,
-    "source": "https://database.lichess.org/lichess_db_eval.jsonl.zst"
+    "source": "https://database.lichess.org/lichess_db_eval.jsonl.zst",
+    "completed_positions": 2500000,
+    "evidence": "full_q_2500k_validation.json",
+    "new_depth_test_overlap": 173,
+    "holdout_filter": "The 173 later-test overlaps must be excluded during training"
+  },
+  "master_openings": {
+    "evidence": "bt4_openings5000.json",
+    "games": 5000,
+    "positions": 150000,
+    "status": "All five targets missed",
+    "input_conflicts": "openings5000_prediction_ceiling.json"
+  },
+  "compact_cnn": {
+    "initialization": "cnn6m_widening_probe.json",
+    "stored_scalars": 5609075,
+    "fp16_bytes": 11251302,
+    "initial_gpu_idle_p95_ms": 13.386073225410655,
+    "source_policy_top1": 0.517,
+    "cpu_int8_bytes": 5771673,
+    "cpu_int8_top1": 0.5045,
+    "status": "Three-epoch history-dropout distillation running; no compact Elo established",
+    "learning_rate": 5e-05,
+    "optimizer_bias_correction": true,
+    "overflow_handling": "Retry unchanged batch at lower scale before optimizer update; forward failures abort"
   }
 }

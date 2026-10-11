@@ -1,5 +1,6 @@
 import argparse
 import json
+import random
 import tempfile
 from pathlib import Path
 
@@ -16,13 +17,22 @@ from chessio.records import record_board
 
 class BoardCalibration(CalibrationDataReader):
     def __init__(self, path, limit=1000, classical=False):
-        self.boards = []
+        if limit <= 0:
+            raise ValueError('Calibration size must be positive')
+        lines, seen, rng = [], 0, random.Random(0)
         with open(path) as stream:
             for line in stream:
-                if len(self.boards) >= limit:
-                    break
-                encoder = encode_history if classical else encode_board
-                self.boards.append(encoder(record_board(json.loads(line)))[None])
+                if not line.strip():
+                    continue
+                seen += 1
+                index = len(lines) if len(lines) < limit else rng.randrange(seen)
+                if index < limit:
+                    if index == len(lines):
+                        lines.append(line)
+                    else:
+                        lines[index] = line
+        encoder = encode_history if classical else encode_board
+        self.boards = [encoder(record_board(json.loads(line)))[None] for line in lines]
         if not self.boards:
             raise ValueError('Empty calibration set')
         self.rewind()
@@ -48,7 +58,7 @@ def quantize_model(input_path, output_path, weight_type='int8', calibration_data
     with tempfile.TemporaryDirectory() as directory:
         prepared = str(Path(directory) / 'prepared.onnx')
         quant_pre_process(input_path, prepared)
-        if classical:
+        if classical and not any(node.op_type == 'Conv' for node in model.graph.node):
             # Recompute activation ranges per position: history includes the unbounded rule-50 clock.
             quantize_dynamic(prepared, str(output), weight_type=QuantType.QInt8 if weight_type == 'int8' else QuantType.QUInt8,
                              per_channel=True, op_types_to_quantize=['MatMul'])

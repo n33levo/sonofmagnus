@@ -46,6 +46,20 @@ class Graph:
                     y = mx.matmul(a, args[1])
             elif op == 'Add': y = a + args[1]
             elif op == 'Mul': y = a * args[1]
+            elif op == 'Conv':
+                pads = attrs.get('pads', [0, 0, 0, 0])
+                if pads[:2] != pads[2:]:
+                    raise ValueError('MLX convolution requires symmetric padding')
+                y = mx.conv2d(a.transpose(0, 2, 3, 1), args[1].transpose(0, 2, 3, 1),
+                              stride=tuple(attrs.get('strides', [1, 1])), padding=tuple(pads[:2]),
+                              dilation=tuple(attrs.get('dilations', [1, 1])), groups=attrs.get('group', 1))
+                if len(args) > 2:
+                    y = y + args[2]
+                y = y.transpose(0, 3, 1, 2)
+            elif op == 'ReduceMean':
+                axes = args[1] if len(args) > 1 else attrs.get('axes')
+                y = mx.mean(a, axis=tuple(int(axis) for axis in axes) if axes is not None else None,
+                            keepdims=bool(attrs.get('keepdims', 1)))
             elif op == 'Reshape': y = a.reshape(tuple(int(n) if n else a.shape[i] for i, n in enumerate(args[1])))
             elif op == 'Transpose': y = a.transpose(attrs.get('perm'))
             elif op == 'Shape': y = np.asarray(a.shape, dtype=np.int32)
@@ -72,7 +86,9 @@ class Graph:
                                                         scale=attrs['scale'], mask=args[3])
             elif op == 'Softmax': y = mx.softmax(a, axis=attrs.get('axis', -1), precise=True)
             elif op == 'Gather': y = mx.take(a, mx.array(args[1], dtype=mx.int32), axis=attrs.get('axis', 0))
-            elif op == 'Split': y = mx.split(a, np.cumsum(args[1])[:-1].tolist(), axis=attrs.get('axis', 0))
+            elif op == 'Split':
+                sizes = args[1] if len(args) > 1 else attrs.get('split')
+                y = mx.split(a, np.cumsum(sizes)[:-1].tolist() if sizes is not None else len(outputs), axis=attrs.get('axis', 0))
             else: raise ValueError(f'Unsupported MLX operation: {op}')
             data.update(zip(outputs, y if op == 'Split' else [y]))
         result = (data[self.outputs[0]], data[self.value_logits if raw_value else self.outputs[1]])

@@ -5,6 +5,7 @@ from pathlib import Path
 
 from play.runner import load_runner
 from chessio.records import record_board
+from model.artifacts import artifact_info
 
 
 def evaluate_agreement(model_path, labels_path, config='main', device='auto', max_samples=None, top_k=(1, 3, 5)):
@@ -45,8 +46,13 @@ def main():
     parser.add_argument('--top-k', default='1,3,5')
     parser.add_argument('--out')
     args = parser.parse_args()
+    model, dataset = artifact_info(args.ckpt), artifact_info(args.labels)
     results = evaluate_agreement(args.ckpt, args.labels, args.config, args.device, args.max,
                                  tuple(int(k) for k in args.top_k.split(',')))
+    if model != artifact_info(args.ckpt) or dataset != artifact_info(args.labels):
+        raise ValueError('Agreement artifacts changed during evaluation')
+    results.update(model=model, dataset=dataset, runtime_source={path: artifact_info(path)['sha256'] for path in
+        ('eval/agree.py', 'play/runner.py', 'play/mlx.py', 'chessio/records.py', 'chessio/lc0.py')})
     print(json.dumps(results, indent=2))
     if args.out:
         Path(args.out).write_text(json.dumps(results, indent=2) + '\n')

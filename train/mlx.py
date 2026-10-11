@@ -35,6 +35,13 @@ def batch_rows(rows):
     return mx.array(inputs), mx.array(mask), mx.array(target)
 
 
+def drop_history(inputs, rows, selected):
+    result = np.array(inputs)
+    for index in np.flatnonzero(selected):
+        result[index] = encode_history(chess.Board(rows[index]['fen']))
+    return mx.array(result)
+
+
 def losses(graph, weights, inputs, mask, target, teacher_policy, teacher_wdl, value_weight=.25, teacher_weight=.75, sample_weight=None, amp=False):
     if amp:
         weights = {name: value.astype(mx.float16) for name, value in weights.items()}
@@ -82,6 +89,23 @@ def cache_teacher(teacher, dataset, path, batch_size, identity):
     return np.load(path, mmap_mode='r')
 
 
+def finite_gradients(gradient, parameters, arguments, scale, amp):
+    retries = 0
+    while True:
+        values, grads = gradient(parameters, *arguments, mx.array(scale, dtype=mx.float32))
+        values = (values[0] / scale, *values[1:])
+        grads = {name: value / scale for name, value in grads.items()}
+        norm = mx.sqrt(sum(mx.sum(mx.square(value)) for value in grads.values()))
+        mx.eval(values, norm)
+        if not all(np.isfinite(float(value)) for value in values):
+            raise FloatingPointError('Non-finite MLX forward loss')
+        if np.isfinite(float(norm)):
+            return values, grads, norm, scale, retries
+        if not amp or scale <= 1:
+            raise FloatingPointError('Non-finite MLX gradient at minimum loss scale')
+        scale, retries = max(1, scale / 2), retries + 1
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--student', required=True)
@@ -97,10 +121,13 @@ def main():
     parser.add_argument('--teacher-cache', help='Memory-mapped teacher outputs, shared across epochs')
     parser.add_argument('--teacher-temperature', type=float, default=.25)
     parser.add_argument('--teacher-weight', type=float, default=.75, help='Policy distillation fraction; use a lower weight for verified tactical labels')
+    parser.add_argument('--history-dropout', type=float, default=0., help='Train the student on FEN-only inputs for this fraction; teacher retains history')
     parser.add_argument('--mode', choices=['distill', 'policy'], default='distill', help='Distill the whole network or fit only policy heads to engine labels')
     args = parser.parse_args()
     if not 0 <= args.teacher_weight <= 1:
         parser.error('Teacher weight must be in [0, 1]')
+    if not 0 <= args.history_dropout <= 1:
+        parser.error('History dropout must be in [0, 1]')
     if args.epochs <= 0 or args.batch_size <= 0 or not np.isfinite(args.lr) or args.lr <= 0 or not np.isfinite(args.teacher_temperature) or args.teacher_temperature <= 0:
         parser.error('Positive epochs, batch size and learning rate required')
     graph = Graph(args.student)
@@ -138,6 +165,9 @@ def main():
                     training_device=str(mx.default_device()), teacher_temperature=args.teacher_temperature, mode=args.mode,
                     master_dtype='float32', compute_dtype='float16' if args.amp == 'fp16' else 'float32',
                     loss_scale=1024 if args.amp == 'fp16' else 1)
+    metadata['history_dropout'] = args.history_dropout
+    metadata['loss_scale_policy'] = 'Halve and retry the unchanged batch on FP16 gradient overflow, before any optimizer update'
+    metadata['optimizer_bias_correction'] = True
     metadata['runtime_source'] = {path: artifact_info(path)['sha256'] for path in
         ('train/mlx.py', 'play/mlx.py', 'chessio/lc0.py', 'chessio/records.py', 'train/dataset.py')}
     if args.mode == 'policy':
@@ -145,18 +175,18 @@ def main():
     (out / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
     cached = cache_teacher(teacher, dataset, args.teacher_cache, args.batch_size,
                           {'teacher': metadata['teacher_source'], 'data': metadata['training_data'], 'samples': len(dataset)}) if args.teacher_cache and teacher else None
-    optimizer = optim.AdamW(args.lr, weight_decay=1e-4)
+    optimizer = optim.AdamW(args.lr, weight_decay=1e-4, bias_correction=True)
     scale = metadata['loss_scale']
-    def objective(p, x, mask, target, teacher_policy, teacher_wdl, quality):
+    def objective(p, x, mask, target, teacher_policy, teacher_wdl, quality, loss_scale):
         values = losses(graph, {**frozen, **p}, x, mask, target, teacher_policy, teacher_wdl,
                         value_weight=.25 if teacher else 0., teacher_weight=args.teacher_weight,
                         sample_weight=quality, amp=args.amp == 'fp16')
-        return (values[0] * scale, *values[1:])
+        return (values[0] * loss_scale, *values[1:])
     gradient = mx.compile(mx.value_and_grad(objective))
     rng = np.random.default_rng(args.seed)
     with (out / 'train.jsonl').open('w') as log:
         for epoch in range(args.epochs):
-            start, total, count = time.perf_counter(), np.zeros(4), 0
+            start, total, count, overflow_retries = time.perf_counter(), np.zeros(4), 0, 0
             indices = rng.permutation(len(dataset))
             for offset in range(0, len(indices), args.batch_size):
                 rows = [dataset.read_row(int(i)) for i in indices[offset:offset + args.batch_size]]
@@ -173,21 +203,23 @@ def main():
                     values = mx.array(np.asarray(cached[indices[offset:offset + args.batch_size]]))
                     teacher_logits, teacher_wdl = values[:, :1858], values[:, 1858:]
                 teacher_policy = mx.softmax(mx.where(mask, teacher_logits.astype(mx.float32) / args.teacher_temperature, -1e9), axis=-1) if teacher else target
-                values, grads = gradient(parameters, inputs, mask, target, teacher_policy, teacher_wdl.astype(mx.float32), mx.array(quality))
-                values = (values[0] / scale, *values[1:])
-                grads = {name: value / scale for name, value in grads.items()}
-                norm = mx.sqrt(sum(mx.sum(mx.square(g)) for g in grads.values()))
+                if args.history_dropout:
+                    inputs = drop_history(inputs, rows, rng.random(len(rows)) < args.history_dropout)
+                values, grads, norm, scale, retries = finite_gradients(gradient, parameters,
+                    (inputs, mask, target, teacher_policy, teacher_wdl.astype(mx.float32), mx.array(quality)), scale, args.amp == 'fp16')
+                overflow_retries += retries
+                if retries:
+                    print(json.dumps({'epoch': epoch + 1, 'batch_offset': offset, 'overflow_retries': retries, 'loss_scale': scale}), flush=True)
                 grads = {name: value / mx.maximum(1., norm) for name, value in grads.items()}
                 parameters = optimizer.apply_gradients(grads, parameters)
                 mx.eval(parameters, optimizer.state, values, norm)
-                if not np.isfinite(float(norm)) or not all(np.isfinite(float(value)) for value in values):
-                    raise FloatingPointError('Non-finite MLX training loss')
                 total += np.array([float(value) for value in values]) * len(rows)
                 count += len(rows)
                 if offset % (args.batch_size * 50) == 0:
-                    print(json.dumps({'epoch': epoch + 1, 'samples': count, 'loss': float(values[0]), 'gradient_norm': float(norm)}), flush=True)
+                    print(json.dumps({'epoch': epoch + 1, 'samples': count, 'loss': float(values[0]), 'gradient_norm': float(norm), 'loss_scale': scale}), flush=True)
             metrics = dict(zip(('loss', 'policy_loss', 'distill_loss', 'value_loss'), (total / count).tolist()))
-            metrics.update(epoch=epoch + 1, samples=count, seconds=time.perf_counter() - start)
+            metrics.update(epoch=epoch + 1, samples=count, seconds=time.perf_counter() - start,
+                           loss_scale_final=scale, overflow_retries=overflow_retries)
             log.write(json.dumps(metrics) + '\n')
             log.flush()
             output_weights = {**{name: mx.array(value) for name, value in graph.constants.items()},

@@ -55,6 +55,29 @@ def test_mirror_preserves_relative_outcome(tmp_path):
     np.testing.assert_array_equal(swap_colors(encode_board(chess.Board())), encode_board(mirrored))
 
 
+def test_native_encoder_preserves_piece_layout_and_distinguishes_en_passant():
+    board = chess.Board('7k/8/8/3pP3/8/8/8/K7 w - d6 0 1')
+    board.halfmove_clock = 12
+    encoded = encode_board(board)
+    without_ep = board.copy()
+    without_ep.ep_square = None
+    baseline = encode_board(without_ep)
+    np.testing.assert_array_equal(encoded[:17], baseline[:17])
+    assert encoded[17].min() == pytest.approx(.12)
+    assert encoded[17, 5, 3] == pytest.approx(1.12)
+    assert np.count_nonzero(encoded[17] != baseline[17]) == 1
+    np.testing.assert_array_equal(swap_colors(encoded), encode_board(board.mirror()))
+    rng = random.Random(0)
+    for _ in range(100):
+        if board.is_game_over():
+            board.reset()
+        planes = encode_board(board)
+        for color_index, color in enumerate((board.turn, not board.turn)):
+            for piece_index, piece in enumerate((chess.KING, chess.QUEEN, chess.ROOK, chess.BISHOP, chess.KNIGHT, chess.PAWN)):
+                assert set(np.flatnonzero(planes[6 * color_index + piece_index])) == set(board.pieces(piece, color))
+        board.push(rng.choice(list(board.legal_moves)))
+
+
 def test_mixed_q_batches_and_missing_value(tmp_path):
     rows = [{'fen': chess.STARTING_FEN, 'move': 'e2e4', 'value': .3, 'q_values': {'e2e4': .9}},
             {'fen': chess.STARTING_FEN, 'move': 'd2d4'}]
@@ -64,6 +87,31 @@ def test_mixed_q_batches_and_missing_value(tmp_path):
     assert batch['q_value_target'][1].max() == -999
     assert batch['value_mask'].tolist() == [True, False]
     assert batch['legal_mask'].sum(1).sum(1).sum(1).tolist() == [20, 20]
+
+
+def test_large_training_saves_loadable_progress_before_the_epoch_finishes(tmp_path):
+    from model import create_model
+    from train.train import save_checkpoint
+    config = {'hidden_channels': 16, 'num_blocks': 1}
+    model = create_model(config)
+    rows = [{'fen': chess.STARTING_FEN, 'move': 'e2e4'}] * 10
+    data = ChessPositionDataset(write_rows(tmp_path / 'rows.jsonl', rows), augment=False)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=.001)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, 5)
+    saved = []
+    def progress(samples):
+        saved.append(samples)
+        save_checkpoint(tmp_path / 'progress.pt', model, config, -1, optimizer, scheduler,
+                        {'partial_epoch': 1, 'samples': samples})
+    train_epoch(model, DataLoader(data, batch_size=2), optimizer, ChessLoss(), 'cpu', False,
+                scheduler=scheduler, checkpoint=progress, checkpoint_every=3)
+    assert saved == [4, 6, 10]
+    checkpoint = torch.load(tmp_path / 'progress.pt', weights_only=True)
+    assert checkpoint['epoch'] == -1 and checkpoint['metrics']['partial_epoch'] == 1
+    assert checkpoint['metrics']['samples'] == 10
+    restored = load_model(tmp_path / 'progress.pt')
+    for name, value in model.state_dict().items():
+        assert torch.equal(value, restored.state_dict()[name])
 
 
 def test_extreme_logits_cannot_select_illegal_moves():
@@ -423,8 +471,10 @@ def test_selfplay_batches_positions_without_lookahead(tmp_path):
     model = CountingModel()
     runner = ChessRunner(model, device='cpu')
     output = tmp_path / 'selfplay.jsonl'
+    checkpoint = tmp_path / 'weights.pt'
+    checkpoint.write_bytes(b'test')
     with patch('train.selfplay.load_runner', return_value=runner):
-        run_selfplay('unused', output, num_games=4, max_moves=3, batch_size=4)
+        run_selfplay(checkpoint, output, num_games=4, max_moves=3, batch_size=4)
     rows = [json.loads(line) for line in output.read_text().splitlines()]
     assert len(rows) == 12
     assert model.calls == 3
@@ -434,6 +484,30 @@ def test_selfplay_batches_positions_without_lookahead(tmp_path):
         assert chess.Move.from_uci(row['move']) in board.legal_moves
         assert len(board.move_stack) == len(row['history'])
     assert len({row['game_id'] for row in rows}) == 4
+
+
+def test_selfplay_position_budget_has_no_extra_neural_inputs_or_fake_outcomes(tmp_path):
+    from train.selfplay import run_selfplay
+    checkpoint = tmp_path / 'weights.pt'
+    checkpoint.write_bytes(b'test')
+    runner = ChessRunner(CountingModel(), device='cpu')
+    output = tmp_path / 'selfplay.jsonl'
+    with patch('train.selfplay.load_runner', return_value=runner):
+        run_selfplay(checkpoint, output, num_games=4, max_moves=3, batch_size=4, positions=5)
+    rows = [json.loads(line) for line in output.read_text().splitlines()]
+    assert len(rows) == 5 and all('value' not in row for row in rows)
+    metadata = json.loads(output.with_suffix('.json').read_text())
+    assert metadata['neural_input_positions'] == 5 and metadata['neural_forward_calls'] == 2
+    assert metadata['unfinished_games'] == 4 and not output.with_suffix('.jsonl.part').exists()
+    incomplete = tmp_path / 'incomplete.jsonl'
+    with patch('train.selfplay.load_runner', return_value=runner), pytest.raises(ValueError, match='Incomplete'):
+        run_selfplay(checkpoint, incomplete, num_games=1, max_moves=1, positions=2)
+    assert not incomplete.exists()
+    class Missing:
+        def batch_policy(self, boards):
+            return []
+    with patch('train.selfplay.load_runner', return_value=Missing()), pytest.raises(ValueError, match='Missing'):
+        run_selfplay(checkpoint, tmp_path / 'missing.jsonl', num_games=1)
 
 
 def test_training_records_keep_repetition_history():

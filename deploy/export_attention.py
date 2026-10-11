@@ -18,8 +18,17 @@ def export(directory, output):
     loaded = mx.load(str(directory / 'weights.safetensors'))
     initializers = [numpy_helper.from_array(np.array(value).astype(np.int64 if name in graph['integer_constants'] else np.float32), name)
                     for name, value in loaded.items()]
-    nodes = [helper.make_node(op, ['board' if name == graph['inputs'][0] else name for name in inputs], outputs, name=outputs[0], **attrs)
-             for op, inputs, outputs, attrs in graph['nodes']]
+    nodes = []
+    for op, inputs, outputs, attributes in graph['nodes']:
+        inputs, attrs = ['board' if name == graph['inputs'][0] else name for name in inputs], dict(attributes)
+        key = 'axes' if op == 'ReduceMean' else 'split' if op == 'Split' else None
+        if key in attrs:
+            name = outputs[0] + '/' + key
+            initializers.append(numpy_helper.from_array(np.asarray(attrs.pop(key), dtype=np.int64), name))
+            inputs.append(name)
+        if op == 'Split' and len(inputs) == 1:
+            attrs['num_outputs'] = len(outputs)
+        nodes.append(helper.make_node(op, inputs, outputs, name=outputs[0], **attrs))
     nodes += [helper.make_node('Identity', [name], [alias]) for name, alias in zip(graph['outputs'], ('policy', 'value'))]
     model = helper.make_model(helper.make_graph(nodes, 'sonofmagnus',
         [helper.make_tensor_value_info('board', TensorProto.FLOAT, ['batch', 112, 8, 8])],

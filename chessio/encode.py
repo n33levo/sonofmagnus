@@ -13,27 +13,8 @@ def encode_board(board: chess.Board, history_frames: int = 0) -> np.ndarray:
     # Determine who is to move
     is_white_turn = board.turn == chess.WHITE
 
-    # Encode pieces
-    for square in chess.SQUARES:
-        piece = board.piece_at(square)
-        if piece is None:
-            continue
-
-        rank = chess.square_rank(square)
-        file = chess.square_file(square)
-
-        # Determine piece channel offset
-        piece_idx = piece_types.index(piece.piece_type)
-
-        # Own pieces vs opponent pieces
-        if piece.color == board.turn:
-            # Own pieces: channels 0-5
-            channel = piece_idx
-        else:
-            # Opponent pieces: channels 6-11
-            channel = piece_idx + 6
-
-        tensor[channel, rank, file] = 1.0
+    masks = [board.pieces_mask(piece, color) for color in (board.turn, not board.turn) for piece in piece_types]
+    tensor[:12] = ((np.asarray(masks, dtype=np.uint64)[:, None] >> np.arange(64, dtype=np.uint64)) & 1).reshape(12, 8, 8)
 
     # Channel 12: Side to move
     tensor[12, :, :] = 1.0 if is_white_turn else 0.0
@@ -46,6 +27,9 @@ def encode_board(board: chess.Board, history_frames: int = 0) -> np.ndarray:
 
     # Channel 17: Halfmove clock (normalized)
     tensor[17, :, :] = min(board.halfmove_clock / 100.0, 1.0)
+    # One spatial marker carries en passant without adding a channel; the clock is the plane's minimum.
+    if board.has_legal_en_passant():
+        tensor[17, board.ep_square // 8, board.ep_square % 8] += 1.
 
     return tensor
 

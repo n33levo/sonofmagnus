@@ -73,10 +73,10 @@
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
-      "passed": 78,
+      "passed": 81,
       "skipped_optional": 16,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38122163407",
-      "source_commit": "424780b"
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38124051754",
+      "source_commit": "223256e"
     },
     "clocked_match": {
       "games": 100,

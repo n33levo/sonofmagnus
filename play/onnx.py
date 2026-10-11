@@ -1,4 +1,5 @@
 import numpy as np
+import onnx
 import onnxruntime as ort
 
 from chessio.encode import encode_board_batch
@@ -7,10 +8,18 @@ from chessio.policy_map import move_to_policy_index
 from play.runner import ChessRunner
 
 
+def session_options(path):
+    options = ort.SessionOptions()
+    options.intra_op_num_threads = 4
+    metadata = {entry.key: entry.value for entry in onnx.load(path, load_external_data=False).metadata_props}
+    if metadata.get('sonofmagnus.float_activations') == '1':
+        options.add_session_config_entry('session.disable_quant_qdq', '1')
+    return options
+
+
 class OnnxRunner(ChessRunner):
     def __init__(self, path):
-        options = ort.SessionOptions()
-        options.intra_op_num_threads = 4
+        options = session_options(path)
         self.session = ort.InferenceSession(str(path), options, providers=['CPUExecutionProvider'])
         specification = self.session.get_inputs()[0]
         if specification.shape[1:] not in ([18, 8, 8], [112, 8, 8]):

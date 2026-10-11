@@ -1,0 +1,74 @@
+{
+  "source": {
+    "model_bytes": 900388424,
+    "sha256": "6c7da5a326e0f9c4aee7520a19a4803bdeae4082d276216f0d347c8cb2b4104b"
+  },
+  "artifact": {
+    "model_bytes": 150568894,
+    "sha256": "809005cc33dde87c3e91e40ba967db9794661af106305df3b62437d89db9f7e5"
+  },
+  "input_positions": 1000000,
+  "eligible_distinct_positions": 907357,
+  "selected_positions": 150000,
+  "fraction": 0.15,
+  "seed": 20261011,
+  "criterion": "Phase and legal-branching proportional policy uncertainty; forced moves excluded; seeded tie-breaking",
+  "phase_piece_thresholds": [
+    24,
+    16,
+    8
+  ],
+  "legal_move_thresholds": [
+    8,
+    20
+  ],
+  "eligible_by_stratum": {
+    "2": 214962,
+    "1": 429,
+    "0": 3474,
+    "5": 173578,
+    "3": 10848,
+    "8": 134566,
+    "7": 94228,
+    "4": 7141,
+    "6": 41614,
+    "9": 56992,
+    "10": 108358,
+    "11": 61167
+  },
+  "selected_by_stratum": {
+    "2": 35537,
+    "1": 71,
+    "0": 574,
+    "5": 28695,
+    "3": 1793,
+    "8": 22246,
+    "7": 15577,
+    "4": 1181,
+    "6": 6879,
+    "9": 9422,
+    "10": 17913,
+    "11": 10112
+  },
+  "eligible_by_phase": {
+    "0": 218865,
+    "1": 191567,
+    "2": 270408,
+    "3": 226517
+  },
+  "selected_by_phase": {
+    "0": 36182,
+    "1": 31669,
+    "2": 44702,
+    "3": 37447
+  },
+  "excluded_inputs": [
+    "data/puzzles_holdout.jsonl",
+    "data/puzzles_final3000.jsonl",
+    "data/puzzles_depth3000.jsonl",
+    "data/stockfish_holdout.jsonl",
+    "data/eval_holdout.jsonl",
+    "data/endgame_holdout.jsonl"
+  ],
+  "producer_sha256": "3513055c5877d6523080fd61442e93e4a87094323baa487e9954357882bdf566"
+}

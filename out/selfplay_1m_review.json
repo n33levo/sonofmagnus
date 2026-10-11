@@ -1,0 +1,17 @@
+{
+  "positions": 1000000,
+  "legal_moves": 1000000,
+  "neural_calls": 64165,
+  "games_started": 7200,
+  "games_finished": 7165,
+  "unfinished_games": 35,
+  "artifact": {
+    "model_bytes": 900388424,
+    "sha256": "6c7da5a326e0f9c4aee7520a19a4803bdeae4082d276216f0d347c8cb2b4104b"
+  },
+  "model": {
+    "model_bytes": 205113406,
+    "sha256": "d92446f5b649e8da20e82de243e1bad683ccb059ae1683f7ae6043c1d883d588"
+  },
+  "reviewer_sha256": "fe26743e0a9892c226adf2f1674514f90ceb0089ae29d57f044b19a06d1e7302"
+}

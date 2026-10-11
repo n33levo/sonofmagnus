@@ -1,0 +1,32 @@
+{
+  "positions": 1000000,
+  "games_started": 7200,
+  "games_finished": 7165,
+  "unfinished_games": 35,
+  "seed": 20261011,
+  "requested_games": 20000,
+  "requested_positions": 1000000,
+  "max_plies": 400,
+  "batch_size": 32,
+  "seconds": 6425.27979095804,
+  "model": {
+    "model_bytes": 205113406,
+    "sha256": "d92446f5b649e8da20e82de243e1bad683ccb059ae1683f7ae6043c1d883d588"
+  },
+  "artifact": {
+    "model_bytes": 900388424,
+    "sha256": "6c7da5a326e0f9c4aee7520a19a4803bdeae4082d276216f0d347c8cb2b4104b"
+  },
+  "neural_input_positions": 1000000,
+  "neural_forward_calls": 64165,
+  "values": "Predicted values are recorded separately; unfinished games have no fabricated outcome target",
+  "policy_entropy": "Legal policy entropy at temperature 1, divided by log of the legal-move count",
+  "runtime_source": {
+    "train/selfplay.py": "c4e6cc221375c462aee040b3793805b6ab32abeac6322629558a56db1f263126",
+    "play/runner.py": "ef8525978d52b9d53df7fbd7f07844eb41333246ef86e47b2a23d76e0f828d16",
+    "play/mlx.py": "81fec41b0acef61549e2f2efc9430b410621c794811295901ca595a8e477ed74",
+    "chessio/lc0.py": "ae0c0807bd204ced7b4534f8e18a1191a3aec6642724133389b9a24503dba09d",
+    "chessio/mask.py": "ee2d2ba3a3d5b295f08db7bbbf483a98a63c0a0a3b280510c2072345ed45ae45",
+    "chessio/policy_map.py": "abc98ec4d7bd4a2e1be3ff3158162869b736c2e79c1f4ab8472db4e6efb35c43"
+  }
+}

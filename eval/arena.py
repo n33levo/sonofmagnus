@@ -2,6 +2,7 @@ import argparse
 import hashlib
 import json
 import math
+import shutil
 import time
 from collections import Counter
 from pathlib import Path
@@ -185,8 +186,17 @@ def main():
     parser.add_argument('--out', default='out/arena.json')
     args = parser.parse_args()
     clock, increment = (map(float, args.time_control.split('+')) if args.time_control else (None, 0.))
+    uci = args.b in ('stockfish', 'uci')
+    opponent_path = (args.uci_path or args.stockfish_path) if uci else args.b
+    if uci:
+        opponent_path = shutil.which(opponent_path) or opponent_path
+    frozen = artifact_info(args.a), artifact_info(opponent_path)
+    runtime = {path: artifact_info(path)['sha256'] for path in
+               ('eval/arena.py', 'play/runner.py', 'play/mlx.py', 'play/onnx.py', 'play/pretrained.py',
+                'chessio/lc0.py', 'chessio/encode.py', 'chessio/mask.py', 'chessio/policy_map.py',
+                'model/__init__.py', 'model/resnet.py', 'model/heads.py')}
     a = load_runner(args.a, args.config, args.device, args.backend)
-    b = UciRunner(args.uci_path or args.stockfish_path, args.stockfish_elo, args.move_time) if args.b in ('stockfish', 'uci') else load_runner(args.b, args.config, args.device, args.backend)
+    b = UciRunner(opponent_path, args.stockfish_elo, args.move_time) if uci else load_runner(args.b, args.config, args.device, args.backend)
     for runner in (a, b):
         if hasattr(runner, 'policy'):
             for _ in range(5):
@@ -196,11 +206,19 @@ def main():
     openings = [l.strip() for l in Path(args.openings).read_text().splitlines() if l.strip()] if args.openings else None
     try:
         results = play_match(a, b, args.games, openings=openings, max_plies=args.max_plies,
-                             pgn_path=out.with_suffix('.pgn'), clock_seconds=clock, increment=increment, seed=args.seed)
+                             pgn_path=out.with_suffix('.pgn'), clock_seconds=clock, increment=increment, seed=args.seed,
+                             names=(Path(args.a).stem, b.engine.id['name'] if uci else Path(args.b).stem))
+        if frozen != (artifact_info(args.a), artifact_info(opponent_path)):
+            raise ValueError('Model or opponent artifact changed during the match')
+        if any(artifact_info(path)['sha256'] != digest for path, digest in runtime.items()):
+            raise ValueError('Runtime source changed during the match')
+        if results['terminations'].get('ply_limit'):
+            raise ValueError('Unfinished games reached the ply cap; no rating will be published')
         results.update(a=args.a, b=args.b, stockfish_elo_setting=args.stockfish_elo,
                        stockfish_move_time=args.move_time if clock is None else None,
                        opponent_limit_protocol='clock' if clock is not None else 'fixed_move_time',
-                       model_a=artifact_info(args.a), rating_pool='local engine match; not FIDE or Lichess Elo')
+                       model_a=frozen[0], opponent_artifact=frozen[1], opponent_path=opponent_path,
+                       runtime_source=runtime, rating_pool='local engine match; not FIDE or Lichess Elo')
         if isinstance(b, UciRunner):
             results['opponent_engine'] = b.engine.id
             results['engine_reset_between_games'] = True

@@ -1,0 +1,20 @@
+{
+  "positions": 2500000,
+  "legal_teacher_moves": 2500000,
+  "distinct_positions": true,
+  "frozen_tests_excluded": true,
+  "pieces_phases": {
+    "0": 1067502,
+    "1": 829483,
+    "2": 485750,
+    "3": 117265
+  },
+  "artifact": {
+    "model_bytes": 327097195,
+    "sha256": "883e505accb246c1c5e968fc6eed46db9baa0c09ba5ba7c7eb6b0eec63b3ea85"
+  },
+  "reviewer": {
+    "model_bytes": 2395,
+    "sha256": "f45e1dd0670dc67059ed5cd4a879c34d75b6daf84bd4e4baa08ab15735361199"
+  }
+}

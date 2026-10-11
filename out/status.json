@@ -74,9 +74,9 @@
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
       "passed": 96,
-      "skipped_optional": 17,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38133947704",
-      "source_commit": "d5cba55"
+      "skipped_optional": 18,
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38134576605",
+      "source_commit": "47721f0"
     },
     "clocked_match": {
       "games": 100,
@@ -378,7 +378,7 @@
     "evidence": "human_corpus_70m.json",
     "holdout_filter": "Earlier tests excluded during collection; later depth-conditioned test must be excluded during training",
     "retained_training_rows": 41765559,
-    "training_status": "Native two-epoch GPU training resumed; short validation jobs may temporarily pause it",
+    "training_status": "Native run temporarily paused while the full compact expert experiment and its rating use the GPU; automatic resume follows",
     "early_checkpoint": {
       "samples": 500224,
       "evidence": "native_human500k_review.json",
@@ -600,9 +600,14 @@
       "importer": "scripts/fetch_expert.py",
       "smoke": "expert256_mlx_smoke.json",
       "job": "expert_cnn_job.json",
-      "status": "Exact 2.5M expert moves collected; independent audit running before compact training",
+      "status": "Full expert epoch training on Metal after independent audit of all 2.5M positions; fixed 100-game comparison and 400-game rating queued",
       "labels": "Stockfish best moves from ChessBench, verified tactical move replay, and masked real value replay from the validated full-action corpus",
-      "expert_positions": 2500000
+      "expert_positions": 2500000,
+      "collection": "chessbench_expert2500k_collection.json",
+      "review": "chessbench_expert2500k_review.json",
+      "tactical_replay_rows": 134886,
+      "value_replay_rows": 100000,
+      "rating_job": "expert_rating_job.json"
     }
   },
   "compact_20M_packing": {

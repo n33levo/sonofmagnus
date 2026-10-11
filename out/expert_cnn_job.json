@@ -1,8 +1,32 @@
 {
-  "status": "Independently checking every expert position before training",
+  "status": "Training one compact expert epoch on Metal; native training temporarily paused",
   "producer": {
     "model_bytes": 5080,
     "sha256": "2119e825d1254a70843a676b8d03da3fb09c92cc90dd87faa94ef6ee078944df"
   },
-  "purpose": "Test direct expert supervision of the compact network; no strength gain assumed"
+  "purpose": "Test direct expert supervision of the compact network; no strength gain assumed",
+  "data": {
+    "model_bytes": 394689467,
+    "sha256": "40757a1ca2b0c6f4eb0d9f9caa57c65e4a40a76ea3d6462b0855453d3e2c3a07"
+  },
+  "expert_positions": 2500000,
+  "tactical_replay_rows": 134886,
+  "tactical_test_overlaps_excluded": 0,
+  "source": {
+    "model_bytes": 327097195,
+    "sha256": "883e505accb246c1c5e968fc6eed46db9baa0c09ba5ba7c7eb6b0eec63b3ea85"
+  },
+  "replay_source": {
+    "model_bytes": 35667940,
+    "sha256": "a83797a8e03596c94c93fa79d82d3e25274a924b18ed21d9453709e85c0e5694"
+  },
+  "tactical_weight": 9,
+  "expert_weight": 3,
+  "value_replay_rows": 100000,
+  "value_replay_source": {
+    "model_bytes": 798798634,
+    "sha256": "831dd3e9e197f2ee5fb61c4d5c322c30fcc8c0b9f37369cf0d7a06f56abfe390"
+  },
+  "epochs": 1,
+  "learning_rate": 2.5e-05
 }

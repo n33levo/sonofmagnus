@@ -75,10 +75,10 @@
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
-      "passed": 44,
-      "skipped_optional": 5,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38096745750",
-      "source_commit": "82d9b7fd666409ef5c86269dedb3686a512d414c"
+      "passed": 49,
+      "skipped_optional": 6,
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38103455480",
+      "source_commit": "6a447943462a8a5eab1ecd86dc291b6be6510d67"
     },
     "clocked_match": {
       "games": 100,
@@ -143,6 +143,18 @@
       "ply_caps": 0,
       "outcomes_verified": true,
       "runtime_source_hashes_verified": true
+    },
+    "clean_install": {
+      "python": "3.12.11",
+      "requirements": "requirements-mlx.txt",
+      "torch": "2.14.1",
+      "onnxruntime": "1.31.0",
+      "mlx": "0.32.3",
+      "lc0_cli_present": true,
+      "classical_weight_format_verified": 1,
+      "served_move": "d2d4",
+      "legal": true,
+      "neural_forward_calls": 1
     }
   },
   "metal_runtime": {
@@ -231,7 +243,7 @@
     "floating_stored_scalars": 5955410,
     "positions": 341010,
     "training_device": "Apple M4 Metal (MLX)",
-    "training_status": "Teacher supervision generation, followed by three complete training passes",
+    "training_status": "Epoch 1 in progress; teacher cache complete",
     "source_identity": {
       "sources": {
         "data/compact_236k_train.jsonl": {
@@ -277,5 +289,17 @@
       "model_sha256": "171285e7652b9eb133a532099483e0775d14467704a000807d2a220da948fd05"
     },
     "strength": "Previous weak checkpoint; deployment path verified only"
+  },
+  "human_corpus": {
+    "status": "Fetching",
+    "sources": "2024-01 to 2024-05",
+    "target_positions": 70000000,
+    "min_both_ratings": 2000,
+    "max_both_ratings": 2800,
+    "time_controls": [
+      "blitz",
+      "rapid"
+    ],
+    "heldout_positions_excluded": true
   }
 }

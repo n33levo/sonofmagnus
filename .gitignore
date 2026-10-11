@@ -36,6 +36,7 @@ ENV/
 # Data & checkpoints
 data/*.pgn
 data/*.pgn.zst
+data/*.part
 data/*.jsonl
 data/*.json
 !data/arena_pool.json

@@ -24,7 +24,7 @@ The pool uses published CCRL Blitz ratings as reference points. Its **local Elo 
 
 The frozen 5.61M CNN measured **2124 local Elo** in [400 games](out/cnn6m_ccrl_pool), with a paired-opening 95% interval of **2040–2188**. It misses the strength target; fresh puzzle scores were **1232/3000** and **1136/3000**. Its **6.54 MB** weight-only CPU export measured **1.7 Elo loss** in [1000 comparison games](out/cnn6m_weight8_1000.json), with a 95% interval of **−14.3 to +17.7** and **35.7 ms in-game p95**. Those games establish relative precision retention, not a new absolute rating.
 
-We collected **70M human positions**, **2.5M distinct full-action labels** and **1M independently replayed self-play positions**. Native training and selective relabeling are running. The [5000-master-game test](out/bt4_openings5000.json) measured 50–66% exact opening agreement, below the targets. [out/targets.json](out/targets.json) keeps the original numerical targets; [out/status.json](out/status.json) records progress.
+We collected **70M human positions**, **2.5M distinct full-action labels** and **1M independently replayed self-play positions**. Another [2.5M expert moves](out/chessbench_expert2500k_review.json) passed an independent audit. Compact expert training and selective relabeling are running; native training follows. The [5000-master-game test](out/bt4_openings5000.json) measured 50–66% exact opening agreement, below the targets. [out/targets.json](out/targets.json) keeps the original numerical targets; [out/status.json](out/status.json) records progress.
 
 ## Run it
 

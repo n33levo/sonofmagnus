@@ -60,7 +60,8 @@
     "The ablation Elo gains, A100 training time and 3\u20134x AMP speedup remain unverified.",
     "The 185M policy exceeds the 20ms GPU target during real games.",
     "No official FIDE or Lichess rating is established; the verified Elo is conditional on the local engine pool.",
-    "The historical and mathematical conflicts are listed in targets.json; implementation cannot change those facts."
+    "The historical and mathematical conflicts are listed in targets.json; implementation cannot change those facts.",
+    "The separate 2M TWIC elite classical-position target is unverified; mixed-speed games cannot certify it."
   ],
   "references": {
     "ChessBench": "https://arxiv.org/abs/2402.04494",
@@ -75,8 +76,8 @@
     "linux_ci": {
       "passed": 96,
       "skipped_optional": 18,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38134576605",
-      "source_commit": "47721f0"
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38135150225",
+      "source_commit": "8931cf7"
     },
     "clocked_match": {
       "games": 100,

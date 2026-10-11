@@ -20,3 +20,15 @@ def test_arena_refuses_a_result_with_changed_artifacts_or_unfinished_games(tmp_p
     with pytest.raises(ValueError, match='changed' if failure == 'changed_model' else 'ply cap'):
         arena.main()
     assert not output.exists()
+
+
+def test_arena_rejects_repeated_pairs_before_loading_models(tmp_path, monkeypatch):
+    import chess
+    import eval.arena as arena
+    openings = tmp_path / 'openings.fen'
+    openings.write_text((chess.STARTING_FEN + '\n') * 2)
+    monkeypatch.setattr(sys, 'argv', ['arena', '--a', 'unloaded.pt', '--b', 'unloaded.pt',
+                                    '--games', '4', '--openings', str(openings)])
+    with pytest.raises(SystemExit) as error:
+        arena.main()
+    assert error.value.code == 2

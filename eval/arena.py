@@ -186,6 +186,11 @@ def main():
     parser.add_argument('--out', default='out/arena.json')
     args = parser.parse_args()
     clock, increment = (map(float, args.time_control.split('+')) if args.time_control else (None, 0.))
+    openings = [line.strip() for line in Path(args.openings).read_text().splitlines() if line.strip()] if args.openings else None
+    if openings is not None:
+        keys = [' '.join(chess.Board(fen).fen().split()[:4]) for fen in openings[:args.games // 2]]
+        if args.games <= 0 or args.games % 2 or len(keys) != args.games // 2 or len(set(keys)) != len(keys):
+            parser.error('Use a positive even game count and a distinct opening for every colour pair')
     uci = args.b in ('stockfish', 'uci')
     opponent_path = (args.uci_path or args.stockfish_path) if uci else args.b
     if uci:
@@ -203,7 +208,6 @@ def main():
                 runner.policy(chess.Board())
     out = Path(args.out)
     out.parent.mkdir(parents=True, exist_ok=True)
-    openings = [l.strip() for l in Path(args.openings).read_text().splitlines() if l.strip()] if args.openings else None
     try:
         results = play_match(a, b, args.games, openings=openings, max_plies=args.max_plies,
                              pgn_path=out.with_suffix('.pgn'), clock_seconds=clock, increment=increment, seed=args.seed,

@@ -68,7 +68,7 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 102,
+    "local_tests": 103,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
@@ -521,6 +521,12 @@
       "trainable_scalars": 5626355,
       "floating_stored_scalars": 5675507,
       "status": "Initialization and CPU deployment verified; two-epoch GPU training queued; no strength gain established"
+    },
+    "quantization_match": {
+      "games": 1000,
+      "distinct_opening_pairs": 500,
+      "selection": "quantization_arena500_selection.json",
+      "status": "CPU float-versus-INT8 games running; relative loss not established"
     }
   },
   "compact_20M_packing": {

@@ -490,12 +490,17 @@ def test_selfplay_position_budget_has_no_extra_neural_inputs_or_fake_outcomes(tm
     from train.selfplay import run_selfplay
     checkpoint = tmp_path / 'weights.pt'
     checkpoint.write_bytes(b'test')
-    runner = ChessRunner(CountingModel(), device='cpu')
+    class UniformPolicy(CountingModel):
+        def forward(self, inputs):
+            self.calls += 1
+            return torch.zeros((len(inputs), 8, 8, 73)), torch.zeros((len(inputs), 1))
+    runner = ChessRunner(UniformPolicy(), device='cpu')
     output = tmp_path / 'selfplay.jsonl'
     with patch('train.selfplay.load_runner', return_value=runner):
         run_selfplay(checkpoint, output, num_games=4, max_moves=3, batch_size=4, positions=5)
     rows = [json.loads(line) for line in output.read_text().splitlines()]
     assert len(rows) == 5 and all('value' not in row for row in rows)
+    assert all(row['policy_entropy'] == pytest.approx(1.) for row in rows)
     metadata = json.loads(output.with_suffix('.json').read_text())
     assert metadata['neural_input_positions'] == 5 and metadata['neural_forward_calls'] == 2
     assert metadata['unfinished_games'] == 4 and not output.with_suffix('.jsonl.part').exists()

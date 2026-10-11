@@ -49,6 +49,7 @@ ckpts/*/*.jsonl
 ckpts/*/run_*.json
 ckpts/*.onnx
 ckpts/*.mlx/
+ckpts/*.cbmlx/
 data/*.zst
 data/*.npy
 data/*.safetensors

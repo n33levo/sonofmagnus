@@ -1,5 +1,6 @@
 import argparse
 import json
+import math
 import time
 from pathlib import Path
 
@@ -21,7 +22,7 @@ def play_selfplay_game(runner, max_moves=400):
 
 def run_selfplay(model_path, output_path, num_games=100, config='main', device='auto', max_moves=400, batch_size=64,
                  positions=None, seed=0):
-    from chessio.mask import sample_legal_move
+    from chessio.mask import sample_legal_move, get_legal_move_probs
     if num_games <= 0 or max_moves <= 0 or batch_size <= 0 or (positions is not None and positions <= 0):
         raise ValueError('Games, moves and batch size must be positive')
     np.random.seed(seed)
@@ -54,9 +55,13 @@ def run_selfplay(model_path, output_path, num_games=100, config='main', device='
                 for idx, (logits, value) in zip(active, predictions):
                     board = boards[idx]
                     move = sample_legal_move(logits, board, runner.get_temperature(board.fullmove_number))
+                    probabilities = get_legal_move_probs(logits, board)
+                    entropy = (-sum(p * math.log(max(p, 1e-300)) for p in probabilities.values())
+                               / math.log(len(probabilities))) if len(probabilities) > 1 else 0.
                     stream.write(json.dumps({'fen': board.fen(), 'game_id': f'selfplay-{start + idx}',
                                              'root_fen': board.root().fen(), 'history': [m.uci() for m in board.move_stack],
-                                             'move': move.uci(), 'predicted_value': value}) + '\n')
+                                             'move': move.uci(), 'predicted_value': value,
+                                             'policy_entropy': max(0., min(1., entropy))}) + '\n')
                     board.push(move)
                     plies[idx] += 1
                     count += 1
@@ -75,6 +80,7 @@ def run_selfplay(model_path, output_path, num_games=100, config='main', device='
         'model': frozen, 'artifact': artifact_info(output), 'neural_input_positions': neural_positions,
         'neural_forward_calls': getattr(runner, 'forward_calls', None),
         'values': 'Predicted values are recorded separately; unfinished games have no fabricated outcome target',
+        'policy_entropy': 'Legal policy entropy at temperature 1, divided by log of the legal-move count',
         'runtime_source': {path: artifact_info(path)['sha256'] for path in
             ('train/selfplay.py', 'play/runner.py', 'play/mlx.py', 'chessio/lc0.py', 'chessio/mask.py', 'chessio/policy_map.py')}}, indent=2) + '\n')
     print(f'Self-play: {count} positions -> {output}')

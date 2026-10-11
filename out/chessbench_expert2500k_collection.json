@@ -1,0 +1,54 @@
+{
+  "positions": 2500000,
+  "source": "https://storage.googleapis.com/searchless_chess/data/train/behavioral_cloning_data.bag",
+  "source_bytes": 36316203219,
+  "source_etag": "\"873402418cd785dfb8b0dabefc80d7c2\"",
+  "source_records_scanned": 2501183,
+  "downloaded_bytes": 178958987,
+  "fetched_ranges_sha256": "891e51f2b1163548d92fb06b787f91757ab1b649f5a93bf6553f127795248e0d",
+  "duplicates_excluded": 1140,
+  "heldout_excluded": 43,
+  "pieces_phases": {
+    "0": 1067502,
+    "1": 829483,
+    "2": 485750,
+    "3": 117265
+  },
+  "excluded_data": {
+    "data/puzzles_holdout.jsonl": {
+      "model_bytes": 206111,
+      "sha256": "88299ef468ca752777945bce0a635976522af6d9a431d31b3a8ad1b21b0048f3"
+    },
+    "data/puzzles_final3000.jsonl": {
+      "model_bytes": 577998,
+      "sha256": "13a37753c25b22ff158fb1e147b84ba82e103ccc0c45178657b83708cd1d6df8"
+    },
+    "data/puzzles_depth3000.jsonl": {
+      "model_bytes": 630065,
+      "sha256": "47cab2eaa9b95444a3711899623d5965513dbddc5157e362caadaff525cd67ed"
+    },
+    "data/stockfish_holdout.jsonl": {
+      "model_bytes": 640134,
+      "sha256": "0af73b599e4ad501024ee0d5db55305169f020027c4ee9a0be60bd3b9b977962"
+    },
+    "data/eval_holdout.jsonl": {
+      "model_bytes": 486694,
+      "sha256": "d0d3d38197f5813765d75f4eda77fa2583b176af37f85e8b8ac8c35a6ca3afc1"
+    },
+    "data/endgame_holdout.jsonl": {
+      "model_bytes": 70673,
+      "sha256": "c0662a2de81255a193b6b8f2b35d1ecf30dbcc9a85abd2ba0307cc38e849da0a"
+    }
+  },
+  "producer": {
+    "model_bytes": 6122,
+    "sha256": "07aa25a0a49d13db389a2dd2c12d5cc8cc0955cfd7fa9217e6f91009491ceb64"
+  },
+  "artifact": {
+    "model_bytes": 327097195,
+    "sha256": "883e505accb246c1c5e968fc6eed46db9baa0c09ba5ba7c7eb6b0eec63b3ea85"
+  },
+  "license": "CC-BY-4.0; retain ChessBench attribution",
+  "selection": "First distinct eligible positions in the upstream training file; not a uniform reservoir",
+  "labels": "Stockfish best moves only; no action-value, position-value or per-row depth labels provided"
+}

@@ -1,0 +1,11 @@
+{
+  "source_artifact": {
+    "model_bytes": 11387419,
+    "sha256": "2f9d5d488604783ca222eef5ba39260541bb59b5de4c843649fd1199b5bcf971"
+  },
+  "model": {
+    "model_bytes": 22740894,
+    "sha256": "0495619d82289837af41478bbb7aea6ec8ebdf00dfc90b281cb65fb26b522a9f"
+  },
+  "format": "FP32 ONNX, classical history"
+}

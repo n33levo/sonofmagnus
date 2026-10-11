@@ -1,0 +1,26 @@
+{
+  "identity": {
+    "teacher": {
+      "model_bytes": 205113406,
+      "sha256": "d92446f5b649e8da20e82de243e1bad683ccb059ae1683f7ae6043c1d883d588"
+    },
+    "data": {
+      "model_bytes": 35667940,
+      "sha256": "a83797a8e03596c94c93fa79d82d3e25274a924b18ed21d9453709e85c0e5694"
+    },
+    "samples": 134886
+  },
+  "artifact": {
+    "model_bytes": 502045820,
+    "sha256": "e94553269cc5252de163ec6c22f4d8a074d01dd54426f0d1ff1eee36a68fed1e"
+  },
+  "source_cache": {
+    "model_bytes": 1269239348,
+    "sha256": "229b26d965d9614839800f9b994703afa2036dd2660282cfe08b118945398ea8"
+  },
+  "source_row_range": [
+    206124,
+    341010
+  ],
+  "dataset_suffix_verified_byte_for_byte": true
+}

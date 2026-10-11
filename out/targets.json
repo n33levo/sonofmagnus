@@ -1,0 +1,216 @@
+{
+  "status": "targets, not measured results",
+  "original_readme_commit": "d3cc129",
+  "strength_elo": {
+    "headline": 2500,
+    "final": 2600,
+    "best_ablation": 2650
+  },
+  "deployment": {
+    "parameters": 6000000,
+    "int8_mb": 8.7,
+    "fp16_mb": 24,
+    "cpu_ms": 100,
+    "gpu_ms": 20,
+    "export_cpu_ms": 45,
+    "export_gpu_ms": 12,
+    "quantization_elo_loss": 15,
+    "quantization_elo_error": 10,
+    "illegal_moves": 0,
+    "positions_per_move": 1
+  },
+  "milestones": [
+    {
+      "phase": "random",
+      "elo": 800,
+      "top1": 0.02,
+      "puzzles": 0.05
+    },
+    {
+      "phase": "human",
+      "elo": 2100,
+      "top1": 0.45,
+      "puzzles": 0.35
+    },
+    {
+      "phase": "elite",
+      "elo": 2250,
+      "top1": 0.52,
+      "puzzles": 0.42
+    },
+    {
+      "phase": "engine_top1",
+      "elo": 2350,
+      "top1": 0.58,
+      "puzzles": 0.48
+    },
+    {
+      "phase": "engine_q",
+      "elo": 2500,
+      "top1": 0.65,
+      "puzzles": 0.58
+    },
+    {
+      "phase": "selfplay_5_iterations",
+      "elo": 2600,
+      "top1": 0.7,
+      "puzzles": 0.65
+    }
+  ],
+  "ablation_elo": {
+    "human": 2100,
+    "engine_top1": 2350,
+    "q_multitask": 2500,
+    "selfplay": 2600,
+    "quality_weighting": 2650,
+    "q_vs_top1_gain": 150,
+    "quality_vs_uniform_gain": 100
+  },
+  "puzzles": {
+    "1500-1800": 0.95,
+    "1800-2100": 0.82,
+    "2100-2400": 0.68,
+    "2400-2700": 0.47,
+    "2700+": 0.23
+  },
+  "openings": {
+    "master_games": 5000,
+    "ruy_lopez": [
+      0.78,
+      15
+    ],
+    "sicilian": [
+      0.72,
+      12
+    ],
+    "queens_gambit": [
+      0.81,
+      14
+    ],
+    "kings_indian": [
+      0.69,
+      11
+    ],
+    "french": [
+      0.75,
+      13
+    ]
+  },
+  "endgames": {
+    "3-4": [
+      0.94,
+      0.08
+    ],
+    "5": [
+      0.87,
+      0.15
+    ],
+    "6": [
+      0.72,
+      0.28
+    ],
+    "7": [
+      0.61,
+      0.42
+    ]
+  },
+  "datasets": {
+    "human_positions": 70000000,
+    "lichess_january": 15000000,
+    "lichess_february_april": 45000000,
+    "twic": 2000000,
+    "engine_full_q": 2500000,
+    "selfplay": 1000000,
+    "listed_total": 65500000
+  },
+  "scaling": [
+    [
+      1000000,
+      1950
+    ],
+    [
+      10000000,
+      2200
+    ],
+    [
+      50000000,
+      2500
+    ],
+    [
+      70000000,
+      2600
+    ]
+  ],
+  "training": {
+    "a100_hours": 35,
+    "phase_a_hours": [
+      8,
+      12
+    ],
+    "amp_speedup": [
+      3,
+      4
+    ],
+    "selective_labeling_fraction": [
+      0.1,
+      0.2
+    ],
+    "dagger_speedup": 5,
+    "full_q_depth": 12
+  },
+  "historical_and_mathematical_conflicts": [
+    "ChessBench already studied action-value prediction; implementing new code cannot establish the claimed historical first application.",
+    "sigmoid(cp/400) is in [0,1] and gives 56.2% at 100 cp and 73.1% at 400 cp, rather than 64% and 91%.",
+    "Elo pools differ. Engine-match Elo does not grant FIDE titles or establish a human percentile.",
+    "The listed dataset components total 65.5M; this is different from the 70M human-position target.",
+    "Dividing two Elo ratings does not establish a percentage of playing strength."
+  ],
+  "human_comparison_original": {
+    "human_percentile": 99.8,
+    "claimed_fm_elo": 2500,
+    "claimed_im_elo": 2600,
+    "claimed_gm_elo": 2700,
+    "claimed_gm_gap": [
+      200,
+      300
+    ]
+  },
+  "engine_comparison_original": {
+    "stockfish_elo": 3500,
+    "stockfish_positions_per_move": 70000000,
+    "stockfish_ms": 100,
+    "leela_elo": 3200,
+    "leela_positions_per_move": 800,
+    "leela_ms": 500,
+    "claimed_strength_ratio_percent": 85,
+    "position_evaluation_ratio": 800
+  },
+  "puzzle_solution_length_solver_moves": {
+    "1500-1800": [
+      2,
+      3
+    ],
+    "1800-2100": [
+      3,
+      4
+    ],
+    "2100-2400": [
+      4,
+      5
+    ],
+    "2400-2700": [
+      5,
+      6
+    ],
+    "2700+": [
+      6,
+      null
+    ]
+  },
+  "quality_sampling": {
+    "elite": 1.0,
+    "master": 1.0,
+    "expert": 0.8,
+    "strong": 0.5
+  }
+}

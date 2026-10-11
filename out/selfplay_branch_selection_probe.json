@@ -1,0 +1,161 @@
+{
+  "positions": 32,
+  "source": {
+    "model_bytes": 37602,
+    "sha256": "44e75965c250906a97efd54f5fbf27ffdcff715dc90330f1bdd6d399ad9a7f2d"
+  },
+  "labels": {
+    "model_bytes": 63898,
+    "sha256": "7a8d52540f895aba021c9955a1db41ee0775f2292ec0ad4905a79c80bd39d630"
+  },
+  "minimum_depth": 12,
+  "histories_verified": true,
+  "all_legal_actions_verified": true,
+  "finite_probability_mass_verified": true,
+  "side_to_move_value_verified": true,
+  "reviewer_sha256": "b3387a073c076d3d277d27285893f8e4b7283e3b270cf82909462f1ed5c7f9e5",
+  "scope": "32-position cost and coverage probe from first 100000 generated rows; not a strength measurement",
+  "selection": {
+    "source": {
+      "model_bytes": 91425612,
+      "sha256": "4a660d03ab2a5d9dd9423e8e26ad9fa62e404a2cc3e6b6058d755df2dd02a6d8"
+    },
+    "artifact": {
+      "model_bytes": 37602,
+      "sha256": "44e75965c250906a97efd54f5fbf27ffdcff715dc90330f1bdd6d399ad9a7f2d"
+    },
+    "input_positions": 100000,
+    "eligible_distinct_positions": 93731,
+    "selected_positions": 32,
+    "fraction": 0.00032,
+    "seed": 20261011,
+    "criterion": "Phase and legal-branching proportional policy uncertainty; forced moves excluded; seeded tie-breaking",
+    "phase_piece_thresholds": [
+      24,
+      16,
+      8
+    ],
+    "legal_move_thresholds": [
+      8,
+      20
+    ],
+    "eligible_by_stratum": {
+      "2": 23859,
+      "1": 68,
+      "0": 403,
+      "5": 17717,
+      "3": 1051,
+      "8": 12859,
+      "7": 9530,
+      "4": 615,
+      "6": 4092,
+      "9": 6016,
+      "10": 10852,
+      "11": 6669
+    },
+    "selected_by_stratum": {
+      "2": 8,
+      "1": 0,
+      "0": 0,
+      "5": 6,
+      "3": 0,
+      "8": 5,
+      "7": 3,
+      "4": 0,
+      "6": 2,
+      "9": 2,
+      "10": 4,
+      "11": 2
+    },
+    "eligible_by_phase": {
+      "0": 24330,
+      "1": 19383,
+      "2": 26481,
+      "3": 23537
+    },
+    "selected_by_phase": {
+      "0": 8,
+      "1": 6,
+      "2": 10,
+      "3": 8
+    },
+    "excluded_inputs": [
+      "data/puzzles_holdout.jsonl",
+      "data/puzzles_final3000.jsonl",
+      "data/puzzles_depth3000.jsonl",
+      "data/stockfish_holdout.jsonl",
+      "data/eval_holdout.jsonl",
+      "data/endgame_holdout.jsonl"
+    ],
+    "producer_sha256": "3513055c5877d6523080fd61442e93e4a87094323baa487e9954357882bdf566"
+  },
+  "labeling": {
+    "identity": {
+      "source": {
+        "model_bytes": 37602,
+        "sha256": "44e75965c250906a97efd54f5fbf27ffdcff715dc90330f1bdd6d399ad9a7f2d"
+      },
+      "engine": {
+        "model_bytes": 79463656,
+        "sha256": "4cae5aac3cb32726ae2564155761faf7ab9ed79be479ecd3f776f70dd90382ef"
+      },
+      "depth": 12,
+      "all_legal_moves": true,
+      "producer": {
+        "model_bytes": 5413,
+        "sha256": "bf304e5f1102af062ddb6d67899f439ce119da48c35164713784e1ed71baee29"
+      },
+      "labeler": {
+        "model_bytes": 4487,
+        "sha256": "f1054a8549b50c780b41ee3b7250b02bd7c3539201c624e069002d6a88be38b4"
+      },
+      "history_encoder": {
+        "model_bytes": 879,
+        "sha256": "71012e224301603d7f32e73ff06d0317846c72b8c2103ee76cd7291d7755cb9e"
+      }
+    },
+    "status": "complete",
+    "positions": 32,
+    "artifact": {
+      "model_bytes": 63898,
+      "sha256": "7a8d52540f895aba021c9955a1db41ee0775f2292ec0ad4905a79c80bd39d630"
+    },
+    "seconds_this_run": 4.503255625022575,
+    "engine_name": [
+      {
+        "name": "Stockfish 17.1",
+        "author": "the Stockfish developers (see AUTHORS file)"
+      },
+      {
+        "name": "Stockfish 17.1",
+        "author": "the Stockfish developers (see AUTHORS file)"
+      }
+    ]
+  },
+  "legal_move_histogram": {
+    "2": 3,
+    "3": 1,
+    "8": 1,
+    "16": 1,
+    "9": 1,
+    "11": 1,
+    "13": 1,
+    "15": 1,
+    "12": 1,
+    "20": 4,
+    "21": 2,
+    "22": 2,
+    "23": 1,
+    "26": 1,
+    "27": 3,
+    "25": 1,
+    "29": 1,
+    "31": 1,
+    "30": 2,
+    "34": 1,
+    "28": 1,
+    "36": 1
+  },
+  "q_range_median": 0.013119056716499405,
+  "q_range_max": 0.13883499353334958
+}

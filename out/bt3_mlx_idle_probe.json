@@ -1,0 +1,65 @@
+{
+  "pgn": {
+    "model_bytes": 268452,
+    "sha256": "83d16228c266592ba7ff6df4b8edfb9a132f7ef10dfee7b316b9f43a0c7e770e"
+  },
+  "seed": 0,
+  "protocol": "Full legal move selection with actual history; trainer paused. Back-to-back 200 and 250ms idle-gap 100 positions per frozen model.",
+  "models": {
+    "ckpts/bt3.mlx": {
+      "artifact": {
+        "model_bytes": 205113406,
+        "sha256": "d92446f5b649e8da20e82de243e1bad683ccb059ae1683f7ae6043c1d883d588"
+      },
+      "warm": {
+        "runs": 200,
+        "warmup": 20,
+        "positions": 200,
+        "protocol": "full move selection, deterministic, PGN history retained",
+        "p50_ms": 10.515229019802064,
+        "p95_ms": 11.52943784254603,
+        "p99_ms": 11.669566294876857,
+        "neural_forward_calls": 220
+      },
+      "idle_gap_ms": 250,
+      "idle_runs": 100,
+      "idle": {
+        "p50_ms": 26.567458466161042,
+        "p95_ms": 34.757481631822884,
+        "p99_ms": 35.17542842193507
+      },
+      "neural_forward_calls": 320
+    },
+    "ckpts/bt3-q6.mlx": {
+      "artifact": {
+        "model_bytes": 90648539,
+        "sha256": "f61728c8829181318c970d538e93a12e95a9536527c2e3ef0686e94ce3dae87a"
+      },
+      "warm": {
+        "runs": 200,
+        "warmup": 20,
+        "positions": 200,
+        "protocol": "full move selection, deterministic, PGN history retained",
+        "p50_ms": 10.896271036472172,
+        "p95_ms": 17.418202030239623,
+        "p99_ms": 19.55005351104773,
+        "neural_forward_calls": 220
+      },
+      "idle_gap_ms": 250,
+      "idle_runs": 100,
+      "idle": {
+        "p50_ms": 24.69654195010662,
+        "p95_ms": 30.867126653902233,
+        "p99_ms": 32.06284513697041
+      },
+      "neural_forward_calls": 320
+    }
+  },
+  "runtime_source": {
+    "play/mlx.py": "af3f81aa7a15d234404c84e5909d29194b4556a6ae4a6132fe9438d30c85f30d",
+    "play/runner.py": "ef8525978d52b9d53df7fbd7f07844eb41333246ef86e47b2a23d76e0f828d16",
+    "chessio/lc0.py": "ae0c0807bd204ced7b4534f8e18a1191a3aec6642724133389b9a24503dba09d",
+    "chessio/mask.py": "ee2d2ba3a3d5b295f08db7bbbf483a98a63c0a0a3b280510c2072345ed45ae45",
+    "chessio/policy_map.py": "abc98ec4d7bd4a2e1be3ff3158162869b736c2e79c1f4ab8472db4e6efb35c43"
+  }
+}

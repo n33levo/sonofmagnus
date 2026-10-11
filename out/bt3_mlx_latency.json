@@ -1,0 +1,15 @@
+{
+  "runs": 200,
+  "warmup": 20,
+  "positions": 200,
+  "protocol": "full move selection, deterministic, PGN history retained",
+  "p50_ms": 9.538958431221545,
+  "p95_ms": 10.925745783606542,
+  "p99_ms": 11.311733279144391,
+  "neural_forward_calls": 220,
+  "checkpoint": "ckpts/bt3.mlx",
+  "model_bytes": 205113406,
+  "model_sha256": "d92446f5b649e8da20e82de243e1bad683ccb059ae1683f7ae6043c1d883d588",
+  "seed": 0,
+  "pgn_sha256": "f7e47a89f9dfd2605ef277c2190dc080e5558c818302885fb19bcab6ca515d65"
+}

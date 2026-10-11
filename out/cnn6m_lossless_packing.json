@@ -1,0 +1,19 @@
+{
+  "positions": 200,
+  "bit_exact_legal_logits": true,
+  "bit_exact_values": true,
+  "source": {
+    "model_bytes": 8282021,
+    "sha256": "fef777df2695c0c6e822bd92a6129b32d91f3e130f7d69a1fe4014c6fc63863a"
+  },
+  "packed": {
+    "model_bytes": 6601129,
+    "sha256": "badf166fbb28d84e2a823a8c97fb3f0d9424fb8b75e611faeca587484525d19e"
+  },
+  "producer": {
+    "model_bytes": 1702,
+    "sha256": "a26c059b85705ba638bb41e742793a745529d42e408e3f27e5a336efb220e2fe"
+  },
+  "raw_weight_bytes_saved": 1681440,
+  "scope": "Storage equivalence; no new strength gain"
+}

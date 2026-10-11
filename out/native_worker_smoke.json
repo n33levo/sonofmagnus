@@ -1,0 +1,76 @@
+{
+  "arguments": {
+    "config": "configs/mini.yaml",
+    "data": "data/human_2024-01_15m.jsonl",
+    "data_weights": null,
+    "exclude_data": null,
+    "tier_sampling": false,
+    "val_data": null,
+    "epochs": 1,
+    "batch_size": 32,
+    "workers": 2,
+    "lr": null,
+    "policy_weight": 1.0,
+    "q_value_weight": 0.0,
+    "value_weight": 0.25,
+    "amp": "none",
+    "device": "cpu",
+    "ckpt_dir": "ckpts/native-worker-smoke",
+    "resume": null,
+    "max_samples": 128,
+    "seed": 0
+  },
+  "config": {
+    "model_size": "mini",
+    "input_channels": 18,
+    "hidden_channels": 64,
+    "num_blocks": 8,
+    "num_groups": 8,
+    "batch_size": 256,
+    "learning_rate": 0.001,
+    "value_weight": 0.25,
+    "epochs_bc": 2,
+    "epochs_distill": 2,
+    "epochs_dagger": 1,
+    "min_elo": 1800,
+    "sample_rate": 0.1,
+    "midgame_only": true,
+    "engine_depth_fast": 14,
+    "engine_depth_deep": 20,
+    "engine_time_fast": 0.1,
+    "engine_time_deep": 1.0,
+    "top_k_moves": 8,
+    "selfplay_games": 1000,
+    "selfplay_temperature": 0.6,
+    "export_fp16": true,
+    "quantize_int8": true,
+    "size_limit_mb": 10.0,
+    "target_latency_ms": 50
+  },
+  "device": "cpu",
+  "samples": 128,
+  "parameters": 655315,
+  "datasets": {
+    "data/human_2024-01_15m.jsonl": {
+      "model_bytes": 2230578372,
+      "sha256": "343e8b5461554565647c665918f343000739da587d38fcbabb7f399c19202646"
+    }
+  },
+  "excluded_data": {},
+  "retained": {
+    "data/human_2024-01_15m.jsonl": {
+      "samples": 128,
+      "heldout_excluded": 0,
+      "tier_dropped": 0
+    }
+  },
+  "initial_checkpoint": null,
+  "runtime_source": {
+    "train/train.py": "dc7e50fc582a7cbda8abcf1740b8a949d0c731f7418216fbfe82971422c0b656",
+    "train/dataset.py": "4183dd7f9f507839ab1880677f0c6c07a9646332b81449b2a7fee24d3f796853",
+    "chessio/records.py": "71012e224301603d7f32e73ff06d0317846c72b8c2103ee76cd7291d7755cb9e",
+    "model/resnet.py": "d41adb9f99c01e0db6c2b994198270c32b7eea2fc3080e2b5a5d77bbaf37d8db",
+    "model/heads.py": "dbe5924cd2760fbbf0fe7bfcdff70117a780a0c2b90de4b076d30ab49645ec89",
+    "model/__init__.py": "14640610cfc61a4998249d61d537ce49c4a358097d11c5de353043e12af2f2af"
+  }
+}

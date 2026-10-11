@@ -1,0 +1,99 @@
+{
+  "checkpoint": "ckpts/bt4-q6.mlx",
+  "model": {
+    "model_bytes": 163551053,
+    "sha256": "78cb179eca5662a4eee7c0ed3e94a50cb1eee41b860072b39ef5eeeae8a4ee39"
+  },
+  "pool": {
+    "reference": "https://computerchess.org.uk/404/rating_list_all.html",
+    "reference_date": "2026-10-10",
+    "reference_conditions": "CCRL Blitz: 2+1 equivalent on Intel i7-4770K, ponder off, opening book up to 12 moves, up to 6-piece tablebases",
+    "engines": [
+      {
+        "name": "stash-20.0.1",
+        "path": "out/engines/stash-20.0.1",
+        "source": "https://github.com/mhouppin/stash-bot.git",
+        "tag": "v20.0.1",
+        "revision": "f1c281c26985ac31c996875540cb26594f107a51",
+        "reference_elo": 2512,
+        "reference_error": 23,
+        "reference_games": 615,
+        "build": "stash"
+      },
+      {
+        "name": "stash-21.0",
+        "path": "out/engines/stash-21.0",
+        "source": "https://github.com/mhouppin/stash-bot.git",
+        "tag": "v21.0",
+        "revision": "6dc8c9cdefaa43e3d82a7c59cd2a5f93bcbd9d5a",
+        "reference_elo": 2714,
+        "reference_error": 14,
+        "reference_games": 1493,
+        "build": "stash"
+      },
+      {
+        "name": "weiss-1.0",
+        "path": "out/engines/weiss-1.0",
+        "source": "https://github.com/TerjeKir/weiss.git",
+        "tag": "v1.0",
+        "revision": "f44a4c654c67139ecbd5f3afd9da1ebe41241464",
+        "reference_elo": 2896,
+        "reference_error": 17,
+        "reference_games": 895,
+        "build": "weiss"
+      },
+      {
+        "name": "stash-25.0",
+        "path": "out/engines/stash-25.0",
+        "source": "https://github.com/mhouppin/stash-bot.git",
+        "tag": "v25.0",
+        "revision": "664849453d3fa0b5b60869325a3764921c902512",
+        "reference_elo": 2933,
+        "reference_error": 18,
+        "reference_games": 874,
+        "build": "stash"
+      }
+    ]
+  },
+  "platform": "macOS-26.3.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "time_control": "10+0.1",
+  "openings_sha256": "2ac6430f7aa6d2c0a1fc9dae6877b8deee02d7eddb93d8385769109b6040a997",
+  "tablebases": false,
+  "opponents": [
+    "stash-20.0.1",
+    "stash-21.0",
+    "weiss-1.0",
+    "stash-25.0"
+  ],
+  "games_per_opponent": 100,
+  "binaries": {
+    "stash-20.0.1": {
+      "model_bytes": 108760,
+      "sha256": "10c500aeb4c7dd83b6c0e48ab766e2f6946a8d3c749cdc0f8b0010b81d8a7bd4"
+    },
+    "stash-21.0": {
+      "model_bytes": 92344,
+      "sha256": "25af30cbf05fa1268d62e01fabd8697feb256c7c78ba68d6917d3c8e967fa084"
+    },
+    "weiss-1.0": {
+      "model_bytes": 138840,
+      "sha256": "1e71bd12fbb05f4ae9a898255ca656eeefae4abd74b9a1988d2eb25d8870d483"
+    },
+    "stash-25.0": {
+      "model_bytes": 104600,
+      "sha256": "35d93df09c12878df3c3992fe8fa16b70495edd9fad137e820983abc2a8ee328"
+    }
+  },
+  "runtime_source": {
+    "play/mlx.py": "00587add0da255bf46be63b81a9f90097aa2b4f62aac63cc541587b4b99ca325",
+    "play/runner.py": "ef8525978d52b9d53df7fbd7f07844eb41333246ef86e47b2a23d76e0f828d16",
+    "chessio/lc0.py": "ae0c0807bd204ced7b4534f8e18a1191a3aec6642724133389b9a24503dba09d",
+    "eval/arena.py": "0908abf51722ca4b2bddea1236d2ead6632fc4eae2ae7c552b80d4fa1488d26e",
+    "eval/rating.py": "9c52642ab7f0b4c250a7caa50b227687ee111c4f993a2918c72641d6b5c9536d",
+    "eval/pool.py": "59a4f9eeed406b1b934584a65651773531ef57fb589b53fe8fc9f1eee98a4768"
+  },
+  "source_commit": "82d9b7fd666409ef5c86269dedb3686a512d414c",
+  "artifact_filenames": "Version suffixes preserved after correcting Path.with_suffix output naming",
+  "draw_protocol": "Automatically claim an available threefold-repetition or fifty-move draw, including a claim by declaring the next move"
+}

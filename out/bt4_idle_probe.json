@@ -1,0 +1,28 @@
+{
+  "0": {
+    "p50_ms": 28.36399950319901,
+    "p95_ms": 35.32626457745209,
+    "p99_ms": 36.02882635546848
+  },
+  "128": {
+    "p50_ms": 30.63481254503131,
+    "p95_ms": 38.715472287731245,
+    "p99_ms": 39.75794573780149
+  },
+  "256": {
+    "p50_ms": 32.45512500870973,
+    "p95_ms": 37.42488182615489,
+    "p99_ms": 39.071463253349066
+  },
+  "512": {
+    "p50_ms": 31.29987500142306,
+    "p95_ms": 38.37755627464503,
+    "p99_ms": 39.317746872548014
+  },
+  "model": {
+    "model_bytes": 163551053,
+    "sha256": "78cb179eca5662a4eee7c0ed3e94a50cb1eee41b860072b39ef5eeeae8a4ee39"
+  },
+  "protocol": "250 ms idle between complete move selections; optional asynchronous non-chess GPU wake kernel",
+  "decision": "Rejected: asynchronous wake kernels increased tail latency"
+}

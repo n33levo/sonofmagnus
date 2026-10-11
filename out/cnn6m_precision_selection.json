@@ -1,0 +1,47 @@
+{
+  "selection": "Minimum legal-policy KL on 128 training calibration roots among models at most 8.7 MB",
+  "variant": "late",
+  "checkpoint": "ckpts/sonofmagnus-cnn6M-int8-late.onnx",
+  "model": {
+    "model_bytes": 8422614,
+    "sha256": "401ff08ad42119e31d1a5d5803f10a191d4709bf3dfcad58b28a6b8069f73b3f"
+  },
+  "training_calibration": {
+    "model_bytes": 149552958,
+    "sha256": "89a4c8fdb4421d23920b7c477f2e68d7ee5fae697bd5d7477a1b93e9ff206d3b"
+  },
+  "quality": {
+    "positions": 128,
+    "mean_legal_policy_kl": 0.0225699050431235,
+    "same_argmax": 120,
+    "model": {
+      "model_bytes": 8422614,
+      "sha256": "401ff08ad42119e31d1a5d5803f10a191d4709bf3dfcad58b28a6b8069f73b3f"
+    },
+    "protected_convolutions": [
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20
+    ],
+    "packing": {
+      "packed_arrays": 26,
+      "raw_bytes_saved": 5370400,
+      "file_bytes": 8422614
+    }
+  },
+  "prior_quantized_baseline": {
+    "positions": 128,
+    "mean_legal_policy_kl": 0.040838213050504654,
+    "same_argmax": 121,
+    "model": {
+      "model_bytes": 8282021,
+      "sha256": "fef777df2695c0c6e822bd92a6129b32d91f3e130f7d69a1fe4014c6fc63863a"
+    }
+  },
+  "rating_status": "Not measured; requires a new fixed game comparison"
+}

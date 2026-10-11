@@ -1,271 +1,132 @@
-"""
-Rules-correct play loop for chess bot.
-
-Single-pass inference only (no search). Features:
-- Legal move masking
-- Temperature-annealed sampling
-- Timeout guards
-- NaN detection
-- Fallback strategies
-"""
-
 import argparse
 import time
-from pathlib import Path
 
 import chess
-import numpy as np
 import torch
 
-from chessio.encode import encode_board
-from chessio.mask import sample_legal_move, argmax_legal_move, build_legal_mask, apply_legal_mask
-from model import ChessNet, create_model_main, create_model_mini
+from chessio.encode import encode_board_batch
+from chessio.mask import sample_legal_move, get_legal_move_probs
+from model import load_model, resolve_device
+
+
+def load_runner(path, config='main', device='auto', backend='auto'):
+    if str(path).endswith('.mlx'):
+        from play.mlx import MlxRunner
+        if device not in ('auto', 'mps', 'gpu'):
+            raise ValueError('MLX serving uses the Apple GPU; use ONNX or the BLAS adapter for CPU inference')
+        return MlxRunner(path)
+    if str(path).endswith('.onnx'):
+        from play.onnx import OnnxRunner
+        return OnnxRunner(path)
+    if str(path).endswith('.pb.gz'):
+        from play.pretrained import PretrainedRunner
+        if backend == 'auto' and device == 'cpu':
+            backend = 'blas'
+        return PretrainedRunner(path, backend)
+    return ChessRunner(load_model(path, config), device)
 
 
 class ChessRunner:
-    """
-    Chess bot runner with single-pass inference.
-    """
-
-    def __init__(
-        self,
-        model: ChessNet,
-        device: str = "cpu",
-        temperature_opening: float = 0.6,
-        temperature_midgame: float = 0.4,
-        temperature_endgame: float = 0.2,
-        move_timeout_ms: float = 1000.0,
-    ):
-        """
-        Args:
-            model: Trained ChessNet model
-            device: Device to run inference on
-            temperature_opening: Sampling temperature for opening (moves 0-10)
-            temperature_midgame: Sampling temperature for midgame (moves 11-30)
-            temperature_endgame: Sampling temperature for endgame (moves 31+)
-            move_timeout_ms: Maximum time per move in milliseconds
-        """
-        self.model = model.to(device)
-        self.model.eval()
-        self.device = device
-
-        self.temp_opening = temperature_opening
-        self.temp_midgame = temperature_midgame
-        self.temp_endgame = temperature_endgame
+    def __init__(self, model, device='auto', temperature_opening=.6,
+                 temperature_midgame=.4, temperature_endgame=.2, move_timeout_ms=1000.):
+        self.device = resolve_device(device)
+        self.model = model.to(self.device).eval()
+        self.temp_opening, self.temp_midgame, self.temp_endgame = (
+            temperature_opening, temperature_midgame, temperature_endgame)
         self.move_timeout_ms = move_timeout_ms
+        self.last_latency_ms = 0.
+        self.forward_calls = 0
 
-    def get_temperature(self, move_number: int) -> float:
-        """Get temperature based on game phase."""
-        if move_number <= 10:
-            return self.temp_opening
-        elif move_number <= 30:
-            return self.temp_midgame
-        else:
-            return self.temp_endgame
+    def get_temperature(self, move_number):
+        return self.temp_opening if move_number <= 10 else self.temp_midgame if move_number <= 30 else self.temp_endgame
 
-    def select_move(
-        self,
-        board: chess.Board,
-        temperature: float = None,
-        deterministic: bool = False,
-    ) -> chess.Move:
-        """
-        Select a move using single-pass inference.
+    @torch.inference_mode()
+    def batch_policy(self, boards):
+        tensor = torch.from_numpy(encode_board_batch(boards)).to(self.device)
+        tensor = tensor.to(next(self.model.parameters()).dtype)
+        logits, value = self.model(tensor)
+        self.forward_calls += 1
+        if not torch.isfinite(value).all():
+            raise ValueError('Non-finite value output')
+        logits, value = logits.float().cpu().numpy(), value.float().cpu().numpy().reshape(-1)
+        return list(zip(logits, value.tolist()))
 
-        Args:
-            board: Current board state
-            temperature: Sampling temperature (None = use auto from move number)
-            deterministic: If True, use argmax; if False, sample
+    def policy(self, board):
+        return self.batch_policy([board])[0]
 
-        Returns:
-            Selected chess.Move
-        """
-        start_time = time.time()
+    def move_probs(self, board):
+        logits, _ = self.policy(board)
+        return get_legal_move_probs(logits, board)
 
-        # Auto temperature
-        if temperature is None:
-            temperature = self.get_temperature(board.fullmove_number)
+    def select_move(self, board, temperature=None, deterministic=False):
+        if board.is_game_over():
+            return None
+        start = time.perf_counter()
+        logits, _ = self.policy(board)
+        temp = 0 if deterministic else self.get_temperature(board.fullmove_number) if temperature is None else temperature
+        move = sample_legal_move(logits, board, temp)
+        self.last_latency_ms = (time.perf_counter() - start) * 1000
+        return move
 
-        try:
-            # Encode board
-            board_tensor = encode_board(board)
-            board_tensor = torch.from_numpy(board_tensor).unsqueeze(0).to(self.device)
-
-            # Forward pass
-            with torch.no_grad():
-                policy_logits, value = self.model(board_tensor)
-
-            # Extract policy logits (B, 8, 8, 73) -> (8, 8, 73)
-            policy_logits = policy_logits[0].cpu().numpy()
-
-            # Check for NaN
-            if np.isnan(policy_logits).any() or np.isnan(value.cpu().numpy()).any():
-                print("WARNING: NaN detected in model output, using fallback")
-                return self._fallback_move(board)
-
-            # Select move
-            if deterministic:
-                move = argmax_legal_move(policy_logits, board)
-            else:
-                move = sample_legal_move(policy_logits, board, temperature=temperature)
-
-            # Verify move is legal (should always be true)
-            if move not in board.legal_moves:
-                print(f"WARNING: Selected illegal move {move}, using fallback")
-                return self._fallback_move(board)
-
-            # Check timeout
-            elapsed_ms = (time.time() - start_time) * 1000
-            if elapsed_ms > self.move_timeout_ms:
-                print(f"WARNING: Move selection took {elapsed_ms:.1f}ms (timeout: {self.move_timeout_ms}ms)")
-
-            return move
-
-        except Exception as e:
-            print(f"ERROR during move selection: {e}")
-            return self._fallback_move(board)
-
-    def _fallback_move(self, board: chess.Board) -> chess.Move:
-        """
-        Fallback strategy when inference fails.
-        Priority: captures > checks > random legal move.
-        """
-        legal_moves = list(board.legal_moves)
-
-        # Prefer captures
-        captures = [m for m in legal_moves if board.is_capture(m)]
-        if captures:
-            return np.random.choice(captures)
-
-        # Prefer checks
-        checks = [m for m in legal_moves if board.gives_check(m)]
-        if checks:
-            return np.random.choice(checks)
-
-        # Random legal move
-        return np.random.choice(legal_moves)
-
-    def play_game(
-        self,
-        opponent_runner=None,
-        max_moves: int = 200,
-        opening_fen: str = None,
-        verbose: bool = True,
-    ) -> dict:
-        """
-        Play a complete game.
-
-        Args:
-            opponent_runner: Another ChessRunner for self-play (None = play against self)
-            max_moves: Maximum number of moves before draw
-            opening_fen: Starting position (None = standard start)
-            verbose: Print game progress
-
-        Returns:
-            Dictionary with game info (moves, result, etc.)
-        """
+    def play_game(self, opponent_runner=None, max_moves=200, opening_fen=None, verbose=True):
         board = chess.Board(opening_fen) if opening_fen else chess.Board()
-        move_history = []
-
-        if verbose:
-            print(f"Starting game from: {board.fen()}")
-            print()
-
-        while not board.is_game_over() and len(move_history) < max_moves:
-            # Select runner for current side
-            if opponent_runner is None or board.turn == chess.WHITE:
-                runner = self
-            else:
-                runner = opponent_runner
-
-            # Select and make move
+        moves = []
+        while not board.is_game_over(claim_draw=True) and len(moves) < max_moves:
+            runner = self if board.turn or opponent_runner is None else opponent_runner
             move = runner.select_move(board)
-            move_history.append(move)
-
+            if move not in board.legal_moves:
+                raise ValueError(f'Illegal move: {move}')
             if verbose:
-                print(f"{len(move_history):3d}. {move.uci():6s} ({board.san(move)})")
-
+                print(f'{len(moves) + 1}. {board.san(move)}')
+            moves.append(move)
             board.push(move)
+        outcome = board.outcome(claim_draw=True)
+        return {'result': outcome.result() if outcome else '1/2-1/2',
+                'reason': outcome.termination.name.lower() if outcome else 'max_moves',
+                'moves': moves, 'num_moves': len(moves), 'final_fen': board.fen()}
 
-        # Determine result
-        if board.is_checkmate():
-            result = "1-0" if board.turn == chess.BLACK else "0-1"
-            reason = "checkmate"
-        elif board.is_stalemate():
-            result = "1/2-1/2"
-            reason = "stalemate"
-        elif board.is_insufficient_material():
-            result = "1/2-1/2"
-            reason = "insufficient_material"
-        elif board.can_claim_fifty_moves():
-            result = "1/2-1/2"
-            reason = "fifty_move_rule"
-        elif board.can_claim_threefold_repetition():
-            result = "1/2-1/2"
-            reason = "threefold_repetition"
-        elif len(move_history) >= max_moves:
-            result = "1/2-1/2"
-            reason = "max_moves"
+
+def play_interactive(runner, board, input_fn=input):
+    while not board.is_game_over(claim_draw=True):
+        print(board)
+        if board.turn == chess.WHITE:
+            text = input_fn('Your move (SAN or UCI, quit to exit): ').strip()
+            if text == 'quit':
+                return
+            try:
+                move = board.parse_san(text)
+            except ValueError:
+                print('Illegal move')
+                continue
         else:
-            result = "1/2-1/2"
-            reason = "unknown"
-
-        if verbose:
-            print()
-            print(f"Game over: {result} ({reason})")
-            print(f"Total moves: {len(move_history)}")
-
-        return {
-            "result": result,
-            "reason": reason,
-            "moves": move_history,
-            "num_moves": len(move_history),
-            "final_fen": board.fen(),
-        }
+            move = runner.select_move(board, deterministic=True)
+            print(f'Engine: {board.san(move)}')
+        board.push(move)
+    print(board.result(claim_draw=True))
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Chess bot runner")
-    parser.add_argument("--ckpt", type=str, help="Path to model checkpoint")
-    parser.add_argument("--config", type=str, choices=["main", "mini"], default="main", help="Model config")
-    parser.add_argument("--fen", type=str, help="Starting FEN position")
-    parser.add_argument("--moves", type=int, default=10, help="Number of moves to play")
-    parser.add_argument("--device", type=str, default="cpu", help="Device (cpu/cuda)")
-    parser.add_argument("--deterministic", action="store_true", help="Use argmax instead of sampling")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--ckpt', required=True)
+    parser.add_argument('--config', choices=['main', 'mini'], default='main')
+    parser.add_argument('--fen')
+    parser.add_argument('--moves', type=int, help='Play this many plies automatically; otherwise play interactively')
+    parser.add_argument('--device', default='auto')
+    parser.add_argument('--deterministic', action='store_true')
     args = parser.parse_args()
-
-    # Create model
-    if args.config == "main":
-        model = create_model_main()
-    else:
-        model = create_model_mini()
-
-    # Load checkpoint if provided
-    if args.ckpt:
-        print(f"Loading checkpoint from {args.ckpt}")
-        checkpoint = torch.load(args.ckpt, map_location=args.device)
-        model.load_state_dict(checkpoint["model_state_dict"])
-
-    # Create runner
-    runner = ChessRunner(model, device=args.device)
-
-    # Play game
+    runner = load_runner(args.ckpt, args.config, args.device)
     board = chess.Board(args.fen) if args.fen else chess.Board()
-    print(f"Starting position: {board.fen()}")
-    print()
-
-    for i in range(args.moves):
-        if board.is_game_over():
-            print("Game over!")
+    if args.moves is None:
+        play_interactive(runner, board)
+        return
+    for _ in range(args.moves):
+        if board.is_game_over(claim_draw=True):
             break
-
         move = runner.select_move(board, deterministic=args.deterministic)
-        print(f"{i+1}. {move.uci()} ({board.san(move)})")
+        print(f'{move.uci()} ({board.san(move)})')
         board.push(move)
-
-    print()
-    print(f"Final position: {board.fen()}")
+    print(board.fen())
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

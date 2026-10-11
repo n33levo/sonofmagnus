@@ -36,10 +36,30 @@ ENV/
 # Data & checkpoints
 data/*.pgn
 data/*.pgn.zst
+data/*.part
+data/*.recover
+data/*.sqlite*
 data/*.jsonl
 data/*.json
+!data/arena_pool.json
 ckpts/*.pt
+ckpts/*.pb.gz
+ckpts/*/*.pt
+ckpts/*/*.jsonl
+ckpts/*/run_*.json
+ckpts/**/*.pt
+ckpts/**/*.jsonl
+ckpts/**/run_*.json
+ckpts/*.onnx
+ckpts/*.mlx/
+ckpts/*.cbmlx/
+data/*.zst
+data/*.npy
+data/*.safetensors
+data/*.csv
+data/*.fen
 out/*.onnx
+out/engines/
 data/twic
 
 # But keep directories and examples
@@ -70,3 +90,5 @@ htmlcov/
 *.ipynb
 
 **.pem
+
+out/*.onnx.data

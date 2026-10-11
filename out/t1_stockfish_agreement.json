@@ -1,0 +1,7 @@
+{
+  "top1_agreement": 0.581,
+  "top3_agreement": 0.8595,
+  "top5_agreement": 0.9315,
+  "total": 2000,
+  "mean_kl_divergence": 1.3346166846580698
+}

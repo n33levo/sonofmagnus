@@ -1,0 +1,6 @@
+{
+  "status": "Waiting for compact expert training and its independently replayed comparison",
+  "checkpoint": "ckpts/sonofmagnus-cnn6M-expert.mlx",
+  "games": 400,
+  "time_control": "10+0.1"
+}

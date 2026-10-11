@@ -1,0 +1,25 @@
+{
+  "initial_run": {
+    "learning_rate": 0.0002,
+    "optimizer_bias_correction": false,
+    "failure": "Non-finite gradient; static scaling and optimizer update before finite check"
+  },
+  "retry_run": {
+    "learning_rate": 0.0002,
+    "optimizer_bias_correction": false,
+    "loss_scale_retried": 256,
+    "failure": "Non-finite forward loss after parameter updates"
+  },
+  "current_run": {
+    "learning_rate": 5e-05,
+    "optimizer_bias_correction": true,
+    "compute_dtype": "float32",
+    "status": "Gold-priority continuation from completed epoch 2"
+  },
+  "fix": "Gradient checks precede optimizer updates. AMP retries the identical batch with lower scale. Bias-corrected AdamW and a smaller fine-tuning rate prevent the observed early forward instability.",
+  "lower_rate_fp16": {
+    "epochs_completed": 2,
+    "last_logged_batch_offset_before_failure": 194304,
+    "failure": "FP16 forward overflow after gradient retry at scale 128; last completed epoch retained"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "local_elo": 2852.5354594953833,
+  "elo_opening_bootstrap_95": [
+    2819.3544109904224,
+    2886.3459406681377
+  ],
+  "elo_hoeffding_95": [
+    2687.4041781470632,
+    3037.478221285175
+  ],
+  "games": 400,
+  "independent_opening_clusters": 50,
+  "score_by_opponent": [
+    0.765,
+    0.68,
+    0.44,
+    0.505
+  ],
+  "fitted_score_by_opponent": [
+    0.8765632172193378,
+    0.6894339310059492,
+    0.4377737787836764,
+    0.38622907299103776
+  ],
+  "score_residuals": [
+    -0.11156321721933782,
+    -0.009433931005949137,
+    0.0022262212163235984,
+    0.11877092700896225
+  ],
+  "rating_pool": "CCRL-referenced local engine pool; not an official CCRL, FIDE or Lichess rating",
+  "uncertainty": "Intervals are conditional on fixed anchors; hardware, time-control and anchor errors are excluded.",
+  "finished_utc": "2026-10-11T01:15:01Z",
+  "latency_ms": {
+    "p50": 25.772,
+    "p95": 33.25979999999999,
+    "p99": 35.08238
+  },
+  "wins": 192,
+  "draws": 94,
+  "losses": 114,
+  "neural_forward_calls": 20963,
+  "model": {
+    "model_bytes": 163551053,
+    "sha256": "78cb179eca5662a4eee7c0ed3e94a50cb1eee41b860072b39ef5eeeae8a4ee39"
+  },
+  "time_control": "10+0.1"
+}

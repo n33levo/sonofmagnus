@@ -1,0 +1,10 @@
+{
+  "status": "Geometry model training and head-to-head games complete; inspect actual results before promotion",
+  "initialization": "ckpts/sonofmagnus-cnn6M-geometry-init.mlx",
+  "training_epochs": 2,
+  "purpose": "Test whether fixed current-board piece geometry improves the compact policy; no strength gain assumed",
+  "model": {
+    "model_bytes": 11387918,
+    "sha256": "dd0a192fdffba61bbf9dba2b4b9a73c6545741038ddffb9ee766404122aecf76"
+  }
+}

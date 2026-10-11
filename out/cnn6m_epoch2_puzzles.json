@@ -1,0 +1,140 @@
+{
+  "1800": {
+    "correct": 61,
+    "total": 79,
+    "accuracy": 0.7721518987341772
+  },
+  "1500": {
+    "correct": 67,
+    "total": 74,
+    "accuracy": 0.9054054054054054
+  },
+  "2800": {
+    "correct": 1,
+    "total": 34,
+    "accuracy": 0.029411764705882353
+  },
+  "2000": {
+    "correct": 27,
+    "total": 50,
+    "accuracy": 0.54
+  },
+  "1900": {
+    "correct": 48,
+    "total": 71,
+    "accuracy": 0.676056338028169
+  },
+  "2100": {
+    "correct": 34,
+    "total": 79,
+    "accuracy": 0.43037974683544306
+  },
+  "1700": {
+    "correct": 41,
+    "total": 56,
+    "accuracy": 0.7321428571428571
+  },
+  "1600": {
+    "correct": 56,
+    "total": 70,
+    "accuracy": 0.8
+  },
+  "2600": {
+    "correct": 10,
+    "total": 54,
+    "accuracy": 0.18518518518518517
+  },
+  "2400": {
+    "correct": 16,
+    "total": 88,
+    "accuracy": 0.18181818181818182
+  },
+  "2500": {
+    "correct": 7,
+    "total": 58,
+    "accuracy": 0.1206896551724138
+  },
+  "2300": {
+    "correct": 17,
+    "total": 57,
+    "accuracy": 0.2982456140350877
+  },
+  "2200": {
+    "correct": 23,
+    "total": 64,
+    "accuracy": 0.359375
+  },
+  "2700": {
+    "correct": 7,
+    "total": 147,
+    "accuracy": 0.047619047619047616
+  },
+  "3000": {
+    "correct": 0,
+    "total": 2,
+    "accuracy": 0.0
+  },
+  "2900": {
+    "correct": 0,
+    "total": 16,
+    "accuracy": 0.0
+  },
+  "3100": {
+    "correct": 0,
+    "total": 1,
+    "accuracy": 0.0
+  },
+  "overall": {
+    "correct": 415,
+    "total": 1000,
+    "accuracy": 0.415
+  },
+  "protocol": "complete_line",
+  "bands": {
+    "1800-2100": {
+      "correct": 136,
+      "total": 200,
+      "accuracy": 0.68,
+      "clopper_pearson_simultaneous_95": [
+        0.5889407941980165,
+        0.7622606360757529
+      ]
+    },
+    "1500-1800": {
+      "correct": 164,
+      "total": 200,
+      "accuracy": 0.82,
+      "clopper_pearson_simultaneous_95": [
+        0.7401372827594688,
+        0.8841053592389467
+      ]
+    },
+    "2700+": {
+      "correct": 8,
+      "total": 200,
+      "accuracy": 0.04,
+      "clopper_pearson_simultaneous_95": [
+        0.013000391369539413,
+        0.09045461334943966
+      ]
+    },
+    "2100-2400": {
+      "correct": 74,
+      "total": 200,
+      "accuracy": 0.37,
+      "clopper_pearson_simultaneous_95": [
+        0.2835974981145226,
+        0.46274948463104726
+      ]
+    },
+    "2400-2700": {
+      "correct": 33,
+      "total": 200,
+      "accuracy": 0.165,
+      "clopper_pearson_simultaneous_95": [
+        0.10359145166001238,
+        0.24292808352780138
+      ]
+    }
+  }
+}

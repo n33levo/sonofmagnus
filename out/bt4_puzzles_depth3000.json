@@ -1,0 +1,179 @@
+{
+  "1700": {
+    "correct": 146,
+    "total": 151,
+    "accuracy": 0.9668874172185431
+  },
+  "1600": {
+    "correct": 204,
+    "total": 206,
+    "accuracy": 0.9902912621359223
+  },
+  "1500": {
+    "correct": 240,
+    "total": 243,
+    "accuracy": 0.9876543209876543
+  },
+  "1800": {
+    "correct": 183,
+    "total": 194,
+    "accuracy": 0.9432989690721649
+  },
+  "1900": {
+    "correct": 206,
+    "total": 220,
+    "accuracy": 0.9363636363636364
+  },
+  "2000": {
+    "correct": 169,
+    "total": 186,
+    "accuracy": 0.9086021505376344
+  },
+  "2300": {
+    "correct": 126,
+    "total": 172,
+    "accuracy": 0.7325581395348837
+  },
+  "2200": {
+    "correct": 154,
+    "total": 195,
+    "accuracy": 0.7897435897435897
+  },
+  "2100": {
+    "correct": 191,
+    "total": 233,
+    "accuracy": 0.8197424892703863
+  },
+  "2600": {
+    "correct": 97,
+    "total": 178,
+    "accuracy": 0.5449438202247191
+  },
+  "2500": {
+    "correct": 125,
+    "total": 189,
+    "accuracy": 0.6613756613756614
+  },
+  "2400": {
+    "correct": 156,
+    "total": 233,
+    "accuracy": 0.6695278969957081
+  },
+  "2800": {
+    "correct": 30,
+    "total": 128,
+    "accuracy": 0.234375
+  },
+  "2900": {
+    "correct": 13,
+    "total": 87,
+    "accuracy": 0.14942528735632185
+  },
+  "2700": {
+    "correct": 146,
+    "total": 355,
+    "accuracy": 0.4112676056338028
+  },
+  "3100": {
+    "correct": 0,
+    "total": 7,
+    "accuracy": 0.0
+  },
+  "3000": {
+    "correct": 4,
+    "total": 23,
+    "accuracy": 0.17391304347826086
+  },
+  "overall": {
+    "correct": 2190,
+    "total": 3000,
+    "accuracy": 0.73
+  },
+  "protocol": "complete_line",
+  "bands": {
+    "1500-1800": {
+      "correct": 590,
+      "total": 600,
+      "accuracy": 0.9833333333333333,
+      "wilson_simultaneous_95": [
+        0.9636527776255334,
+        0.9924412473798584
+      ],
+      "clopper_pearson_simultaneous_95": [
+        0.9646748774426706,
+        0.993777659461244
+      ]
+    },
+    "1800-2100": {
+      "correct": 558,
+      "total": 600,
+      "accuracy": 0.93,
+      "wilson_simultaneous_95": [
+        0.8982021460861878,
+        0.9523918485737815
+      ],
+      "clopper_pearson_simultaneous_95": [
+        0.8987709286991987,
+        0.9541581219419617
+      ]
+    },
+    "2100-2400": {
+      "correct": 471,
+      "total": 600,
+      "accuracy": 0.785,
+      "wilson_simultaneous_95": [
+        0.7388056965902841,
+        0.8249600905680676
+      ],
+      "clopper_pearson_simultaneous_95": [
+        0.7387662570899916,
+        0.8266141616325542
+      ]
+    },
+    "2400-2700": {
+      "correct": 378,
+      "total": 600,
+      "accuracy": 0.63,
+      "wilson_simultaneous_95": [
+        0.5780659203076877,
+        0.6790904036592798
+      ],
+      "clopper_pearson_simultaneous_95": [
+        0.5775081132901076,
+        0.6803924169003204
+      ]
+    },
+    "2700+": {
+      "correct": 193,
+      "total": 600,
+      "accuracy": 0.32166666666666666,
+      "wilson_simultaneous_95": [
+        0.27472670439855146,
+        0.37250756913394195
+      ],
+      "clopper_pearson_simultaneous_95": [
+        0.27330454244572844,
+        0.3729108692378047
+      ]
+    }
+  },
+  "model": {
+    "model_bytes": 163551053,
+    "sha256": "78cb179eca5662a4eee7c0ed3e94a50cb1eee41b860072b39ef5eeeae8a4ee39"
+  },
+  "dataset": {
+    "model_bytes": 630065,
+    "sha256": "47cab2eaa9b95444a3711899623d5965513dbddc5157e362caadaff525cd67ed"
+  },
+  "neural_forward_calls": 10200,
+  "seconds": 171.94728066702373,
+  "source_commit": "c497f30",
+  "runtime_source": {
+    "play/mlx.py": "af3f81aa7a15d234404c84e5909d29194b4556a6ae4a6132fe9438d30c85f30d",
+    "play/runner.py": "ef8525978d52b9d53df7fbd7f07844eb41333246ef86e47b2a23d76e0f828d16",
+    "chessio/lc0.py": "ae0c0807bd204ced7b4534f8e18a1191a3aec6642724133389b9a24503dba09d",
+    "eval/puzzles.py": "3dfe8dcb669fae9b4abb536a41a361e59ab0a0337ba132142de18b7e0e101689"
+  },
+  "statistics_source": "b8f8d679baa9e79c430015f06c48f75da2d6e59191fc829ef33a897dacd4f279",
+  "interval_method": "Exact Clopper-Pearson binomial intervals, Bonferroni alpha=0.01 per band across five bands"
+}

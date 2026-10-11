@@ -1,0 +1,39 @@
+{
+  "model": {
+    "model_bytes": 11253315,
+    "sha256": "bd5b7a0c4fa0af39400f631209e1e76711d48a247ee3182ae005b3c2ea41d744"
+  },
+  "protocol": "Full move selection, retained PGN history, 200 warm / 100 after 250ms idle; other GPU training stopped",
+  "compute": {
+    "float16": {
+      "runs": 200,
+      "warmup": 20,
+      "positions": 100,
+      "protocol": "full move selection, deterministic, PGN history retained",
+      "p50_ms": 8.288457989692688,
+      "p95_ms": 8.67162355571054,
+      "p99_ms": 9.033220421988515,
+      "neural_forward_calls": 220,
+      "idle": {
+        "p50_ms": 12.119687453377992,
+        "p95_ms": 13.115650281542912,
+        "p99_ms": 13.422998406458648
+      }
+    },
+    "float32": {
+      "runs": 200,
+      "warmup": 20,
+      "positions": 100,
+      "protocol": "full move selection, deterministic, PGN history retained",
+      "p50_ms": 9.849854512140155,
+      "p95_ms": 13.284284807741642,
+      "p99_ms": 13.976683004293587,
+      "neural_forward_calls": 220,
+      "idle": {
+        "p50_ms": 13.309521018527448,
+        "p95_ms": 15.244252030970529,
+        "p99_ms": 15.505904509918764
+      }
+    }
+  }
+}

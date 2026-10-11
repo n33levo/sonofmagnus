@@ -1,0 +1,47 @@
+{
+  "model": {
+    "model_bytes": 163551053,
+    "sha256": "78cb179eca5662a4eee7c0ed3e94a50cb1eee41b860072b39ef5eeeae8a4ee39"
+  },
+  "positions": 200,
+  "source_hash": "08327c7834d5b41dd395645c0483ed43ef1be814fb748736a01e5cd944963d1c",
+  "separate": {
+    "runs": 200,
+    "warmup": 20,
+    "positions": 200,
+    "protocol": "full move selection, deterministic, PGN history retained",
+    "p50_ms": 13.082895951811224,
+    "p95_ms": 15.579401695868,
+    "p99_ms": 16.18586109718307,
+    "neural_forward_calls": 220,
+    "idle_250ms": {
+      "p50_ms": 29.35572899878025,
+      "p95_ms": 35.01123600290156,
+      "p99_ms": 41.27549875760451
+    }
+  },
+  "fused": {
+    "runs": 200,
+    "warmup": 20,
+    "positions": 200,
+    "protocol": "full move selection, deterministic, PGN history retained",
+    "p50_ms": 13.326729473192245,
+    "p95_ms": 18.07338334619999,
+    "p99_ms": 19.185286168940365,
+    "neural_forward_calls": 220,
+    "idle_250ms": {
+      "p50_ms": 27.49143698019907,
+      "p95_ms": 36.33796036010608,
+      "p99_ms": 38.19897927460261
+    }
+  },
+  "parity": {
+    "same_moves": 199,
+    "total": 200,
+    "max_legal_logit_error": 0.1015625,
+    "max_value_error": 0.0068359375
+  },
+  "decision": "Rejected: no p95 improvement and one changed move in 200 positions",
+  "source_base_commit": "d6ed7c23e456f8e5ee4fffcce2b89b465969d2f2",
+  "source_patch": "bt4_qkv_probe.patch"
+}

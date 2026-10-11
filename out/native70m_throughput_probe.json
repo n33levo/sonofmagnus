@@ -1,0 +1,66 @@
+{
+  "device": "Apple M4 MPS",
+  "dataset": {
+    "model_bytes": 2230578372,
+    "sha256": "343e8b5461554565647c665918f343000739da587d38fcbabb7f399c19202646"
+  },
+  "steps_per_case": 8,
+  "warmup_steps": 3,
+  "measurements": [
+    {
+      "batch_size": 128,
+      "layout": "contiguous",
+      "median_step_ms": 177.709249954205,
+      "samples_per_second": 720.2776447089001,
+      "loss": 2.0619826316833496,
+      "allocator_bytes": 105328896
+    },
+    {
+      "batch_size": 128,
+      "layout": "channels_last",
+      "median_step_ms": 208.7151875020936,
+      "samples_per_second": 613.275926548067,
+      "loss": 1.8190572261810303,
+      "allocator_bytes": 105328896
+    },
+    {
+      "batch_size": 256,
+      "layout": "contiguous",
+      "median_step_ms": 352.554916520603,
+      "samples_per_second": 726.1280101451644,
+      "loss": 2.702697992324829,
+      "allocator_bytes": 113849856
+    },
+    {
+      "batch_size": 256,
+      "layout": "channels_last",
+      "median_step_ms": 428.91552101355046,
+      "samples_per_second": 596.8541296781665,
+      "loss": 2.4071567058563232,
+      "allocator_bytes": 113849856
+    },
+    {
+      "batch_size": 512,
+      "layout": "contiguous",
+      "median_step_ms": 622.472312534228,
+      "samples_per_second": 822.5265440570846,
+      "loss": 2.7168617248535156,
+      "allocator_bytes": 134430976
+    },
+    {
+      "batch_size": 512,
+      "layout": "channels_last",
+      "median_step_ms": 746.7382915201597,
+      "samples_per_second": 685.648514096826,
+      "loss": 2.763094902038574,
+      "allocator_bytes": 134430976
+    }
+  ],
+  "runtime_source": {
+    "train/train.py": "dc7e50fc582a7cbda8abcf1740b8a949d0c731f7418216fbfe82971422c0b656",
+    "train/dataset.py": "4183dd7f9f507839ab1880677f0c6c07a9646332b81449b2a7fee24d3f796853",
+    "model/resnet.py": "d41adb9f99c01e0db6c2b994198270c32b7eea2fc3080e2b5a5d77bbaf37d8db",
+    "model/heads.py": "dbe5924cd2760fbbf0fe7bfcdff70117a780a0c2b90de4b076d30ab49645ec89",
+    "model/__init__.py": "14640610cfc61a4998249d61d537ce49c4a358097d11c5de353043e12af2f2af"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "passed": 94,
+  "log": {
+    "model_bytes": 180,
+    "sha256": "d8c6c8480ec8b18fbe8edbb52caedd1b1832ffbe00183899de78716cf7defa1f"
+  },
+  "source_files": {
+    "train/selfplay.py": "c4e6cc221375c462aee040b3793805b6ab32abeac6322629558a56db1f263126",
+    "scripts/select_selfplay.py": "d0eadcfe1b4c0c1a774ce44933c4dd015f66814f7847ca5c5ea5f910751f99df",
+    "scripts/check_selfplay.py": "fe26743e0a9892c226adf2f1674514f90ceb0089ae29d57f044b19a06d1e7302"
+  }
+}

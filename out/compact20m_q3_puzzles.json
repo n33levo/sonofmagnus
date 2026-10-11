@@ -1,0 +1,156 @@
+{
+  "1800": {
+    "correct": 20,
+    "total": 79,
+    "accuracy": 0.25316455696202533
+  },
+  "1500": {
+    "correct": 27,
+    "total": 74,
+    "accuracy": 0.36486486486486486
+  },
+  "2800": {
+    "correct": 1,
+    "total": 34,
+    "accuracy": 0.029411764705882353
+  },
+  "2000": {
+    "correct": 8,
+    "total": 50,
+    "accuracy": 0.16
+  },
+  "1900": {
+    "correct": 11,
+    "total": 71,
+    "accuracy": 0.15492957746478872
+  },
+  "2100": {
+    "correct": 18,
+    "total": 79,
+    "accuracy": 0.22784810126582278
+  },
+  "1700": {
+    "correct": 12,
+    "total": 56,
+    "accuracy": 0.21428571428571427
+  },
+  "1600": {
+    "correct": 28,
+    "total": 70,
+    "accuracy": 0.4
+  },
+  "2600": {
+    "correct": 2,
+    "total": 54,
+    "accuracy": 0.037037037037037035
+  },
+  "2400": {
+    "correct": 6,
+    "total": 88,
+    "accuracy": 0.06818181818181818
+  },
+  "2500": {
+    "correct": 5,
+    "total": 58,
+    "accuracy": 0.08620689655172414
+  },
+  "2300": {
+    "correct": 4,
+    "total": 57,
+    "accuracy": 0.07017543859649122
+  },
+  "2200": {
+    "correct": 14,
+    "total": 64,
+    "accuracy": 0.21875
+  },
+  "2700": {
+    "correct": 10,
+    "total": 147,
+    "accuracy": 0.06802721088435375
+  },
+  "3000": {
+    "correct": 0,
+    "total": 2,
+    "accuracy": 0.0
+  },
+  "2900": {
+    "correct": 0,
+    "total": 16,
+    "accuracy": 0.0
+  },
+  "3100": {
+    "correct": 0,
+    "total": 1,
+    "accuracy": 0.0
+  },
+  "overall": {
+    "correct": 166,
+    "total": 1000,
+    "accuracy": 0.166
+  },
+  "protocol": "complete_line",
+  "bands": {
+    "1800-2100": {
+      "correct": 39,
+      "total": 200,
+      "accuracy": 0.195,
+      "clopper_pearson_simultaneous_95": [
+        0.1283760349420482,
+        0.2766240304410541
+      ]
+    },
+    "1500-1800": {
+      "correct": 67,
+      "total": 200,
+      "accuracy": 0.335,
+      "clopper_pearson_simultaneous_95": [
+        0.2513864167779556,
+        0.4266756380199005
+      ]
+    },
+    "2700+": {
+      "correct": 11,
+      "total": 200,
+      "accuracy": 0.055,
+      "clopper_pearson_simultaneous_95": [
+        0.02192094221478922,
+        0.11056406737848562
+      ]
+    },
+    "2100-2400": {
+      "correct": 36,
+      "total": 200,
+      "accuracy": 0.18,
+      "clopper_pearson_simultaneous_95": [
+        0.11589464076105321,
+        0.25986271724053145
+      ]
+    },
+    "2400-2700": {
+      "correct": 13,
+      "total": 200,
+      "accuracy": 0.065,
+      "clopper_pearson_simultaneous_95": [
+        0.028361040541985405,
+        0.12352149519675285
+      ]
+    }
+  },
+  "model": {
+    "model_bytes": 8526870,
+    "sha256": "f27bd44b94e54605103d9af2121b4196589b7f4587eefdb8cce5e606fe16f8f3"
+  },
+  "dataset": {
+    "model_bytes": 206111,
+    "sha256": "88299ef468ca752777945bce0a635976522af6d9a431d31b3a8ad1b21b0048f3"
+  },
+  "neural_forward_calls": 1605,
+  "runtime_source": {
+    "eval/puzzles.py": "21d5229edf2b591f1a3a9e8d59d446394ab4bae9c1311e7da7403a0a2f044beb",
+    "eval/statistics.py": "b8f8d679baa9e79c430015f06c48f75da2d6e59191fc829ef33a897dacd4f279",
+    "play/runner.py": "ef8525978d52b9d53df7fbd7f07844eb41333246ef86e47b2a23d76e0f828d16",
+    "play/mlx.py": "81fec41b0acef61549e2f2efc9430b410621c794811295901ca595a8e477ed74",
+    "chessio/lc0.py": "ae0c0807bd204ced7b4534f8e18a1191a3aec6642724133389b9a24503dba09d"
+  }
+}

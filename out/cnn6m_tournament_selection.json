@@ -1,0 +1,50 @@
+{
+  "rule": "Most complete solutions on the existing 1000-puzzle selection set; Stockfish top-1 breaks ties. No fresh puzzle tests or tournament games used.",
+  "candidates": [
+    {
+      "checkpoint": "ckpts/sonofmagnus-cnn6M-epoch2.mlx",
+      "model": {
+        "model_bytes": 11253315,
+        "sha256": "bd5b7a0c4fa0af39400f631209e1e76711d48a247ee3182ae005b3c2ea41d744"
+      },
+      "puzzles_complete": 415,
+      "top1_agreement": 0.519
+    },
+    {
+      "checkpoint": "ckpts/sonofmagnus-cnn6M-gold-epoch1.mlx",
+      "model": {
+        "model_bytes": 11253181,
+        "sha256": "d60fc0595d443baa6e8305a9fc0b357584c0e9d99d938bbaa5e57be6c78b25ff"
+      },
+      "puzzles_complete": 432,
+      "top1_agreement": 0.5155
+    },
+    {
+      "checkpoint": "ckpts/sonofmagnus-cnn6M-gold-final.mlx",
+      "model": {
+        "model_bytes": 11253422,
+        "sha256": "22053e48b5fee0389a4e5be7aa9ac896363ececd0e570f2e992d5d52af7a283e"
+      },
+      "puzzles_complete": 423,
+      "top1_agreement": 0.51
+    }
+  ],
+  "selected": {
+    "checkpoint": "ckpts/sonofmagnus-cnn6M-gold-epoch1.mlx",
+    "model": {
+      "model_bytes": 11253181,
+      "sha256": "d60fc0595d443baa6e8305a9fc0b357584c0e9d99d938bbaa5e57be6c78b25ff"
+    },
+    "puzzles_complete": 432,
+    "top1_agreement": 0.5155
+  },
+  "frozen": "ckpts/sonofmagnus-cnn6M-selected.mlx",
+  "games": 400,
+  "opening_pairs": 50,
+  "time_control": "10+0.1",
+  "openings": "data/compact_arena_openings.fen",
+  "openings_artifact": {
+    "model_bytes": 3293,
+    "sha256": "240020e9db2814431ca1816b0f719065b6155366434ffa9d484ce1605d4485e9"
+  }
+}

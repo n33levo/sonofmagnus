@@ -1,0 +1,15 @@
+{
+  "file_size_mb": 8.282019,
+  "size_ok": true,
+  "p50_latency_ms": 3.2002500374801457,
+  "p95_latency_ms": 7.9663333017379045,
+  "p99_latency_ms": 10.61417172895744,
+  "latency_ok": true,
+  "provider": "CPUExecutionProvider",
+  "runs": 200,
+  "threads": 4,
+  "positions": 200,
+  "neural_forward_calls": 210,
+  "protocol": "Complete move selection; retained PGN history",
+  "model_sha256": "894b8f612d2ba54b18eabe4b3af86517ebb781c4ea036c908fe96f702e08a15b"
+}

@@ -1,0 +1,19 @@
+{
+  "sources": {
+    "data/compact_236k_train.jsonl": {
+      "model_bytes": 113885018,
+      "sha256": "7b25b98d2b3138b8eeaf5b564806542462813cf46d9ac12deed0ce979b171fcf"
+    },
+    "data/tactics50k_train.jsonl": {
+      "model_bytes": 35667940,
+      "sha256": "a83797a8e03596c94c93fa79d82d3e25274a924b18ed21d9453709e85c0e5694"
+    }
+  },
+  "training": {
+    "model_bytes": 149552958,
+    "sha256": "89a4c8fdb4421d23920b7c477f2e68d7ee5fae697bd5d7477a1b93e9ff206d3b"
+  },
+  "positions": 341010,
+  "teacher": "BT3 history policy and WDL",
+  "quality": "Native quality weights from human ratings; deep Stockfish puzzle replies have weight 3"
+}

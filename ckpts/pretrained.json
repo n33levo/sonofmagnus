@@ -1,0 +1,33 @@
+{
+  "runtime": {
+    "source": "https://github.com/LeelaChessZero/lc0",
+    "revision": "fd71a2d921b689c5f479d3227c3806c8e272d9c5",
+    "license": "GPL-3.0"
+  },
+  "weights": {
+    "bt3": {
+      "source": "https://storage.lczero.org/files/networks-contrib/BT3-768x15x24h-swa-2790000.pb.gz",
+      "sha256": "e3067757d1fc2dfc66947b21d15ace0cedf4c54254fc1de83d77c378a3e8b8e1",
+      "bytes": 190937780,
+      "architecture": "LC0 pretrained transformer"
+    },
+    "bt4": {
+      "source": "https://storage.lczero.org/files/networks-contrib/BT4-1024x15x32h-swa-6147500-policytune-332.pb.gz",
+      "sha256": "e6ada9d6c4a769bfab3aa0848d82caeb809aa45f83e6c605fc58a31d21bdd618",
+      "bytes": 382645315,
+      "architecture": "LC0 pretrained transformer"
+    },
+    "t1-256x10": {
+      "source": "https://storage.lczero.org/files/networks-contrib/t1-256x10-distilled-swa-2432500.pb.gz",
+      "sha256": "bc27a6cae8ad36f2b9a80a6ad9dabb0d6fda25b1e7f481a79bc359e14f563406",
+      "bytes": 37118673,
+      "architecture": "LC0 pretrained transformer"
+    },
+    "t74": {
+      "source": "https://storage.lczero.org/files/networks-contrib/744706_spsa072024.pb.gz",
+      "sha256": "2fbc783b016005c8bb20178a9d0096c8c0749bce3df1b26e59d0231ba293a7ba",
+      "bytes": 6482009,
+      "architecture": "LC0 ResNet, 10 blocks, 128 channels"
+    }
+  }
+}

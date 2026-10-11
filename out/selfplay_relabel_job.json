@@ -1,0 +1,8 @@
+{
+  "status": "Labeling the selected 150000 positions with depth-12 Stockfish across every legal action",
+  "selfplay_review": "out/selfplay_1m_review.json",
+  "source": "data/selfplay_150k_hard.jsonl",
+  "labels": "data/selfplay_150k_q.jsonl",
+  "dagger_iterations": 5,
+  "dagger_positions_per_iteration": 200000
+}

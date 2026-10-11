@@ -68,15 +68,15 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 89,
+    "local_tests": 90,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
-      "passed": 75,
+      "passed": 77,
       "skipped_optional": 13,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38116872510",
-      "source_commit": "cd01a1f"
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38117599331",
+      "source_commit": "1298761"
     },
     "clocked_match": {
       "games": 100,
@@ -178,7 +178,8 @@
       "overflow_regression": true,
       "parameters_unchanged_during_retry": true,
       "scale_1024_to_512_verified": true
-    }
+    },
+    "independent_pool_review": "bt4_ccrl_pool/independent_review.json"
   },
   "metal_runtime": {
     "strong_185M": {

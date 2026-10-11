@@ -67,6 +67,7 @@ def review(directory, source_commit=None):
     for name, expected in calculated.items():
         assert rating[name] == expected, f'Rating calculation differs: {name}'
     return dict(total, matches=matches, model=manifest['model'],
+                reviewer_sha256=artifact_info(__file__)['sha256'],
                 latency_ms={f'p{q}': float(np.percentile(latencies, q)) for q in (50, 95, 99)},
                 outcomes_verified=True, source_hashes_verified=True, forfeits=0, ply_caps=0)
 

@@ -9,6 +9,7 @@ import chess
 
 from play.runner import load_runner
 from eval.statistics import binomial_interval
+from model.artifacts import artifact_info
 
 
 def puzzle_moves(puzzle):
@@ -102,8 +103,15 @@ def main():
     parser.add_argument('--first-move-only', action='store_true')
     parser.add_argument('--out')
     args = parser.parse_args()
+    model, dataset = artifact_info(args.ckpt), artifact_info(args.puzzles)
     runner = load_runner(args.ckpt, args.config, args.device)
     results = evaluate_runner(runner, args.puzzles, args.max, args.first_move_only)
+    if artifact_info(args.ckpt) != model or artifact_info(args.puzzles) != dataset:
+        raise ValueError('Model or puzzle dataset changed during evaluation')
+    results.update(model=model, dataset=dataset,
+                   neural_forward_calls=getattr(runner, 'forward_calls', None),
+                   runtime_source={path: artifact_info(path)['sha256'] for path in
+                       ('eval/puzzles.py', 'eval/statistics.py', 'play/runner.py', 'play/mlx.py', 'chessio/lc0.py')})
     print(json.dumps(results, indent=2))
     if args.out:
         Path(args.out).write_text(json.dumps(results, indent=2) + '\n')

@@ -44,6 +44,7 @@
     "model_bytes": 163551053,
     "sha256": "78cb179eca5662a4eee7c0ed3e94a50cb1eee41b860072b39ef5eeeae8a4ee39"
   },
+  "reviewer_sha256": "d71e86f356b964aac39107bdb0d3a6a1c5c7fae28a78930be8f767b547a5f9b7",
   "latency_ms": {
     "p50": 25.772,
     "p95": 33.25979999999999,

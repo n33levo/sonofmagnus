@@ -1,0 +1,62 @@
+{
+  "3": {
+    "total": 40,
+    "optimal": 40,
+    "absolute_value_error": 0.14525683216925245,
+    "forced_choice_total": 12,
+    "forced_choice_optimal": 12,
+    "optimal_move_rate": 1.0,
+    "value_mae": 0.003631420804231311
+  },
+  "4": {
+    "total": 40,
+    "optimal": 40,
+    "absolute_value_error": 1.2510245553967252,
+    "forced_choice_total": 15,
+    "forced_choice_optimal": 15,
+    "optimal_move_rate": 1.0,
+    "value_mae": 0.03127561388491813
+  },
+  "5": {
+    "total": 40,
+    "optimal": 39,
+    "absolute_value_error": 1.015501472473261,
+    "forced_choice_total": 11,
+    "forced_choice_optimal": 10,
+    "optimal_move_rate": 0.975,
+    "value_mae": 0.025387536811831524
+  },
+  "6": {
+    "total": 40,
+    "optimal": 39,
+    "absolute_value_error": 1.838031161139952,
+    "forced_choice_total": 16,
+    "forced_choice_optimal": 15,
+    "optimal_move_rate": 0.975,
+    "value_mae": 0.0459507790284988
+  },
+  "7": {
+    "total": 40,
+    "optimal": 40,
+    "absolute_value_error": 7.269688628613949,
+    "forced_choice_total": 17,
+    "forced_choice_optimal": 17,
+    "optimal_move_rate": 1.0,
+    "value_mae": 0.1817422157153487
+  },
+  "protocol": "Preserve tablebase WDL under the fifty-move rule; DTZ tie-breaking is not scored",
+  "model": {
+    "model_bytes": 11253181,
+    "sha256": "d60fc0595d443baa6e8305a9fc0b357584c0e9d99d938bbaa5e57be6c78b25ff"
+  },
+  "dataset": {
+    "model_bytes": 70673,
+    "sha256": "c0662a2de81255a193b6b8f2b35d1ecf30dbcc9a85abd2ba0307cc38e849da0a"
+  },
+  "runtime_source": {
+    "eval/endgames.py": "da6d095b2b480e3faca82851f6aa19fb4320e9071f6064b8c55309172d51b332",
+    "play/runner.py": "ef8525978d52b9d53df7fbd7f07844eb41333246ef86e47b2a23d76e0f828d16",
+    "play/mlx.py": "81fec41b0acef61549e2f2efc9430b410621c794811295901ca595a8e477ed74",
+    "chessio/lc0.py": "ae0c0807bd204ced7b4534f8e18a1191a3aec6642724133389b9a24503dba09d"
+  }
+}

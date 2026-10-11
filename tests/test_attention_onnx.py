@@ -59,3 +59,47 @@ def test_classical_int8_runs_on_cpu_and_retains_legal_history(tmp_path):
     assert runner.forward_calls == 1
     latency = check_model(int8, num_runs=2, num_warmup=0)
     assert latency['positions'] == 1 and latency['neural_forward_calls'] == 2
+
+
+def test_mixed_cnn_keeps_sensitive_boundaries_float_and_quantizes_the_body(tmp_path):
+    rng = np.random.default_rng(17)
+    arrays = {
+        'input_w': rng.normal(0, .02, (8, 112, 1, 1)).astype(np.float32),
+        'body_w': rng.normal(0, .02, (8, 8, 3, 3)).astype(np.float32),
+        'policy_w': rng.normal(0, .02, (512, 1858)).astype(np.float32),
+        'value_w': rng.normal(0, .02, (512, 3)).astype(np.float32),
+        'shape': np.array([-1, 512]),
+    }
+    nodes = [
+        helper.make_node('Conv', ['board', 'input_w'], ['input'], name='/inputconv/conv'),
+        helper.make_node('Relu', ['input'], ['activated']),
+        helper.make_node('Conv', ['activated', 'body_w'], ['body'], name='/body/conv', pads=[1, 1, 1, 1]),
+        helper.make_node('Reshape', ['body', 'shape'], ['flat']),
+        helper.make_node('MatMul', ['flat', 'policy_w'], ['policy'], name='/policy/linear'),
+        helper.make_node('MatMul', ['flat', 'value_w'], ['logits'], name='/value/linear'),
+        helper.make_node('Softmax', ['logits'], ['value'], axis=1),
+    ]
+    model = helper.make_model(helper.make_graph(nodes, 'cnn',
+        [helper.make_tensor_value_info('board', TensorProto.FLOAT, ['batch', 112, 8, 8])],
+        [helper.make_tensor_value_info('policy', TensorProto.FLOAT, ['batch', 1858]),
+         helper.make_tensor_value_info('value', TensorProto.FLOAT, ['batch', 3])],
+        [numpy_helper.from_array(value, name) for name, value in arrays.items()]),
+        opset_imports=[helper.make_opsetid('', 18)])
+    model.ir_version = 10
+    source, mixed = tmp_path / 'cnn.onnx', tmp_path / 'mixed.onnx'
+    onnx.save(model, source)
+    calibration = tmp_path / 'boards.jsonl'
+    board = chess.Board()
+    board.push_uci('e2e4')
+    calibration.write_text('\n'.join(json.dumps({'fen': fen}) for fen in
+                                    [chess.STARTING_FEN, board.fen()]) + '\n')
+    metrics = quantize_model(source, mixed, calibration_data=calibration, keep_input_and_heads=True)
+    assert metrics['size_mb'] < source.stat().st_size / 1e6
+    graph = onnx.load(mixed).graph
+    weights = list(graph.initializer)
+    assert any(weight.data_type == TensorProto.INT8 and list(weight.dims) == [8, 8, 3, 3] for weight in weights)
+    for shape in ([8, 112, 1, 1], [512, 1858], [512, 3]):
+        assert any(weight.data_type == TensorProto.FLOAT and list(weight.dims) == shape for weight in weights)
+    runner = load_runner(mixed, device='cpu')
+    assert runner.select_move(board, deterministic=True) in board.legal_moves
+    assert runner.forward_calls == 1

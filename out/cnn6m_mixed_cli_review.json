@@ -1,0 +1,15 @@
+{
+  "model": {
+    "model_bytes": 8282019,
+    "sha256": "894b8f612d2ba54b18eabe4b3af86517ebb781c4ea036c908fe96f702e08a15b"
+  },
+  "source": {
+    "model_bytes": 22474422,
+    "sha256": "bb4eed6e767e436740eeb54a10dfd9419f1b5eafcdb2c4c6186d10a9f077153b"
+  },
+  "float_boundaries_verified": true,
+  "int8_tensors": 80,
+  "legal_move": "f1b5",
+  "neural_forward_calls": 1,
+  "producer_sha256": "16ddcabc03aa4f2bf1ad517f033c877cdb6fbf7f927f7327da3e8f55e5314149"
+}

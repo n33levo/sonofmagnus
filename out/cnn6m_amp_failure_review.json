@@ -19,7 +19,7 @@
   "fix": "Gradient checks precede optimizer updates. AMP retries the identical batch with lower scale. Bias-corrected AdamW and a smaller fine-tuning rate prevent the observed early forward instability.",
   "lower_rate_fp16": {
     "epochs_completed": 2,
-    "third_epoch_failed_after_samples": 194304,
+    "last_logged_batch_offset_before_failure": 194304,
     "failure": "FP16 forward overflow after gradient retry at scale 128; last completed epoch retained"
   }
 }

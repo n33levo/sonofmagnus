@@ -45,7 +45,7 @@ class BoardCalibration(CalibrationDataReader):
         self.iterator = iter(self.boards)
 
 
-def quantize_model(input_path, output_path, weight_type='int8', calibration_data=None):
+def quantize_model(input_path, output_path, weight_type='int8', calibration_data=None, keep_input_and_heads=False):
     if calibration_data is None:
         raise ValueError('INT8 conversion requires --calibration-data for validation')
     model = onnx.load(input_path)
@@ -54,11 +54,21 @@ def quantize_model(input_path, output_path, weight_type='int8', calibration_data
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
     classical = model.graph.input[0].type.tensor_type.shape.dim[1].dim_value == 112
+    cnn = any(node.op_type == 'Conv' for node in model.graph.node)
+    if keep_input_and_heads and not (classical and cnn):
+        raise ValueError('Keeping these boundaries in FP32 requires a classical LC0 CNN')
     calibration = BoardCalibration(calibration_data, classical=classical)
     with tempfile.TemporaryDirectory() as directory:
         prepared = str(Path(directory) / 'prepared.onnx')
         quant_pre_process(input_path, prepared)
-        if classical and not any(node.op_type == 'Conv' for node in model.graph.node):
+        excluded = []
+        if keep_input_and_heads:
+            optimized = onnx.load(prepared)
+            input_name = optimized.graph.input[0].name
+            excluded = [node.name for node in optimized.graph.node
+                        if any(name.startswith(('/inputconv/', '/policy/', '/value/')) for name in [node.name, *node.output])
+                        or (node.op_type == 'Conv' and input_name in node.input)]
+        if classical and not cnn:
             # Recompute activation ranges per position: history includes the unbounded rule-50 clock.
             quantize_dynamic(prepared, str(output), weight_type=QuantType.QInt8 if weight_type == 'int8' else QuantType.QUInt8,
                              per_channel=True, op_types_to_quantize=['MatMul'])
@@ -66,7 +76,7 @@ def quantize_model(input_path, output_path, weight_type='int8', calibration_data
             quantize_static(prepared, str(output), calibration, quant_format=QuantFormat.QDQ,
                             activation_type=QuantType.QUInt8,
                             weight_type=QuantType.QInt8 if weight_type == 'int8' else QuantType.QUInt8,
-                            per_channel=True, op_types_to_quantize=['Conv', 'MatMul', 'Gemm'])
+                            per_channel=True, op_types_to_quantize=['Conv', 'MatMul', 'Gemm'], nodes_to_exclude=excluded)
     model = onnx.load(output)
     public = {value.name for value in [*model.graph.input, *model.graph.output]}
     names = {name for node in model.graph.node for name in [*node.input, *node.output] if name and name not in public}
@@ -101,8 +111,9 @@ def main():
     parser.add_argument('--out', required=True)
     parser.add_argument('--weight-type', choices=['int8', 'uint8'], default='int8')
     parser.add_argument('--calibration-data', required=True)
+    parser.add_argument('--keep-input-and-heads', action='store_true', help='Spend extra bytes on FP32 input convolution and heads')
     args = parser.parse_args()
-    quantize_model(args.input, args.out, args.weight_type, args.calibration_data)
+    quantize_model(args.input, args.out, args.weight_type, args.calibration_data, args.keep_input_and_heads)
 
 
 if __name__ == '__main__':

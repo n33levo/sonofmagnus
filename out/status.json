@@ -68,15 +68,15 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 88,
+    "local_tests": 89,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
       "passed": 75,
-      "skipped_optional": 12,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38115533804",
-      "source_commit": "81af61d"
+      "skipped_optional": 13,
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38116872510",
+      "source_commit": "cd01a1f"
     },
     "clocked_match": {
       "games": 100,
@@ -406,7 +406,7 @@
     "source_policy_top1": 0.517,
     "cpu_int8_bytes": 5771673,
     "cpu_int8_top1": 0.5045,
-    "status": "Two CNN epochs complete; third FP16 pass failed and was not counted. Gold-priority FP32 continuation is running from epoch 2.",
+    "status": "Two CNN epochs and the first gold-priority FP32 pass are complete. The second FP32 pass is running; compact Elo is not yet established.",
     "learning_rate": 5e-05,
     "optimizer_bias_correction": true,
     "overflow_handling": "Retry unchanged batch at lower scale before optimizer update; forward failures abort",
@@ -428,6 +428,23 @@
       "original_endgame_point_targets_met": true,
       "training": "cnn6m_epoch2_training.json"
     },
-    "fp32_compute": "cnn6m_fp32_compute_probe.json: idle p95 15.24ms with FP16 stored weights"
+    "fp32_compute": "cnn6m_fp32_compute_probe.json: idle p95 15.24ms with FP16 stored weights",
+    "gold_epoch1": {
+      "top1": 0.5155,
+      "puzzles_complete": 432,
+      "original_endgame_point_targets_met": true,
+      "training": "cnn6m_gold_epoch1_training.json",
+      "evidence": [
+        "cnn6m_gold_epoch1_agreement.json",
+        "cnn6m_gold_epoch1_puzzles.json",
+        "cnn6m_gold_epoch1_endgames.json"
+      ]
+    },
+    "cpu_mixed_initialization": {
+      "model_bytes": 8282019,
+      "top1": 0.5085,
+      "evidence": "cnn6m_mixed_cli_review.json",
+      "scope": "Widened initialization only; not the final fine-tuned model"
+    }
   }
 }

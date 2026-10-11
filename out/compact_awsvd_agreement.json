@@ -1,0 +1,12 @@
+{
+  "top1_agreement": 0.447,
+  "top3_agreement": 0.7225,
+  "top5_agreement": 0.8295,
+  "total": 2000,
+  "mean_kl_divergence": 2.0380620964202234,
+  "model": {
+    "model_bytes": 13469543,
+    "sha256": "6b5f0102854919ad315417aa76d849ec4ed0816eedaa9a2efa67d39243644f85"
+  },
+  "dataset_sha256": "0af73b599e4ad501024ee0d5db55305169f020027c4ee9a0be60bd3b9b977962"
+}

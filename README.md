@@ -13,14 +13,15 @@ Frozen datasets, results and game logs live in [data](data) and [out](out).
 | Model | Stored weights | Full move-selection p95 | Complete puzzles | Stockfish depth-14 top-1 |
 |---|---:|---:|---:|---:|
 | sonofmagnus-102M | 205.1 MB, FP16 MLX | 10.9 ms, isolated GPU benchmark | 717/1000 | 62.95%, 2000 positions |
-| sonofmagnus-compact-0.65M | 0.96 MB, INT8 ONNX | <1 ms CPU | Not competitive yet | 25.45%, 2000 positions |
-| sonofmagnus-compact-6.7M | Training | Pending | Pending | Pending |
+| sonofmagnus-compact-0.66M | 0.96 MB, INT8 ONNX | <1 ms CPU | Not competitive yet | 25.45%, 2000 positions |
+| sonofmagnus-185M | 163.6 MB, 6-bit MLX | 17.6 ms, isolated GPU benchmark | 784/1000 | 63.15%, 2000 positions |
+| sonofmagnus-compact-6.7M | 7.81 MB, 8-bit MLX | Pending | 136/1000 | 44.85%, 2000 positions |
 
 Parameter labels are rounded; export manifests record exact stored scalar counts and bytes. Puzzle scoring requires the whole solution, with one deterministic attempt. The 102M model clears the five original puzzle-band point targets: **95%, 82%, 68%, 47%, 23%**. Sampling uncertainty still applies.
 
-**Elo is being established in an offline tournament.** A 20-game probe against full-strength Stash 21.0 scored 8 wins, 4 draws and 8 losses at 10+0.1. That sample cannot establish 2600 Elo. Stockfish's `UCI_Elo` setting is not a rating certificate.
+**Elo is being established in a 400-game offline tournament.** A 20-game probe against full-strength Stash 21.0 scored 8 wins, 4 draws and 8 losses at 10+0.1. That sample cannot establish 2600 Elo. Stockfish's `UCI_Elo` setting is not a rating certificate.
 
-The pool uses published CCRL Blitz ratings as reference points. Local time controls and hardware differ, so its result is a **CCRL-referenced local Elo estimate**, with paired-opening confidence intervals, not an official CCRL, FIDE or Lichess rating. In-game latency is checked separately from the isolated benchmark.
+The pool uses published CCRL Blitz ratings as reference points. Local time controls and hardware differ, so its result is a **CCRL-referenced local Elo estimate**, with paired-opening confidence intervals, not an official CCRL, FIDE or Lichess rating. In-game latency is checked separately: the 185M policy measured 33.3 ms at p95 in its first 100 tournament games, above the target.
 
 The original numeric targets, including the curriculum, ablations, opening benchmark, endgames, training speed and dataset sizes, remain in [out/targets.json](out/targets.json). [out/status.json](out/status.json) records what is still missing. The 70M-position training run and the compact model's playing strength have not been established.
 

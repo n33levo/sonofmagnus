@@ -1,0 +1,92 @@
+{
+  "initialization": {
+    "model_bytes": 13468402,
+    "sha256": "b4dd44e603137ae3dc5a004b2c531bd2827a87850a633cece1a41843109408ac"
+  },
+  "fp16_model": {
+    "model_bytes": 13469543,
+    "sha256": "6b5f0102854919ad315417aa76d849ec4ed0816eedaa9a2efa67d39243644f85"
+  },
+  "q8_model": {
+    "model_bytes": 7808680,
+    "sha256": "c1cf25f1917e60bd99fe53164bda77026c093ab89863a8b8f8262088831e497f"
+  },
+  "stored_scalars": 6673986,
+  "train_rows": 18000,
+  "heldout_rows": 2000,
+  "exact_fen_overlap": 0,
+  "device": "Apple M4 GPU / MLX",
+  "epoch_logs": [
+    {
+      "loss": 2.241346115960015,
+      "policy_loss": 2.02964243888855,
+      "distill_loss": 1.9950917236540053,
+      "value_loss": 0.9504668779902988,
+      "epoch": 1,
+      "samples": 18000,
+      "seconds": 88.63978520792443
+    },
+    {
+      "loss": 1.7976747888988918,
+      "policy_loss": 1.6567951384650337,
+      "distill_loss": 1.5742576711442735,
+      "value_loss": 0.8111309894455804,
+      "epoch": 2,
+      "samples": 18000,
+      "seconds": 76.76122012501583
+    },
+    {
+      "loss": 1.53849534257253,
+      "policy_loss": 1.4340281298955282,
+      "distill_loss": 1.3176908067067463,
+      "value_loss": 0.7668808184199863,
+      "epoch": 3,
+      "samples": 18000,
+      "seconds": 92.99563254206441
+    },
+    {
+      "loss": 1.3341093798743353,
+      "policy_loss": 1.2583448769251506,
+      "distill_loss": 1.1138317630555894,
+      "value_loss": 0.7365973649024964,
+      "epoch": 4,
+      "samples": 18000,
+      "seconds": 93.11673312506173
+    }
+  ],
+  "status": "size target met; chess strength targets not met",
+  "command": "python -m train.mlx --student ckpts/t1-awsvd-r64.mlx --teacher ckpts/bt3.mlx --data data/eval_train.jsonl --out ckpts/compact-awsvd-6.7M.mlx --epochs 4 --batch-size 32 --lr 0.0001 --teacher-cache data/bt3_teacher18k.npy",
+  "training_source": {
+    "source_onnx_sha256": "1e2e95cf5a3eacc08ab7d893108f50c49ce0ff350c1dff87b5bffc4966c1cae0",
+    "weight_bits": 16,
+    "stored_scalars_before_quantization": 6673986,
+    "weights_and_graph_bytes": 13467770,
+    "quantized_matrices": 0,
+    "low_rank_width": 64,
+    "factorized_matrices": 86,
+    "relative_squared_weight_error": 0.02581470934176662,
+    "compression_metric": "ridge-regularized activation error",
+    "calibration": {
+      "model_bytes": 246614432,
+      "sha256": "e5a95c04996bf063014d460277850c7f769379868586dbf97b5db565f21be683"
+    },
+    "source_weights_sha256": "bc27a6cae8ad36f2b9a80a6ad9dabb0d6fda25b1e7f481a79bc359e14f563406",
+    "student_source": {
+      "model_bytes": 13468402,
+      "sha256": "b4dd44e603137ae3dc5a004b2c531bd2827a87850a633cece1a41843109408ac"
+    },
+    "teacher_source": {
+      "model_bytes": 205113406,
+      "sha256": "d92446f5b649e8da20e82de243e1bad683ccb059ae1683f7ae6043c1d883d588"
+    },
+    "training_data": {
+      "model_bytes": 4387554,
+      "sha256": "253d11f601b2540a53cf5eaf4c674c62d34c71736bef37f6174c01b6ebc0a51d"
+    },
+    "seed": 0,
+    "learning_rate": 0.0001,
+    "objective": "25% engine policy, 75% teacher policy, 0.25 teacher WDL CE plus centred-value MSE",
+    "training_device": "Device(gpu, 0)",
+    "teacher_temperature": 0.25
+  }
+}

@@ -22,7 +22,7 @@ Parameter labels are rounded; export manifests record exact stored scalar counts
 
 The pool uses published CCRL Blitz ratings as reference points. Its **local Elo estimate** uses different hardware and clocks; it is not an official CCRL, FIDE or Lichess rating. Intervals condition on fixed anchors and exclude those systematic differences. In-game latency remains about **33.3 ms at p95**, above the GPU target.
 
-The original numeric targets remain in [out/targets.json](out/targets.json). [out/status.json](out/status.json) tracks the remaining work. A new **5.96M** policy is training on **341,010** positions with real histories and verified tactical labels. We have collected **70M human positions** and **2.5M distinct full-action engine labels**; their full training runs remain unfinished. The [5000-master-game test](out/bt4_openings5000.json) measured 50–66% exact opening-move agreement, below the original targets.
+The original targets remain in [out/targets.json](out/targets.json); [out/status.json](out/status.json) tracks progress. The 6M transformer finished at **41.6% agreement / 318 puzzles**. We are now fine-tuning a **5.61M CNN** on **341,010** positions; its last completed pass scored **51.9% / 415 puzzles**. Compact Elo remains unmeasured. We collected **70M human positions** and **2.5M distinct full-action labels**; full training is unfinished. The [5000-master-game test](out/bt4_openings5000.json) measured 50–66% exact opening agreement, below the targets.
 
 ## Run it
 

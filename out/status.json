@@ -76,10 +76,10 @@
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
-      "passed": 67,
+      "passed": 68,
       "skipped_optional": 6,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38106288810",
-      "source_commit": "d004414"
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38107151881",
+      "source_commit": "c497f30"
     },
     "clocked_match": {
       "games": 100,
@@ -157,7 +157,8 @@
       "legal": true,
       "neural_forward_calls": 1
     },
-    "focused_q_corpus_tests": 7
+    "focused_q_corpus_tests": 7,
+    "native_training_regressions": 5
   },
   "metal_runtime": {
     "strong_185M": {
@@ -311,7 +312,7 @@
     "strength": "Previous weak checkpoint; deployment path verified only"
   },
   "human_corpus": {
-    "status": "Extracting with verified replay of interrupted January/February prefixes and exact HTTP byte-range recovery",
+    "status": "January and February complete; March to May extracting; not yet trained on the 70M corpus",
     "sources": "2024-01 to 2024-05",
     "target_positions": 70000000,
     "min_both_ratings": 2000,
@@ -320,7 +321,12 @@
       "blitz",
       "rapid"
     ],
-    "heldout_positions_excluded": true
+    "heldout_positions_excluded": true,
+    "completed_positions": 30000000,
+    "completed_months": [
+      "2024-01",
+      "2024-02"
+    ]
   },
   "engine_corpus": {
     "status": "Extracting",

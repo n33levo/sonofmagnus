@@ -1,0 +1,61 @@
+{
+  "url": "https://database.lichess.org/lichess_db_puzzle.csv.zst",
+  "source_headers": {
+    "Server": "nginx",
+    "Date": "Sun, 11 Oct 2026 03:07:15 GMT",
+    "Content-Type": "application/octet-stream",
+    "Content-Length": "307234795",
+    "Last-Modified": "Fri, 02 Oct 2026 08:51:45 GMT",
+    "Connection": "close",
+    "ETag": "\"6abf70a1-125007eb\"",
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+    "X-Frame-Options": "DENY",
+    "Accept-Ranges": "bytes"
+  },
+  "seed": 20261011,
+  "source_prefix_records": 3000000,
+  "eligible_by_band": [
+    182074,
+    71916,
+    14687,
+    3051,
+    1046
+  ],
+  "samples_per_band": 600,
+  "minimum_plays": 1000,
+  "excluded_training": {
+    "model_bytes": 149552958,
+    "sha256": "89a4c8fdb4421d23920b7c477f2e68d7ee5fae697bd5d7477a1b93e9ff206d3b"
+  },
+  "excluded_selection_puzzles": {
+    "model_bytes": 206111,
+    "sha256": "88299ef468ca752777945bce0a635976522af6d9a431d31b3a8ad1b21b0048f3"
+  },
+  "dataset": {
+    "model_bytes": 630065,
+    "sha256": "47cab2eaa9b95444a3711899623d5965513dbddc5157e362caadaff525cd67ed"
+  },
+  "solution_lengths_solver_moves": [
+    [
+      2,
+      3
+    ],
+    [
+      3,
+      4
+    ],
+    [
+      4,
+      5
+    ],
+    [
+      5,
+      6
+    ],
+    [
+      6,
+      null
+    ]
+  ],
+  "protocol": "Fixed-prefix reservoir sampling conditioned on original rating and solution-length bands; excludes all 341010 compact-training input positions, training puzzle IDs, previous selection puzzles and final rating-stratified puzzle IDs. Later training must exclude this dataset."
+}

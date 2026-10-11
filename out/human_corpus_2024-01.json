@@ -1,0 +1,32 @@
+{
+  "url": "https://database.lichess.org/standard/lichess_db_standard_rated_2024-01.pgn.zst",
+  "source_headers": {
+    "Server": "nginx",
+    "Date": "Sun, 11 Oct 2026 02:38:57 GMT",
+    "Content-Type": "application/octet-stream",
+    "Content-Length": "32379325271",
+    "Last-Modified": "Mon, 17 Jun 2024 17:04:28 GMT",
+    "Connection": "close",
+    "ETag": "\"66706c9c-789f54b57\"",
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+    "X-Frame-Options": "DENY",
+    "Accept-Ranges": "bytes"
+  },
+  "license": "CC0",
+  "positions": 15000000,
+  "games": 197742,
+  "rating_range": [
+    2000,
+    2800
+  ],
+  "time_controls": [
+    "blitz",
+    "rapid"
+  ],
+  "heldout_positions_skipped": 114925,
+  "history": "Current-position corpus for the native 18-plane ResNet",
+  "artifact": {
+    "model_bytes": 2230578372,
+    "sha256": "343e8b5461554565647c665918f343000739da587d38fcbabb7f399c19202646"
+  }
+}

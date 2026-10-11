@@ -4,7 +4,7 @@ import math
 from pathlib import Path
 
 from play.runner import load_runner
-import chess
+from chessio.records import record_board
 
 
 def evaluate_agreement(model_path, labels_path, config='main', device='auto', max_samples=None, top_k=(1, 3, 5)):
@@ -16,7 +16,7 @@ def evaluate_agreement(model_path, labels_path, config='main', device='auto', ma
             if max_samples is not None and total >= max_samples:
                 break
             item = json.loads(line)
-            board = chess.Board(item['fen'])
+            board = record_board(item)
             teacher = item.get('move_probs', {item.get('move'): 1.})
             best = max(teacher, key=teacher.get)
             probs = {move.uci(): p for move, p in runner.move_probs(board).items()}

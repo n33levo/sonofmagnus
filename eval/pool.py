@@ -26,6 +26,9 @@ def main():
     openings = [line.strip() for line in Path(args.openings).read_text().splitlines() if line.strip()]
     if args.games <= 0 or args.games % 2 or args.games // 2 > len(openings):
         parser.error('Use an even game count with no repeated opening pairs')
+    keys = [' '.join(chess.Board(fen).fen().split()[:4]) for fen in openings[:args.games // 2]]
+    if len(set(keys)) != len(keys):
+        parser.error('Opening pairs must have distinct positions')
     if any(not Path(engine['path']).is_file() for engine in pool['engines']):
         parser.error('Build the opponents first: python -m scripts.build_pool')
     clock, increment = map(float, args.time_control.split('+'))
@@ -46,17 +49,18 @@ def main():
     scores = []
     for specification in pool['engines']:
         engine = UciRunner(specification['path'])
-        path = out / specification['name']
+        pgn_path = out / (specification['name'] + '.pgn')
+        result_path = out / (specification['name'] + '.json')
         try:
             result = play_match(runner, engine, args.games, openings=openings, max_plies=1000,
-                                pgn_path=path.with_suffix('.pgn'), clock_seconds=clock, increment=increment,
+                                pgn_path=pgn_path, clock_seconds=clock, increment=increment,
                                 names=(Path(args.ckpt).stem, specification['name']))
             binary = artifact_info(specification['path'])
             if binary != manifest['binaries'][specification['name']]:
                 raise ValueError('Opponent binary changed during tournament')
             result.update(opponent=specification, binary=binary,
                           engine_id=engine.engine.id, uci_options=engine.configured_options)
-            path.with_suffix('.json').write_text(json.dumps(result, indent=2) + '\n')
+            result_path.write_text(json.dumps(result, indent=2) + '\n')
             if result['terminations'].get('ply_limit'):
                 raise ValueError('Unfinished games reached the ply cap; no rating will be published')
             if result.get('neural_forward_calls_a') != result['moves_a']:

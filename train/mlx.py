@@ -10,13 +10,14 @@ import mlx.optimizers as optim
 import numpy as np
 
 from chessio.lc0 import encode_history, policy_index
+from chessio.records import record_board
 from model.artifacts import artifact_info
 from play.mlx import Graph
 from train.dataset import ChessPositionDataset
 
 
 def batch_rows(rows):
-    boards = [chess.Board(row['fen']) for row in rows]
+    boards = [record_board(row) for row in rows]
     inputs = np.stack([encode_history(board) for board in boards])
     mask, target = np.zeros((len(rows), 1858), bool), np.zeros((len(rows), 1858), np.float32)
     for i, (row, board) in enumerate(zip(rows, boards)):
@@ -123,8 +124,11 @@ def main():
     metadata = json.loads((Path(args.student) / 'metadata.json').read_text())
     metadata.update(student_source=artifact_info(args.student), teacher_source=artifact_info(args.teacher) if teacher else None,
                     training_data=artifact_info(args.data), seed=args.seed, learning_rate=args.lr,
+                    training_epochs=args.epochs, training_samples=len(dataset), trainable_scalars=sum(p.size for p in parameters.values()),
                     objective='25% engine policy, 75% teacher policy, 0.25 teacher WDL CE plus centred-value MSE',
                     training_device=str(mx.default_device()), teacher_temperature=args.teacher_temperature, mode=args.mode)
+    metadata['runtime_source'] = {path: artifact_info(path)['sha256'] for path in
+        ('train/mlx.py', 'play/mlx.py', 'chessio/lc0.py', 'chessio/records.py', 'train/dataset.py')}
     if args.mode == 'policy':
         metadata['objective'] = 'Legal-move cross entropy on engine labels; policy heads only'
     (out / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
@@ -170,6 +174,8 @@ def main():
             mx.save_safetensors(str(temporary), output_weights)
             temporary.replace(out / 'weights.safetensors')
             print(json.dumps(metrics), flush=True)
+    if artifact_info(args.data) != metadata['training_data']:
+        raise ValueError('Training data changed during the run')
 
 
 if __name__ == '__main__':

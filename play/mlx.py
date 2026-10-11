@@ -37,9 +37,11 @@ class Graph:
                     moment = features.T @ features
                     moments[name] = moments.get(name, 0) + moment
                 if name in self.quantized:
-                    group, bits = self.quantized[name]
+                    configuration = self.quantized[name]
+                    group, bits = configuration[:2]
+                    transpose = configuration[2] if len(configuration) > 2 else True
                     y = mx.quantized_matmul(a, weights[name + '.packed'], weights[name + '.scales'],
-                                           weights[name + '.biases'], transpose=True, group_size=group, bits=bits)
+                                           weights[name + '.biases'], transpose=transpose, group_size=group, bits=bits)
                 else:
                     y = mx.matmul(a, args[1])
             elif op == 'Add': y = a + args[1]

@@ -7,6 +7,8 @@ import chess
 import chess.engine
 import numpy as np
 
+from chessio.records import record_board
+
 
 def cp_to_q_value(cp):
     z = cp / 400.
@@ -61,7 +63,8 @@ def label_positions_from_file(input_path, output_path, engine_path='stockfish', 
                 if max_positions is not None and count >= max_positions:
                     break
                 item = json.loads(line)
-                board = chess.Board(item.get('fen', item.get('position')))
+                item['fen'] = item.get('fen', item.get('position'))
+                board = record_board(item)
                 if board.is_game_over(claim_draw=True):
                     continue
                 label = label_position(board, engine, depth, time_limit, top_k, include_q_values)

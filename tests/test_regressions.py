@@ -416,8 +416,26 @@ def test_selfplay_batches_positions_without_lookahead(tmp_path):
     assert len(rows) == 12
     assert model.calls == 3
     for row in rows:
-        assert chess.Move.from_uci(row['move']) in chess.Board(row['fen']).legal_moves
+        from chessio.records import record_board
+        board = record_board(row)
+        assert chess.Move.from_uci(row['move']) in board.legal_moves
+        assert len(board.move_stack) == len(row['history'])
     assert len({row['game_id'] for row in rows}) == 4
+
+
+def test_training_records_keep_repetition_history():
+    from chessio.records import record_board
+    board = chess.Board()
+    moves = ['g1f3', 'g8f6', 'f3g1', 'f6g8'] * 2
+    for move in moves:
+        board.push_uci(move)
+    row = {'root_fen': chess.STARTING_FEN, 'history': moves, 'fen': board.fen()}
+    restored = record_board(row)
+    assert restored.can_claim_threefold_repetition()
+    assert restored.move_stack == board.move_stack
+    row['fen'] = chess.STARTING_FEN
+    with pytest.raises(ValueError, match='disagree'):
+        record_board(row)
 
 
 def test_clock_forfeit_is_draw_when_opponent_cannot_mate(tmp_path):

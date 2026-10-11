@@ -105,11 +105,12 @@ def read_games(pgn_path):
 
 class PGNStreamDataset(IterableDataset):
     def __init__(self, pgn_path, min_elo=1800, sample_rate=1.0,
-                 midgame_only=True, max_positions=None, seed=0):
+                 midgame_only=True, max_positions=None, seed=0, include_history=False):
         if not 0 <= sample_rate <= 1:
             raise ValueError('Sample rate must be in [0, 1]')
         self.pgn_path, self.min_elo, self.sample_rate = pgn_path, min_elo, sample_rate
         self.midgame_only, self.max_positions, self.seed = midgame_only, max_positions, seed
+        self.include_history = include_history
 
     def _parse_pgn(self):
         rng = random.Random(self.seed)
@@ -132,9 +133,12 @@ class PGNStreamDataset(IterableDataset):
             board = game.board()
             for move in line:
                 if (not self.midgame_only or 10 <= board.fullmove_number <= 40) and rng.random() < self.sample_rate:
-                    yield {'fen': board.fen(), 'move': move.uci(),
+                    item = {'fen': board.fen(), 'move': move.uci(),
                            'value': game_value if board.turn else -game_value, 'game_id': game_id,
                            'weight': 3. if elo >= 2600 else 2. if elo >= 2400 else 1.5 if elo >= 2200 else 1.}
+                    if self.include_history:
+                        item.update(root_fen=board.root().fen(), history=[m.uci() for m in board.move_stack])
+                    yield item
                     count += 1
                     if self.max_positions is not None and count >= self.max_positions:
                         break
@@ -146,8 +150,8 @@ class PGNStreamDataset(IterableDataset):
 
 
 def build_jsonl_from_pgn(pgn_path, output_path, min_elo=1800, sample_rate=.1,
-                         max_positions=1_000_000, val_path=None, val_fraction=.1, midgame_only=False):
-    dataset = PGNStreamDataset(pgn_path, min_elo, sample_rate, midgame_only, max_positions)
+                         max_positions=1_000_000, val_path=None, val_fraction=.1, midgame_only=False, include_history=False):
+    dataset = PGNStreamDataset(pgn_path, min_elo, sample_rate, midgame_only, max_positions, include_history=include_history)
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
     if val_path:
         Path(val_path).parent.mkdir(parents=True, exist_ok=True)
@@ -174,6 +178,7 @@ if __name__ == '__main__':
     parser.add_argument('--max-positions', type=int, default=1_000_000)
     parser.add_argument('--val-out')
     parser.add_argument('--val-fraction', type=float, default=.1)
+    parser.add_argument('--history', action='store_true')
     args = parser.parse_args()
     build_jsonl_from_pgn(args.pgn, args.out, args.elo_min, args.sample_rate,
-                         args.max_positions, args.val_out, args.val_fraction)
+                         args.max_positions, args.val_out, args.val_fraction, include_history=args.history)

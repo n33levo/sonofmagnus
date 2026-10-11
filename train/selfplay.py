@@ -38,6 +38,7 @@ def run_selfplay(model_path, output_path, num_games=100, config='main', device='
                     board = boards[idx]
                     move = sample_legal_move(logits, board, runner.get_temperature(board.fullmove_number))
                     stream.write(json.dumps({'fen': board.fen(), 'game_id': f'selfplay-{start + idx}',
+                                             'root_fen': board.root().fen(), 'history': [m.uci() for m in board.move_stack],
                                              'move': move.uci(), 'predicted_value': value}) + '\n')
                     board.push(move)
                     plies[idx] += 1

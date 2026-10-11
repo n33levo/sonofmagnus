@@ -3,24 +3,26 @@ import json
 import tempfile
 from pathlib import Path
 
-import chess
 import numpy as np
 import onnx
 import onnxruntime as ort
-from onnxruntime.quantization import CalibrationDataReader, QuantFormat, QuantType, quantize_static
+from onnxruntime.quantization import CalibrationDataReader, QuantFormat, QuantType, quantize_static, quantize_dynamic
 from onnxruntime.quantization.shape_inference import quant_pre_process
 
 from chessio.encode import encode_board
+from chessio.lc0 import encode_history
+from chessio.records import record_board
 
 
 class BoardCalibration(CalibrationDataReader):
-    def __init__(self, path, limit=1000):
+    def __init__(self, path, limit=1000, classical=False):
         self.boards = []
         with open(path) as stream:
             for line in stream:
                 if len(self.boards) >= limit:
                     break
-                self.boards.append(encode_board(chess.Board(json.loads(line)['fen']))[None])
+                encoder = encode_history if classical else encode_board
+                self.boards.append(encoder(record_board(json.loads(line)))[None])
         if not self.boards:
             raise ValueError('Empty calibration set')
         self.rewind()
@@ -35,20 +37,26 @@ class BoardCalibration(CalibrationDataReader):
 
 def quantize_model(input_path, output_path, weight_type='int8', calibration_data=None):
     if calibration_data is None:
-        raise ValueError('Convolution INT8 quantization requires --calibration-data')
+        raise ValueError('INT8 conversion requires --calibration-data for validation')
     model = onnx.load(input_path)
     if model.graph.input[0].type.tensor_type.elem_type != onnx.TensorProto.FLOAT:
         raise ValueError('Quantize an FP32 export, not FP16')
     output = Path(output_path)
     output.parent.mkdir(parents=True, exist_ok=True)
-    calibration = BoardCalibration(calibration_data)
+    classical = model.graph.input[0].type.tensor_type.shape.dim[1].dim_value == 112
+    calibration = BoardCalibration(calibration_data, classical=classical)
     with tempfile.TemporaryDirectory() as directory:
         prepared = str(Path(directory) / 'prepared.onnx')
         quant_pre_process(input_path, prepared)
-        quantize_static(prepared, str(output), calibration, quant_format=QuantFormat.QDQ,
-                        activation_type=QuantType.QUInt8,
-                        weight_type=QuantType.QInt8 if weight_type == 'int8' else QuantType.QUInt8,
-                        per_channel=True, op_types_to_quantize=['Conv', 'MatMul', 'Gemm'])
+        if classical:
+            # Recompute activation ranges per position: history includes the unbounded rule-50 clock.
+            quantize_dynamic(prepared, str(output), weight_type=QuantType.QInt8 if weight_type == 'int8' else QuantType.QUInt8,
+                             per_channel=True, op_types_to_quantize=['MatMul'])
+        else:
+            quantize_static(prepared, str(output), calibration, quant_format=QuantFormat.QDQ,
+                            activation_type=QuantType.QUInt8,
+                            weight_type=QuantType.QInt8 if weight_type == 'int8' else QuantType.QUInt8,
+                            per_channel=True, op_types_to_quantize=['Conv', 'MatMul', 'Gemm'])
     onnx.checker.check_model(onnx.load(output))
     baseline = ort.InferenceSession(str(input_path), providers=['CPUExecutionProvider'])
     quantized = ort.InferenceSession(str(output), providers=['CPUExecutionProvider'])

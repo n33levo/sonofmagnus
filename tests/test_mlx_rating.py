@@ -192,3 +192,20 @@ def test_activation_weighted_factorization_minimizes_its_actual_metric():
     naive_error = weight - naive_left @ naive_right
     assert np.trace(error.T @ metric @ error) < np.trace(naive_error.T @ metric @ naive_error)
     assert np.linalg.matrix_rank(left @ right, tol=1e-8) == 16
+
+
+def test_quantized_bottlenecks_support_both_matrix_orientations():
+    mx = pytest.importorskip('mlx.core')
+    from deploy.export_mlx import quantize_weights
+    rng = np.random.default_rng(0)
+    original = {'left': mx.array(rng.normal(size=(128, 16)).astype(np.float16) * .05),
+                'right': mx.array(rng.normal(size=(16, 128)).astype(np.float16) * .05)}
+    packed = dict(original)
+    configurations = quantize_weights(packed, set(packed), 8)
+    assert configurations['left'][2] and not configurations['right'][2]
+    for name, weight in original.items():
+        inputs = mx.array(rng.normal(size=(4, weight.shape[0])).astype(np.float16))
+        group, bits, transpose = configurations[name]
+        actual = mx.quantized_matmul(inputs, packed[name + '.packed'], packed[name + '.scales'],
+                                    packed[name + '.biases'], group_size=group, bits=bits, transpose=transpose)
+        np.testing.assert_allclose(np.array(actual), np.array(inputs @ weight), atol=.015, rtol=.1)

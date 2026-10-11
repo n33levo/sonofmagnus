@@ -17,12 +17,15 @@ def quantize_weights(weights, matrices, bits):
         raise ValueError('Supported weight widths: 4, 6, 8, 16')
     for name in sorted(matrices):
         weight = weights[name]
-        if weight.ndim != 2 or weight.shape[0] % 32 or weight.shape[1] < 32:
+        if weight.ndim != 2:
             continue
-        packed, scales, biases = mx.quantize(weight.T, group_size=32, bits=bits)
+        transpose = weight.shape[0] % 32 == 0
+        if not transpose and weight.shape[1] % 32:
+            continue
+        packed, scales, biases = mx.quantize(weight.T if transpose else weight, group_size=32, bits=bits)
         weights.pop(name)
         weights.update({name + '.packed': packed, name + '.scales': scales, name + '.biases': biases})
-        quantized[name] = [32, bits]
+        quantized[name] = [32, bits, transpose]
     return quantized
 
 
@@ -46,7 +49,7 @@ def factorize(weight, rank, gram=None, ridge=.01):
     return left, right, float((singular[rank:] ** 2).sum()), float((singular ** 2).sum())
 
 
-def export_graph(path, directory, bits=16, source_weights=None, rank=None, calibration=None):
+def export_graph(path, directory, bits=16, source_weights=None, rank=None, calibration=None, io_rank=None):
     import mlx.core as mx
     if calibration and rank is None:
         raise ValueError('Activation calibration requires a low-rank export')
@@ -74,15 +77,17 @@ def export_graph(path, directory, bits=16, source_weights=None, rank=None, calib
     low_rank, discarded_energy, total_energy = 0, 0., 0.
     moments = mx.load(str(calibration)) if calibration else {}
     if rank is not None:
-        if rank <= 0 or rank % 32:
-            raise ValueError('Low-rank width must be a positive multiple of 32')
+        if rank <= 0 or rank % 16 or (io_rank is not None and (io_rank <= 0 or io_rank % 16)):
+            raise ValueError('Low-rank widths must be positive multiples of 16')
         rewritten = []
         for node in nodes:
             weight = values.get(node.input[1]) if node.op_type == 'MatMul' else None
-            if weight is not None and weight.ndim == 2 and rank * sum(weight.shape) < weight.size:
+            boundary = node.op_type == 'MatMul' and (node.input[1].startswith(('/attn_body/', '/policy/', '/value/')) or node.input[1] == '/const/smolgen_w')
+            width = io_rank if io_rank and boundary else rank
+            if weight is not None and weight.ndim == 2 and width * sum(weight.shape) < weight.size:
                 name = node.input[1]
                 if name + '.left' not in values:
-                    left, right, error, energy = factorize(weight, rank, moments.get(name))
+                    left, right, error, energy = factorize(weight, width, moments.get(name))
                     values[name + '.left'], values[name + '.right'] = left.astype(weight.dtype), right.astype(weight.dtype)
                     low_rank += 1
                     discarded_energy += error
@@ -113,6 +118,7 @@ def export_graph(path, directory, bits=16, source_weights=None, rank=None, calib
              'weights_and_graph_bytes': sum(p.stat().st_size for p in directory.iterdir() if p.name != 'metadata.json'), 'quantized_matrices': len(quantized)}
     if rank is not None:
         stats.update(low_rank_width=rank, factorized_matrices=low_rank,
+                     input_output_rank=io_rank or rank,
                      relative_squared_weight_error=discarded_energy / total_energy if total_energy else 0.,
                      compression_metric='ridge-regularized activation error' if calibration else 'weight Frobenius error')
     if calibration:
@@ -134,8 +140,9 @@ def main():
     parser.add_argument('--source-weights', required=True)
     parser.add_argument('--rank', type=int, help='SVD bottleneck width; requires retraining and new strength tests')
     parser.add_argument('--calibration', help='Input second moments from deploy.calibrate_mlx')
+    parser.add_argument('--io-rank', type=int, help='Wider embedding, heads and shared attention geometry')
     args = parser.parse_args()
-    export_graph(args.onnx, args.out, args.bits, args.source_weights, args.rank, args.calibration)
+    export_graph(args.onnx, args.out, args.bits, args.source_weights, args.rank, args.calibration, args.io_rank)
 
 
 if __name__ == '__main__':

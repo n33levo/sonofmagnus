@@ -184,5 +184,33 @@
     "leela_ms": 500,
     "claimed_strength_ratio_percent": 85,
     "position_evaluation_ratio": 800
+  },
+  "puzzle_solution_length_solver_moves": {
+    "1500-1800": [
+      2,
+      3
+    ],
+    "1800-2100": [
+      3,
+      4
+    ],
+    "2100-2400": [
+      4,
+      5
+    ],
+    "2400-2700": [
+      5,
+      6
+    ],
+    "2700+": [
+      6,
+      null
+    ]
+  },
+  "quality_sampling": {
+    "elite": 1.0,
+    "master": 1.0,
+    "expert": 0.8,
+    "strong": 0.5
   }
 }

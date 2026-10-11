@@ -62,7 +62,8 @@
     "The under-20 ms GPU target was not met in the clocked match: move-selection p95 was 36.27 ms, versus 17.72 ms in back-to-back sampling.",
     "The historical first-application claim conflicts with ChessBench, which explicitly studied action-value prediction.",
     "The 185M policy still exceeds the 20 ms GPU limit during real games; its isolated benchmark is faster.",
-    "The new 6.67M attention policy fits the byte budget but does not meet puzzle or agreement targets."
+    "The new 6.67M attention policy fits the byte budget but does not meet puzzle or agreement targets.",
+    "Original puzzle depth profiles and tier-retention fractions require separate validation; rating-only puzzle point scores do not establish the depth profiles."
   ],
   "references": {
     "ChessBench": "https://arxiv.org/abs/2402.04494",
@@ -286,7 +287,8 @@
       "strength_status": "Below target",
       "cpu_deployment": "compact6m_epoch1_cpu_isolated.json",
       "graph_compaction": "compact6m_cpu_graph_compaction.json",
-      "metal_q8": "compact6m_lowrank_q8_probe.json: baseline measurements"
+      "metal_q8": "compact6m_lowrank_q8_probe.json: baseline measurements",
+      "cpu_agreement": "compact6m_epoch1_cpu_agreement.json"
     }
   },
   "portable_attention": {

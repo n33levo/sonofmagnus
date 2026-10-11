@@ -8,11 +8,25 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import ConcatDataset, DataLoader
+from torch.utils.data import ConcatDataset, DataLoader, Sampler
 import yaml
 
 from model import create_model, resolve_device
+from model.artifacts import artifact_info
 from train.dataset import ChessPositionDataset
+
+
+class ShuffledPositions(Sampler):
+    def __init__(self, size):
+        self.size = size
+
+    def __len__(self):
+        return self.size
+
+    def __iter__(self):
+        order = torch.randperm(self.size)
+        for start in range(0, self.size, 65536):
+            yield from order[start:start + 65536].tolist()
 
 
 class ChessLoss(nn.Module):
@@ -79,12 +93,14 @@ def train_epoch(model, dataloader, optimizer, loss_fn, device, use_amp=True,
             if scheduler and scaler.get_scale() >= old_scale:
                 scheduler.step()
         n = policy.shape[0]
-        totals += np.array([loss.detach().item() for loss in losses]) * n
+        totals += torch.stack([loss.detach() for loss in losses]).float().cpu().numpy().astype(np.float64) * n
         scores = policy.detach().flatten(1)
         if 'legal_mask' in batch:
             scores = scores.masked_fill(batch['legal_mask'].flatten(1) == 0, -torch.inf)
         correct += (scores.argmax(1) == batch['policy_target'].flatten(1).argmax(1)).sum().item()
         count += n
+        if training and count % (n * 50) == 0:
+            print(json.dumps({'samples': count, 'loss': float(totals[0] / count), 'top1': correct / count}), flush=True)
     if not count:
         raise ValueError('Empty training or validation dataset')
     return {**dict(zip(('loss', 'policy_loss', 'q_loss', 'value_loss'), (totals / count).tolist())),
@@ -140,7 +156,8 @@ def main():
     for dataset, weight in zip(datasets, weights):
         dataset.weight = weight
     batch_size = args.batch_size or config.get('batch_size', 256)
-    loader = DataLoader(ConcatDataset(datasets), batch_size=batch_size, shuffle=True, pin_memory=device.type == 'cuda')
+    combined = ConcatDataset(datasets)
+    loader = DataLoader(combined, batch_size=batch_size, sampler=ShuffledPositions(len(combined)), pin_memory=device.type == 'cuda')
     val_loader = DataLoader(ChessPositionDataset(args.val_data, augment=False), batch_size=batch_size) if args.val_data else None
     if not len(loader):
         parser.error('Empty training dataset')
@@ -151,6 +168,13 @@ def main():
     loss_fn = ChessLoss(args.policy_weight, args.q_value_weight, args.value_weight)
     ckpt_dir = Path(args.ckpt_dir)
     ckpt_dir.mkdir(parents=True, exist_ok=True)
+    sources = {path: artifact_info(path) for path in paths}
+    provenance = {'arguments': vars(args), 'config': config, 'device': str(device), 'samples': len(combined),
+        'parameters': model.get_num_params(), 'datasets': sources,
+        'initial_checkpoint': artifact_info(args.resume) if args.resume else None,
+        'runtime_source': {path: artifact_info(path)['sha256'] for path in
+            ('train/train.py', 'train/dataset.py', 'model/resnet.py', 'model/heads.py', 'model/__init__.py')}}
+    (ckpt_dir / f'run_{start + 1}.json').write_text(json.dumps(provenance, indent=2) + '\n')
     print(f'{device}: {model.get_num_params():,} parameters, {len(loader.dataset):,} samples', flush=True)
     with (ckpt_dir / 'train.jsonl').open('a') as log:
         for epoch in range(start, start + args.epochs):
@@ -165,6 +189,8 @@ def main():
             log.flush()
             save_checkpoint(ckpt_dir / f'epoch_{epoch + 1}.pt', model, config, epoch, optimizer, scheduler, metrics)
             save_checkpoint(ckpt_dir / 'latest.pt', model, config, epoch, optimizer, scheduler, metrics)
+    if any(artifact_info(path) != frozen for path, frozen in sources.items()):
+        raise ValueError('Training data changed during the run')
 
 
 if __name__ == '__main__':

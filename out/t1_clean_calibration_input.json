@@ -1,0 +1,60 @@
+{
+  "source": {
+    "model_bytes": 4387554,
+    "sha256": "253d11f601b2540a53cf5eaf4c674c62d34c71736bef37f6174c01b6ebc0a51d"
+  },
+  "artifact": {
+    "model_bytes": 4385730,
+    "sha256": "081c19dd0779338bf09149be927c93dd7feede4a52f7926e75be9d8677d0d755"
+  },
+  "positions": 17994,
+  "excluded": 6,
+  "full_solution_holdouts": [
+    {
+      "path": "data/puzzles_holdout.jsonl",
+      "artifact": {
+        "model_bytes": 206111,
+        "sha256": "88299ef468ca752777945bce0a635976522af6d9a431d31b3a8ad1b21b0048f3"
+      }
+    },
+    {
+      "path": "data/puzzles_final3000.jsonl",
+      "artifact": {
+        "model_bytes": 577998,
+        "sha256": "13a37753c25b22ff158fb1e147b84ba82e103ccc0c45178657b83708cd1d6df8"
+      }
+    },
+    {
+      "path": "data/puzzles_depth3000.jsonl",
+      "artifact": {
+        "model_bytes": 630065,
+        "sha256": "47cab2eaa9b95444a3711899623d5965513dbddc5157e362caadaff525cd67ed"
+      }
+    },
+    {
+      "path": "data/stockfish_holdout.jsonl",
+      "artifact": {
+        "model_bytes": 640134,
+        "sha256": "0af73b599e4ad501024ee0d5db55305169f020027c4ee9a0be60bd3b9b977962"
+      }
+    },
+    {
+      "path": "data/eval_holdout.jsonl",
+      "artifact": {
+        "model_bytes": 486694,
+        "sha256": "d0d3d38197f5813765d75f4eda77fa2583b176af37f85e8b8ac8c35a6ca3afc1"
+      }
+    },
+    {
+      "path": "data/endgame_holdout.jsonl",
+      "artifact": {
+        "model_bytes": 70673,
+        "sha256": "c0662a2de81255a193b6b8f2b35d1ecf30dbcc9a85abd2ba0307cc38e849da0a"
+      }
+    }
+  ],
+  "reserved_openings": {
+    "model_bytes": 3293,
+    "sha256": "240020e9db2814431ca1816b0f719065b6155366434ffa9d484ce1605d4485e9"
+  }
+}

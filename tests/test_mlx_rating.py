@@ -233,3 +233,49 @@ def test_three_bit_packing_preserves_both_matrix_orientations_on_cpu():
             np.testing.assert_allclose(np.array(actual), np.array(inputs @ (restored.T if transpose else restored)),
                                        rtol=1e-5, atol=1e-5)
             assert float(mx.linalg.norm(actual - inputs @ weight) / mx.linalg.norm(inputs @ weight)) < .3
+
+
+def test_calibrated_packing_preserves_important_channels_and_rewrites_the_input():
+    mx = pytest.importorskip('mlx.core')
+    from deploy.quantize_mlx import calibrated_weights
+    rng = np.random.default_rng(12)
+    with mx.stream(mx.cpu):
+        original = rng.normal(0, .1, (128, 64)).astype(np.float16)
+        original[0] = .011
+        variance = np.full(128, .001, dtype=np.float32)
+        variance[0] = 1000
+        weights = {'w': mx.array(original), 'uncalibrated': mx.array(original)}
+        graph = {'nodes': [['MatMul', ['input', 'w'], ['policy'], {}],
+                           ['MatMul', ['input', 'uncalibrated'], ['value'], {}]]}
+        configurations, errors = calibrated_weights(weights, graph, {'w': mx.diag(mx.array(variance))}, 3, 128)
+        assert set(configurations) == {'w', 'uncalibrated'}
+        assert errors['w']['calibrated'] < errors['w']['baseline'] / 10
+        assert graph['nodes'][0][0] == 'Mul'
+        assert graph['nodes'][1][1][0] == graph['nodes'][0][2][0]
+        inputs = rng.normal(size=(8, 128)).astype(np.float32) * np.sqrt(variance)
+        inverse = weights[graph['nodes'][0][1][1]]
+        group, bits, transpose = configurations['w']
+        actual = mx.quantized_matmul(mx.array(inputs) * inverse, weights['w.packed'], weights['w.scales'],
+                                    weights['w.biases'], group_size=group, bits=bits, transpose=transpose)
+        relative = np.linalg.norm(np.array(actual) - inputs @ original) / np.linalg.norm(inputs @ original)
+        baseline = mx.quantized_matmul(mx.array(inputs), weights['uncalibrated.packed'], weights['uncalibrated.scales'],
+                                      weights['uncalibrated.biases'], group_size=group, bits=bits, transpose=transpose)
+        baseline_relative = np.linalg.norm(np.array(baseline) - inputs @ original) / np.linalg.norm(inputs @ original)
+        assert relative < .05 and relative < baseline_relative / 5
+
+
+def test_calibrated_packing_rejects_an_unrelated_source_before_writing(tmp_path):
+    mx = pytest.importorskip('mlx.core')
+    from deploy.quantize_mlx import quantize
+    from model.artifacts import artifact_info
+    source, output, moments = tmp_path / 'source.mlx', tmp_path / 'packed.mlx', tmp_path / 'moments.safetensors'
+    source.mkdir()
+    (source / 'graph.json').write_text(json.dumps({'nodes': [['MatMul', ['input', 'w'], ['policy'], {}]]}))
+    with mx.stream(mx.cpu):
+        mx.save_safetensors(str(source / 'weights.safetensors'), {'w': mx.array(np.ones((128, 64), np.float16))})
+        mx.save_safetensors(str(moments), {'w': mx.array(np.eye(128, dtype=np.float32))})
+        moments.with_suffix('.json').write_text(json.dumps({'model': {'model_bytes': 0, 'sha256': 'unrelated'},
+                                                          'artifact': artifact_info(moments)}))
+        with pytest.raises(ValueError, match='Calibration must match'):
+            quantize(source, output, 3, 128, moments)
+    assert not output.exists()

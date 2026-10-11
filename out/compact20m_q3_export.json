@@ -1,0 +1,15 @@
+{
+  "model": {
+    "model_bytes": 8526870,
+    "sha256": "f27bd44b94e54605103d9af2121b4196589b7f4587eefdb8cce5e606fe16f8f3"
+  },
+  "source": {
+    "model_bytes": 40368551,
+    "sha256": "7a3b057157c6632ce2e1ca5999ad16e3ab6b79bacb06756650bfc37063118211"
+  },
+  "stored_scalars": 20134466,
+  "bits": 3,
+  "group_size": 128,
+  "within_8_7MB": true,
+  "strength_status": "Unmeasured; quality evaluation queued after the compact tournament"
+}

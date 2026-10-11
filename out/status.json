@@ -75,8 +75,8 @@
     "linux_ci": {
       "passed": 77,
       "skipped_optional": 13,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38117599331",
-      "source_commit": "1298761"
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38117766535",
+      "source_commit": "b6ab9e3"
     },
     "clocked_match": {
       "games": 100,
@@ -407,7 +407,7 @@
     "source_policy_top1": 0.517,
     "cpu_int8_bytes": 5771673,
     "cpu_int8_top1": 0.5045,
-    "status": "Two CNN epochs and the first gold-priority FP32 pass are complete. The second FP32 pass is running; compact Elo is not yet established.",
+    "status": "Both gold-priority FP32 passes are complete and tested. The earlier checkpoint was frozen using the preset validation rule; the 400-game compact tournament is running.",
     "learning_rate": 5e-05,
     "optimizer_bias_correction": true,
     "overflow_handling": "Retry unchanged batch at lower scale before optimizer update; forward failures abort",
@@ -445,7 +445,20 @@
       "model_bytes": 8282019,
       "top1": 0.5085,
       "evidence": "cnn6m_mixed_cli_review.json",
-      "scope": "Widened initialization only; not the final fine-tuned model"
-    }
+      "scope": "Widened initialization only; not the final fine-tuned model",
+      "latency_p95_ms": 7.9663333017379045
+    },
+    "gold_epoch2": {
+      "top1": 0.51,
+      "puzzles_complete": 423,
+      "training": "cnn6m_gold_training.json",
+      "evidence": [
+        "cnn6m_gold_agreement.json",
+        "cnn6m_gold_puzzles.json",
+        "cnn6m_gold_endgames.json"
+      ]
+    },
+    "tournament_selection": "cnn6m_tournament_selection.json",
+    "tournament": "cnn6m_ccrl_pool"
   }
 }

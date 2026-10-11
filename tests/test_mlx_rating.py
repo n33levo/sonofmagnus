@@ -214,3 +214,22 @@ def test_quantized_bottlenecks_support_both_matrix_orientations():
         actual = mx.quantized_matmul(inputs, packed[name + '.packed'], packed[name + '.scales'],
                                     packed[name + '.biases'], group_size=group, bits=bits, transpose=transpose)
         np.testing.assert_allclose(np.array(actual), np.array(inputs @ weight), atol=.015, rtol=.1)
+
+
+def test_three_bit_packing_preserves_both_matrix_orientations_on_cpu():
+    mx = pytest.importorskip('mlx.core')
+    from deploy.export_mlx import quantize_weights
+    rng = np.random.default_rng(42)
+    with mx.stream(mx.cpu):
+        for shape in [(128, 192), (32, 128)]:
+            weight = mx.array(rng.normal(0, .1, shape).astype(np.float32))
+            inputs = mx.array(rng.normal(size=(8, shape[0])).astype(np.float32))
+            packed = {'weight': weight}
+            group, bits, transpose = quantize_weights(packed, {'weight'}, 3, 128)['weight']
+            restored = mx.dequantize(packed['weight.packed'], packed['weight.scales'], packed['weight.biases'],
+                                    group_size=group, bits=bits)
+            actual = mx.quantized_matmul(inputs, packed['weight.packed'], packed['weight.scales'],
+                                        packed['weight.biases'], group_size=group, bits=bits, transpose=transpose)
+            np.testing.assert_allclose(np.array(actual), np.array(inputs @ (restored.T if transpose else restored)),
+                                       rtol=1e-5, atol=1e-5)
+            assert float(mx.linalg.norm(actual - inputs @ weight) / mx.linalg.norm(inputs @ weight)) < .3

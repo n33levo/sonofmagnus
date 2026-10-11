@@ -8,24 +8,24 @@ import onnx
 from onnx import helper, numpy_helper
 
 
-def quantize_weights(weights, matrices, bits):
+def quantize_weights(weights, matrices, bits, group_size=32):
     import mlx.core as mx
     quantized = {}
     if bits == 16:
         return quantized
-    if bits not in (4, 6, 8):
-        raise ValueError('Supported weight widths: 4, 6, 8, 16')
+    if bits not in (2, 3, 4, 6, 8) or group_size not in (32, 64, 128):
+        raise ValueError('Supported widths: 2, 3, 4, 6, 8, 16; groups: 32, 64, 128')
     for name in sorted(matrices):
         weight = weights[name]
         if weight.ndim != 2:
             continue
-        transpose = weight.shape[0] % 32 == 0
-        if not transpose and weight.shape[1] % 32:
+        transpose = weight.shape[0] % group_size == 0
+        if not transpose and weight.shape[1] % group_size:
             continue
-        packed, scales, biases = mx.quantize(weight.T if transpose else weight, group_size=32, bits=bits)
+        packed, scales, biases = mx.quantize(weight.T if transpose else weight, group_size=group_size, bits=bits)
         weights.pop(name)
         weights.update({name + '.packed': packed, name + '.scales': scales, name + '.biases': biases})
-        quantized[name] = [32, bits, transpose]
+        quantized[name] = [group_size, bits, transpose]
     return quantized
 
 
@@ -49,7 +49,7 @@ def factorize(weight, rank, gram=None, ridge=.01):
     return left, right, float((singular[rank:] ** 2).sum()), float((singular ** 2).sum())
 
 
-def export_graph(path, directory, bits=16, source_weights=None, rank=None, calibration=None, io_rank=None):
+def export_graph(path, directory, bits=16, source_weights=None, rank=None, calibration=None, io_rank=None, group_size=32):
     import mlx.core as mx
     if calibration and rank is None:
         raise ValueError('Activation calibration requires a low-rank export')
@@ -104,7 +104,7 @@ def export_graph(path, directory, bits=16, source_weights=None, rank=None, calib
     integer = [name for name, value in values.items() if np.issubdtype(value.dtype, np.integer)]
     weights = {name: mx.array(value.astype(np.int32) if name in integer else value) for name, value in values.items()}
     matrices = {node.input[1] for node in nodes if node.op_type == 'MatMul' and node.input[1] in values}
-    quantized = quantize_weights(weights, matrices, bits)
+    quantized = quantize_weights(weights, matrices, bits, group_size)
     directory = Path(directory)
     directory.mkdir(parents=True, exist_ok=True)
     graph = {'inputs': [v.name for v in model.graph.input], 'outputs': outputs, 'integer_constants': integer,
@@ -137,13 +137,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--onnx', required=True)
     parser.add_argument('--out', required=True)
-    parser.add_argument('--bits', type=int, choices=[4, 6, 8, 16], default=16)
+    parser.add_argument('--bits', type=int, choices=[2, 3, 4, 6, 8, 16], default=16)
+    parser.add_argument('--group-size', type=int, choices=[32, 64, 128], default=32)
     parser.add_argument('--source-weights', required=True)
     parser.add_argument('--rank', type=int, help='SVD bottleneck width; requires retraining and new strength tests')
     parser.add_argument('--calibration', help='Input second moments from deploy.calibrate_mlx')
     parser.add_argument('--io-rank', type=int, help='Wider embedding, heads and shared attention geometry')
     args = parser.parse_args()
-    export_graph(args.onnx, args.out, args.bits, args.source_weights, args.rank, args.calibration, args.io_rank)
+    export_graph(args.onnx, args.out, args.bits, args.source_weights, args.rank, args.calibration, args.io_rank, args.group_size)
 
 
 if __name__ == '__main__':

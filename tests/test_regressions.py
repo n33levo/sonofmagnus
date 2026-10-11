@@ -504,6 +504,9 @@ def test_selfplay_position_budget_has_no_extra_neural_inputs_or_fake_outcomes(tm
     metadata = json.loads(output.with_suffix('.json').read_text())
     assert metadata['neural_input_positions'] == 5 and metadata['neural_forward_calls'] == 2
     assert metadata['unfinished_games'] == 4 and not output.with_suffix('.jsonl.part').exists()
+    from scripts.check_selfplay import check
+    reviewed = check(output, checkpoint)
+    assert reviewed['legal_moves'] == 5 and reviewed['neural_calls'] == 2
     incomplete = tmp_path / 'incomplete.jsonl'
     with patch('train.selfplay.load_runner', return_value=runner), pytest.raises(ValueError, match='Incomplete'):
         run_selfplay(checkpoint, incomplete, num_games=1, max_moves=1, positions=2)

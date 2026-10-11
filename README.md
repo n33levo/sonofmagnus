@@ -14,7 +14,7 @@ Frozen datasets, results and game logs live in [data](data) and [out](out).
 |---|---:|---:|---:|---:|
 | sonofmagnus-102M | 205.1 MB, FP16 MLX | 10.9 ms, isolated GPU benchmark | 717/1000 | 62.95%, 2000 positions |
 | sonofmagnus-185M | 163.6 MB, 6-bit MLX | 17.6 ms, isolated GPU benchmark | 784/1000 | 63.15%, 2000 positions |
-| sonofmagnus-6M, first training pass | 12.09 MB FP16 / 7.41 MB at 8 bits | 15.9 ms, isolated FP16 GPU benchmark | 277/1000 | 38.25%, 2000 positions |
+| sonofmagnus-6M, CNN | 11.25 MB FP16 | 14.08 ms, 400-game GPU tournament | 432/1000 | 51.55%, 2000 positions |
 
 Parameter labels are rounded; export manifests record exact stored scalar counts and bytes. Puzzle scoring requires the whole solution, with one deterministic attempt. The 185M model also clears all five original targets on [3000 puzzles with the specified solution lengths](out/bt4_puzzles_depth3000.json): **98.3%, 93.0%, 78.5%, 63.0%, 32.2%**. All five simultaneous 95% binomial lower bounds exceed the targets. A separate rating-stratified test scored **2355/3000**.
 
@@ -22,7 +22,7 @@ Parameter labels are rounded; export manifests record exact stored scalar counts
 
 The pool uses published CCRL Blitz ratings as reference points. Its **local Elo estimate** uses different hardware and clocks; it is not an official CCRL, FIDE or Lichess rating. Intervals condition on fixed anchors and exclude those systematic differences. In-game latency remains about **33.3 ms at p95**, above the GPU target.
 
-The original targets remain in [out/targets.json](out/targets.json); [out/status.json](out/status.json) tracks progress. The 6M transformer finished at **41.6% agreement / 318 puzzles**. We are now fine-tuning a **5.61M CNN** on **341,010** positions; its first gold-priority FP32 pass scored **51.55% / 432 puzzles**. Compact Elo remains unmeasured. We collected **70M human positions** and **2.5M distinct full-action labels**; full training is unfinished. The [5000-master-game test](out/bt4_openings5000.json) measured 50–66% exact opening agreement, below the targets.
+The original targets remain in [out/targets.json](out/targets.json); [out/status.json](out/status.json) tracks progress. The 6M transformer finished at **41.6% agreement / 318 puzzles**. We are now fine-tuning a **5.61M CNN** on **341,010** positions; its first gold-priority FP32 pass scored **51.55% / 432 puzzles**. The frozen CNN measured **2124 local Elo** in [400 games](out/cnn6m_ccrl_pool), with a paired-opening 95% interval of **2040–2188**. It meets GPU latency and misses the strength target. We collected **70M human positions** and **2.5M distinct full-action labels**; full training is unfinished. The [5000-master-game test](out/bt4_openings5000.json) measured 50–66% exact opening agreement, below the targets.
 
 ## Run it
 

@@ -1,0 +1,57 @@
+{
+  "legal_plies": 29279,
+  "engine_moves": 14550,
+  "games": 400,
+  "matches": {
+    "stash-20.0.1": {
+      "legal_plies": 7170,
+      "engine_moves": 3565,
+      "games": 100,
+      "pgn": {
+        "model_bytes": 196032,
+        "sha256": "f55217d37f10d6088dc694e292bcdc8219fdb629b3a1dea3cf7d17c93e156396"
+      }
+    },
+    "stash-21.0": {
+      "legal_plies": 7314,
+      "engine_moves": 3636,
+      "games": 100,
+      "pgn": {
+        "model_bytes": 199007,
+        "sha256": "b01db277e31d2560fc5d5b662c352f4af2f6d723f7700b49ad64f52b22c9bb38"
+      }
+    },
+    "weiss-1.0": {
+      "legal_plies": 7616,
+      "engine_moves": 3784,
+      "games": 100,
+      "pgn": {
+        "model_bytes": 205905,
+        "sha256": "d6236a7950a6073d8e1a6382277b0d4c62a7dcacdd71bc6d37cd97afd285a9ba"
+      }
+    },
+    "stash-25.0": {
+      "legal_plies": 7179,
+      "engine_moves": 3565,
+      "games": 100,
+      "pgn": {
+        "model_bytes": 195684,
+        "sha256": "2fc7229cd2e545a755bf3cd12ab167bcef6640c92a28584b5a22d692064321f8"
+      }
+    }
+  },
+  "model": {
+    "model_bytes": 11253181,
+    "sha256": "d60fc0595d443baa6e8305a9fc0b357584c0e9d99d938bbaa5e57be6c78b25ff"
+  },
+  "reviewer_sha256": "d71e86f356b964aac39107bdb0d3a6a1c5c7fae28a78930be8f767b547a5f9b7",
+  "latency_ms": {
+    "p50": 12.6025,
+    "p95": 14.07855,
+    "p99": 14.514
+  },
+  "outcomes_verified": true,
+  "source_hashes_verified": true,
+  "forfeits": 0,
+  "ply_caps": 0
+}

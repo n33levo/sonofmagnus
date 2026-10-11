@@ -68,7 +68,7 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 90,
+    "local_tests": 94,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
@@ -407,7 +407,7 @@
     "source_policy_top1": 0.517,
     "cpu_int8_bytes": 5771673,
     "cpu_int8_top1": 0.5045,
-    "status": "Both gold-priority FP32 passes are complete and tested. The earlier checkpoint was frozen using the preset validation rule; the 400-game compact tournament is running.",
+    "status": "Complete 400-game tournament independently replayed: latency passes, strength fails.",
     "learning_rate": 5e-05,
     "optimizer_bias_correction": true,
     "overflow_handling": "Retry unchanged batch at lower scale before optimizer update; forward failures abort",
@@ -422,7 +422,7 @@
         "cnn6m_epoch1_endgames.json"
       ]
     },
-    "next_stage": "Two FP32 passes with verified tactical labels weighted above the teacher, then a frozen compact tournament",
+    "next_stage": "Compare smaller pretrained candidates, collect and relabel self-play, complete the native 70M and full-Q training runs",
     "epoch2": {
       "top1": 0.519,
       "puzzles_complete": 415,
@@ -459,6 +459,43 @@
       ]
     },
     "tournament_selection": "cnn6m_tournament_selection.json",
-    "tournament": "cnn6m_ccrl_pool"
+    "tournament": "cnn6m_ccrl_pool",
+    "rating": {
+      "local_elo": 2123.7374200917484,
+      "elo_opening_bootstrap_95": [
+        2039.5725515500194,
+        2187.5153546117645
+      ],
+      "elo_hoeffding_95": [
+        null,
+        2511.966969451996
+      ],
+      "games": 400,
+      "independent_opening_clusters": 50,
+      "score_by_opponent": [
+        0.07,
+        0.045,
+        0.03,
+        0.005
+      ],
+      "fitted_score_by_opponent": [
+        0.09664954581241753,
+        0.03236352229831536,
+        0.011595204012737429,
+        0.009391727876529816
+      ],
+      "score_residuals": [
+        -0.02664954581241752,
+        0.012636477701684641,
+        0.018404795987262572,
+        -0.004391727876529816
+      ],
+      "rating_pool": "CCRL-referenced local engine pool; not an official CCRL, FIDE or Lichess rating",
+      "uncertainty": "Intervals are conditional on fixed anchors; hardware, time-control and anchor errors are excluded.",
+      "finished_utc": "2026-10-11T07:35:12Z"
+    },
+    "review": "cnn6m_ccrl_pool/independent_review.json",
+    "latency_p95_ms": 14.07855,
+    "playing_strength_target_met": false
   }
 }

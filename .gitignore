@@ -47,6 +47,9 @@ ckpts/*.pb.gz
 ckpts/*/*.pt
 ckpts/*/*.jsonl
 ckpts/*/run_*.json
+ckpts/**/*.pt
+ckpts/**/*.jsonl
+ckpts/**/run_*.json
 ckpts/*.onnx
 ckpts/*.mlx/
 ckpts/*.cbmlx/

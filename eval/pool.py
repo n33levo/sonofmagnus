@@ -44,7 +44,9 @@ def main():
                 'tablebases': False, 'opponents': [], 'games_per_opponent': args.games,
                 'binaries': {engine['name']: artifact_info(engine['path']) for engine in pool['engines']},
                 'runtime_source': {path: artifact_info(path)['sha256'] for path in
-                    ('play/mlx.py', 'play/runner.py', 'chessio/lc0.py', 'eval/arena.py', 'eval/rating.py', 'eval/pool.py')}}
+                    ('play/mlx.py', 'play/runner.py', 'chessio/lc0.py', 'eval/arena.py', 'eval/rating.py', 'eval/pool.py',
+                     'chessio/encode.py', 'chessio/mask.py', 'chessio/policy_map.py',
+                     'model/__init__.py', 'model/resnet.py', 'model/heads.py')}}
     (out / 'manifest.json').write_text(json.dumps(manifest, indent=2) + '\n')
     scores = []
     for specification in pool['engines']:

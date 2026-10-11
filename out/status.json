@@ -68,15 +68,15 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 94,
+    "local_tests": 97,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
-      "passed": 77,
-      "skipped_optional": 13,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38117766535",
-      "source_commit": "b6ab9e3"
+      "passed": 78,
+      "skipped_optional": 16,
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38122163407",
+      "source_commit": "424780b"
     },
     "clocked_match": {
       "games": 100,
@@ -496,6 +496,38 @@
     },
     "review": "cnn6m_ccrl_pool/independent_review.json",
     "latency_p95_ms": 14.07855,
-    "playing_strength_target_met": false
+    "playing_strength_target_met": false,
+    "cpu_selected": {
+      "model_bytes": 8282021,
+      "latency_p95_ms": 2.25795833976008,
+      "evidence": "cnn6m_selected_cpu_deployment.json",
+      "rating_status": "Not separately rated; quantization Elo loss remains unmeasured"
+    },
+    "fresh_puzzles": {
+      "rating_stratified": "cnn6m_selected_puzzles_final3000.json",
+      "depth_conditioned": "cnn6m_selected_puzzles_depth3000.json",
+      "scores": [
+        1232,
+        1136
+      ],
+      "positions_per_test": 3000,
+      "original_targets_met": false
+    }
+  },
+  "compact_20M_packing": {
+    "plain": "compact20m_q3_agreement.json",
+    "calibrated": "compact20m_q3_calibrated_agreement.json",
+    "plain_top1": 0.3065,
+    "calibrated_top1": 0.441,
+    "calibrated_bytes": 8660815,
+    "calibrated_p95_ms": 11.1713,
+    "status": "Strength insufficient; deployment experiment only"
+  },
+  "selfplay_training": {
+    "requested_positions": 1000000,
+    "status": "GPU self-play running; full-corpus audit, phase-stratified 15% selection and verified depth-12 all-action relabeling follow",
+    "selection_probe": "selfplay_phase_selection_probe.json",
+    "dagger": "Two-round CPU end-to-end smoke passed; five full on-policy rounds queued after native training",
+    "dagger_smoke": "dagger_cpu_e2e.json"
   }
 }

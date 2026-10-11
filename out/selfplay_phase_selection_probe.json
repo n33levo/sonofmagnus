@@ -1,0 +1,127 @@
+{
+  "positions": 32,
+  "source": {
+    "model_bytes": 36174,
+    "sha256": "42897d8dc4723d37d5d3e8505ef5daa30e2f5201e78894b3188172121aa3b130"
+  },
+  "labels": {
+    "model_bytes": 49334,
+    "sha256": "20c8adfcf2b31823a54d8270be5657b713058348dfb9baa7f3c1722bc400e6df"
+  },
+  "minimum_depth": 12,
+  "histories_verified": true,
+  "all_legal_actions_verified": true,
+  "finite_probability_mass_verified": true,
+  "side_to_move_value_verified": true,
+  "reviewer_sha256": "b3387a073c076d3d277d27285893f8e4b7283e3b270cf82909462f1ed5c7f9e5",
+  "scope": "32-position cost probe, selected from first 100000 self-play rows; not the final 150000-position set",
+  "selection": {
+    "source": {
+      "model_bytes": 91425612,
+      "sha256": "4a660d03ab2a5d9dd9423e8e26ad9fa62e404a2cc3e6b6058d755df2dd02a6d8"
+    },
+    "artifact": {
+      "model_bytes": 36174,
+      "sha256": "42897d8dc4723d37d5d3e8505ef5daa30e2f5201e78894b3188172121aa3b130"
+    },
+    "input_positions": 100000,
+    "eligible_distinct_positions": 94987,
+    "selected_positions": 32,
+    "fraction": 0.00032,
+    "seed": 20261011,
+    "criterion": "Phase-proportional highest normalized legal-policy entropy; seeded tie-breaking",
+    "phase_piece_thresholds": [
+      24,
+      16,
+      8
+    ],
+    "eligible_by_phase": {
+      "0": 24355,
+      "1": 19511,
+      "2": 26872,
+      "3": 24249
+    },
+    "selected_by_phase": {
+      "0": 8,
+      "1": 7,
+      "2": 9,
+      "3": 8
+    },
+    "excluded_inputs": [
+      "data/puzzles_holdout.jsonl",
+      "data/puzzles_final3000.jsonl",
+      "data/puzzles_depth3000.jsonl",
+      "data/stockfish_holdout.jsonl",
+      "data/eval_holdout.jsonl",
+      "data/endgame_holdout.jsonl"
+    ],
+    "producer_sha256": "3b957b38d0069b7a22f39c91dae459dc4de188178f864c917964b163dc38a02f"
+  },
+  "labeling": {
+    "identity": {
+      "source": {
+        "model_bytes": 36174,
+        "sha256": "42897d8dc4723d37d5d3e8505ef5daa30e2f5201e78894b3188172121aa3b130"
+      },
+      "engine": {
+        "model_bytes": 79463656,
+        "sha256": "4cae5aac3cb32726ae2564155761faf7ab9ed79be479ecd3f776f70dd90382ef"
+      },
+      "depth": 12,
+      "all_legal_moves": true,
+      "producer": {
+        "model_bytes": 5413,
+        "sha256": "bf304e5f1102af062ddb6d67899f439ce119da48c35164713784e1ed71baee29"
+      },
+      "labeler": {
+        "model_bytes": 4487,
+        "sha256": "f1054a8549b50c780b41ee3b7250b02bd7c3539201c624e069002d6a88be38b4"
+      },
+      "history_encoder": {
+        "model_bytes": 879,
+        "sha256": "71012e224301603d7f32e73ff06d0317846c72b8c2103ee76cd7291d7755cb9e"
+      }
+    },
+    "status": "complete",
+    "positions": 32,
+    "artifact": {
+      "model_bytes": 49334,
+      "sha256": "20c8adfcf2b31823a54d8270be5657b713058348dfb9baa7f3c1722bc400e6df"
+    },
+    "seconds_this_run": 1.9549837920349091,
+    "engine_name": [
+      {
+        "name": "Stockfish 17.1",
+        "author": "the Stockfish developers (see AUTHORS file)"
+      },
+      {
+        "name": "Stockfish 17.1",
+        "author": "the Stockfish developers (see AUTHORS file)"
+      }
+    ]
+  },
+  "legal_move_histogram": {
+    "2": 15,
+    "3": 6,
+    "4": 2,
+    "5": 2,
+    "6": 1,
+    "13": 1,
+    "15": 1,
+    "26": 1,
+    "27": 2,
+    "25": 1
+  },
+  "q_range_median": 0.004967828722590495,
+  "q_range_max": 0.14647750884760083,
+  "source_phase_histogram": {
+    "0": 29355,
+    "1": 19519,
+    "2": 26872,
+    "3": 24254
+  },
+  "entropy_only_32_phase_histogram": {
+    "2": 2,
+    "3": 30
+  }
+}

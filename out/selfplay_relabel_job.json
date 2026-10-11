@@ -1,0 +1,8 @@
+{
+  "status": "Waiting for the exact 1M self-play audit and 15% phase-stratified selection",
+  "selfplay_review": "out/selfplay_1m_review.json",
+  "source": "data/selfplay_150k_hard.jsonl",
+  "labels": "data/selfplay_150k_q.jsonl",
+  "dagger_iterations": 5,
+  "dagger_positions_per_iteration": 200000
+}

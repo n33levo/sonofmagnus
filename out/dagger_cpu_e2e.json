@@ -1,0 +1,159 @@
+{
+  "scope": "Two-iteration CPU end-to-end smoke; not strength evidence",
+  "iterations": 2,
+  "positions": 320,
+  "selected_labels": 32,
+  "source": "train/dagger.py",
+  "producer": {
+    "model_bytes": 4210,
+    "sha256": "ee49378d6539d800ade06ef51f17a50a903bcfb09aed1349e8ff7527c8173594"
+  },
+  "initial_checkpoint": {
+    "model_bytes": 76254,
+    "sha256": "face2d3b4e9983a47375337777de7b29dbddcf39d77a6e6d74bc885f9ce4d50b"
+  },
+  "final_checkpoint": {
+    "model_bytes": 228461,
+    "sha256": "d02bfdd0c8be71f067b44f9b2143b6a66c314a7866df265f3385d5230829d412"
+  },
+  "engine": {
+    "model_bytes": 79463656,
+    "sha256": "4cae5aac3cb32726ae2564155761faf7ab9ed79be479ecd3f776f70dd90382ef"
+  },
+  "iteration_reviews": [
+    {
+      "selfplay": {
+        "positions": 160,
+        "legal_moves": 160,
+        "neural_calls": 5,
+        "games_started": 32,
+        "games_finished": 0,
+        "unfinished_games": 32,
+        "artifact": {
+          "model_bytes": 46703,
+          "sha256": "0e7a62d97e0c6e1aa60ff13338041c4a22feb88145062c079783bb1cadf17029"
+        },
+        "model": {
+          "model_bytes": 76254,
+          "sha256": "face2d3b4e9983a47375337777de7b29dbddcf39d77a6e6d74bc885f9ce4d50b"
+        },
+        "reviewer_sha256": "fe26743e0a9892c226adf2f1674514f90ceb0089ae29d57f044b19a06d1e7302"
+      },
+      "labels": {
+        "positions": 16,
+        "source": {
+          "model_bytes": 4770,
+          "sha256": "8749c62848766134bbbffdcc478f0c68de3a819d5f2e5abff9ea700dc26d1860"
+        },
+        "labels": {
+          "model_bytes": 19766,
+          "sha256": "05fa614bb1e79fa7d9cbcd6b3df20cbbb74f33661ce551bd065d0a2deaf2e617"
+        },
+        "minimum_depth": 2,
+        "histories_verified": true,
+        "all_legal_actions_verified": true,
+        "finite_probability_mass_verified": true,
+        "side_to_move_value_verified": true,
+        "reviewer_sha256": "b3387a073c076d3d277d27285893f8e4b7283e3b270cf82909462f1ed5c7f9e5"
+      },
+      "selection": {
+        "source": {
+          "model_bytes": 46703,
+          "sha256": "0e7a62d97e0c6e1aa60ff13338041c4a22feb88145062c079783bb1cadf17029"
+        },
+        "artifact": {
+          "model_bytes": 4770,
+          "sha256": "8749c62848766134bbbffdcc478f0c68de3a819d5f2e5abff9ea700dc26d1860"
+        },
+        "input_positions": 160,
+        "eligible_distinct_positions": 107,
+        "selected_positions": 16,
+        "fraction": 0.1,
+        "seed": 20261012,
+        "criterion": "Phase-proportional highest normalized legal-policy entropy; seeded tie-breaking",
+        "phase_piece_thresholds": [
+          24,
+          16,
+          8
+        ],
+        "eligible_by_phase": {
+          "0": 107
+        },
+        "selected_by_phase": {
+          "0": 16
+        },
+        "excluded_inputs": [
+          "/tmp/sonofmagnus-dagger-e2e/heldout.jsonl"
+        ],
+        "producer_sha256": "3b957b38d0069b7a22f39c91dae459dc4de188178f864c917964b163dc38a02f"
+      }
+    },
+    {
+      "selfplay": {
+        "positions": 160,
+        "legal_moves": 160,
+        "neural_calls": 5,
+        "games_started": 32,
+        "games_finished": 0,
+        "unfinished_games": 32,
+        "artifact": {
+          "model_bytes": 46717,
+          "sha256": "2c8f7b93e4e187ce332f88f975ade9d6417d914369107d5fac49f265f3f31115"
+        },
+        "model": {
+          "model_bytes": 228461,
+          "sha256": "42b41d285342ae28292db286540c709dd7ebbd48c9cada9127d2c66aba9fd256"
+        },
+        "reviewer_sha256": "fe26743e0a9892c226adf2f1674514f90ceb0089ae29d57f044b19a06d1e7302"
+      },
+      "labels": {
+        "positions": 16,
+        "source": {
+          "model_bytes": 4733,
+          "sha256": "b8376f5bb566ca1ba46eb761233c92789f8c8e7fe6816945af726bb744ccc975"
+        },
+        "labels": {
+          "model_bytes": 19416,
+          "sha256": "9a155ebe5b8e660dfc0cf8bd3eeb809ff85be89af78faafa9a366ff66141107a"
+        },
+        "minimum_depth": 2,
+        "histories_verified": true,
+        "all_legal_actions_verified": true,
+        "finite_probability_mass_verified": true,
+        "side_to_move_value_verified": true,
+        "reviewer_sha256": "b3387a073c076d3d277d27285893f8e4b7283e3b270cf82909462f1ed5c7f9e5"
+      },
+      "selection": {
+        "source": {
+          "model_bytes": 46717,
+          "sha256": "2c8f7b93e4e187ce332f88f975ade9d6417d914369107d5fac49f265f3f31115"
+        },
+        "artifact": {
+          "model_bytes": 4733,
+          "sha256": "b8376f5bb566ca1ba46eb761233c92789f8c8e7fe6816945af726bb744ccc975"
+        },
+        "input_positions": 160,
+        "eligible_distinct_positions": 105,
+        "selected_positions": 16,
+        "fraction": 0.1,
+        "seed": 20261013,
+        "criterion": "Phase-proportional highest normalized legal-policy entropy; seeded tie-breaking",
+        "phase_piece_thresholds": [
+          24,
+          16,
+          8
+        ],
+        "eligible_by_phase": {
+          "0": 105
+        },
+        "selected_by_phase": {
+          "0": 16
+        },
+        "excluded_inputs": [
+          "/tmp/sonofmagnus-dagger-e2e/heldout.jsonl"
+        ],
+        "producer_sha256": "3b957b38d0069b7a22f39c91dae459dc4de188178f864c917964b163dc38a02f"
+      }
+    }
+  ]
+}

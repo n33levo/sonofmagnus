@@ -13,6 +13,7 @@ import yaml
 
 from model import create_model, resolve_device
 from model.artifacts import artifact_info
+from chessio.records import holdout_positions
 from train.dataset import ChessPositionDataset
 
 
@@ -120,6 +121,8 @@ def main():
     parser.add_argument('--config', required=True)
     parser.add_argument('--data', required=True)
     parser.add_argument('--data-weights')
+    parser.add_argument('--exclude-data', help='Comma-separated frozen JSONL tests; exclude their complete position lines')
+    parser.add_argument('--tier-sampling', action='store_true', help='Retain elite/master/expert/strong human rows at 100/100/80/50 percent')
     parser.add_argument('--val-data')
     parser.add_argument('--epochs', type=int, default=2)
     parser.add_argument('--batch-size', type=int)
@@ -152,7 +155,10 @@ def main():
     weights = [float(w) for w in args.data_weights.split(',')] if args.data_weights else [1.] * len(paths)
     if len(weights) != len(paths) or any(not np.isfinite(w) or w <= 0 for w in weights):
         parser.error('--data-weights needs one positive finite weight per dataset')
-    datasets = [ChessPositionDataset(path, max_samples=args.max_samples) for path in paths]
+    excluded = args.exclude_data.split(',') if args.exclude_data else []
+    blocked = holdout_positions(excluded)
+    datasets = [ChessPositionDataset(path, max_samples=args.max_samples, exclude=blocked,
+                tier_sampling=args.tier_sampling, seed=args.seed + i) for i, path in enumerate(paths)]
     for dataset, weight in zip(datasets, weights):
         dataset.weight = weight
     batch_size = args.batch_size or config.get('batch_size', 256)
@@ -171,6 +177,9 @@ def main():
     sources = {path: artifact_info(path) for path in paths}
     provenance = {'arguments': vars(args), 'config': config, 'device': str(device), 'samples': len(combined),
         'parameters': model.get_num_params(), 'datasets': sources,
+        'excluded_data': {path: artifact_info(path) for path in excluded},
+        'retained': {path: {'samples': len(dataset), 'heldout_excluded': dataset.excluded, 'tier_dropped': dataset.tier_dropped}
+                     for path, dataset in zip(paths, datasets)},
         'initial_checkpoint': artifact_info(args.resume) if args.resume else None,
         'runtime_source': {path: artifact_info(path)['sha256'] for path in
             ('train/train.py', 'train/dataset.py', 'model/resnet.py', 'model/heads.py', 'model/__init__.py')}}

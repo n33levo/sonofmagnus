@@ -16,7 +16,7 @@ Frozen datasets, results and game logs live in [data](data) and [out](out).
 | sonofmagnus-185M | 163.6 MB, 6-bit MLX | 17.6 ms, isolated GPU benchmark | 784/1000 | 63.15%, 2000 positions |
 | sonofmagnus-6M, first training pass | 12.09 MB FP16 / 7.41 MB at 8 bits | 15.9 ms, isolated FP16 GPU benchmark | 277/1000 | 38.25%, 2000 positions |
 
-Parameter labels are rounded; export manifests record exact stored scalar counts and bytes. Puzzle scoring requires the whole solution, with one deterministic attempt. The 102M model clears the five original puzzle-band point targets: **95%, 82%, 68%, 47%, 23%**. Sampling uncertainty still applies.
+Parameter labels are rounded; export manifests record exact stored scalar counts and bytes. Puzzle scoring requires the whole solution, with one deterministic attempt. The 185M model also clears all five original targets on [3000 puzzles with the specified solution lengths](out/bt4_puzzles_depth3000.json): **98.3%, 93.0%, 78.5%, 63.0%, 32.2%**. All five simultaneous 95% binomial lower bounds exceed the targets. A separate rating-stratified test scored **2355/3000**.
 
 **The 185M checkpoint measured 2853 local Elo** in [400 recorded games](out/bt4_ccrl_pool), with 192 wins, 94 draws and 114 losses at 10+0.1. The paired-opening 95% interval is **2819–2886**; the conservative bound is **2687–3037**. We replayed all 41,863 plies and verified one network call for each of its 20,963 moves, with no forfeits or capped games.
 

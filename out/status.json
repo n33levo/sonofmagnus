@@ -62,8 +62,7 @@
     "The under-20 ms GPU target was not met in the clocked match: move-selection p95 was 36.27 ms, versus 17.72 ms in back-to-back sampling.",
     "The historical first-application claim conflicts with ChessBench, which explicitly studied action-value prediction.",
     "The 185M policy still exceeds the 20 ms GPU limit during real games; its isolated benchmark is faster.",
-    "The new 6.67M attention policy fits the byte budget but does not meet puzzle or agreement targets.",
-    "The original 100%/100%/80%/50% tier-retention fractions have not been reproduced; quality weights are active."
+    "The new 6.67M attention policy fits the byte budget but does not meet puzzle or agreement targets."
   ],
   "references": {
     "ChessBench": "https://arxiv.org/abs/2402.04494",
@@ -71,15 +70,15 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 66,
+    "local_tests": 76,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
-      "passed": 68,
-      "skipped_optional": 6,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38107151881",
-      "source_commit": "c497f30"
+      "passed": 69,
+      "skipped_optional": 7,
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38108257147",
+      "source_commit": "417e6ad"
     },
     "clocked_match": {
       "games": 100,
@@ -164,6 +163,18 @@
       "depth_conditioned": "bt4_puzzles_depth3000.json",
       "all_five_original_targets_above_simultaneous_binomial_lower_bounds": true,
       "model": "bt4-q6.mlx"
+    },
+    "tier_filter": {
+      "focused_tests": 2,
+      "real_training_smoke_samples": 128,
+      "tier_dropped": 51,
+      "retention_rates": [
+        1.0,
+        1.0,
+        0.8,
+        0.5
+      ],
+      "full_line_holdout_exclusion": true
     }
   },
   "metal_runtime": {
@@ -252,7 +263,7 @@
     "floating_stored_scalars": 5955410,
     "positions": 341010,
     "training_device": "Apple M4 Metal (MLX)",
-    "training_status": "Epoch 1 saved and evaluated; epoch 2 in progress",
+    "training_status": "Epoch 2 saved and tested; epoch 3 in progress, temporarily paused for 5000-game opening benchmark",
     "source_identity": {
       "sources": {
         "data/compact_236k_train.jsonl": {
@@ -303,6 +314,13 @@
       "relative_gradient_error": 0.006006997817703127,
       "cli_smoke_samples": 16,
       "current_three_epoch_run": "Existing FP32 run; AMP applies to subsequent runs"
+    },
+    "epoch2": {
+      "agreement": "compact6m_epoch2_agreement.json",
+      "puzzles": "compact6m_epoch2_puzzles.json",
+      "top1": 0.3985,
+      "puzzles_complete": 294,
+      "strength_status": "Below targets"
     }
   },
   "portable_attention": {
@@ -325,7 +343,7 @@
     "strength": "Previous weak checkpoint; deployment path verified only"
   },
   "human_corpus": {
-    "status": "January and February complete; March to May extracting; not yet trained on the 70M corpus",
+    "status": "January to April complete; May extracting; no 70M training result yet",
     "sources": "2024-01 to 2024-05",
     "target_positions": 70000000,
     "min_both_ratings": 2000,
@@ -335,10 +353,12 @@
       "rapid"
     ],
     "heldout_positions_excluded": true,
-    "completed_positions": 30000000,
+    "completed_positions": 60000000,
     "completed_months": [
       "2024-01",
-      "2024-02"
+      "2024-02",
+      "2024-03",
+      "2024-04"
     ]
   },
   "engine_corpus": {

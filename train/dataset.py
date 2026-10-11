@@ -59,11 +59,13 @@ def position_sample(item, augment=False):
 
 
 class ChessPositionDataset(Dataset):
-    def __init__(self, data_path, augment=True, max_samples=None):
+    def __init__(self, data_path, augment=True, max_samples=None, exclude=(), tier_sampling=False, seed=0):
         self.data_path = Path(data_path)
         self.augment = augment
         self.weight = 1.
         self.offsets = array('Q')
+        blocked, rng = set(exclude), random.Random(seed)
+        self.excluded, self.tier_dropped = 0, 0
         with self.data_path.open('rb') as stream:
             while max_samples is None or len(self.offsets) < max_samples:
                 offset = stream.tell()
@@ -71,6 +73,18 @@ class ChessPositionDataset(Dataset):
                 if not line:
                     break
                 if line.strip():
+                    if blocked or tier_sampling:
+                        row = json.loads(line)
+                        key = ' '.join(row['fen'].split()[:4])
+                        if key.split()[-1] != '-':
+                            key = ' '.join(chess.Board(row['fen']).fen().split()[:4])
+                        if key in blocked:
+                            self.excluded += 1
+                            continue
+                        rate = {1.: .5, 1.5: .8, 2.: 1., 3.: 1.}.get(row.get('weight'), 1.) if tier_sampling and 'move_probs' not in row else 1.
+                        if rng.random() >= rate:
+                            self.tier_dropped += 1
+                            continue
                     self.offsets.append(offset)
         self.stream = None
 

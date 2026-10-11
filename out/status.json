@@ -73,10 +73,10 @@
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
-      "passed": 87,
+      "passed": 89,
       "skipped_optional": 17,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38126616442",
-      "source_commit": "36856ef"
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38130712704",
+      "source_commit": "f8e74fa"
     },
     "clocked_match": {
       "games": 100,
@@ -566,7 +566,15 @@
       "deployment": "cnn6m_weight8_float_optimized_cpu_deployment.json",
       "cpu_p95_ms": 51.379456231370554,
       "game_selection": "cnn6m_weight8_game_selection.json",
-      "status": "Fresh 1000-game comparison running; strength loss unmeasured"
+      "status": "1000 games independently replayed; no detectable relative strength difference; compact absolute-strength target remains unmet",
+      "result": "cnn6m_weight8_1000.json",
+      "review": "cnn6m_weight8_1000_review.json",
+      "elo_loss": 1.7371924043128577,
+      "paired_bootstrap_95": [
+        -14.252848935949016,
+        17.734601440379787
+      ],
+      "in_game_cpu_p95_ms": 35.663127119187266
     }
   },
   "compact_20M_packing": {

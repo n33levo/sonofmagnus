@@ -1,0 +1,23 @@
+{
+  "games": 1000,
+  "legal_plies": 83583,
+  "moves_by_side": [
+    41795,
+    41788
+  ],
+  "outcomes_verified": true,
+  "distinct_colour_pairs": 500,
+  "artifacts": [
+    {
+      "model_bytes": 11901,
+      "sha256": "6ce4a14ee04d14e1bfc7494d0a999f6a35be9d90c2fee30ced38e06a418664c5"
+    },
+    {
+      "model_bytes": 2176274,
+      "sha256": "d14b264f984209507671bf96fa0e9a3467f0aef5fd1b344c9a0e9d1d13420226"
+    }
+  ],
+  "source_hashes_verified": true,
+  "rating_calculation_verified": true,
+  "reviewer_sha256": "91a4d8b864491e23b5a6ae4d03950b75b48291d798c7b5a3ae2957a65dad12d0"
+}

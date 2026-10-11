@@ -179,7 +179,7 @@ def test_puzzle_bands_keep_counts_and_sampling_uncertainty(tmp_path):
         result = evaluate_runner(None, write_rows(tmp_path / 'puzzles.jsonl', rows))
     band = result['bands']['1500-1800']
     assert band['correct'] == 1 and band['total'] == 2 and band['accuracy'] == .5
-    assert 0 < band['wilson_simultaneous_95'][0] < .5 < band['wilson_simultaneous_95'][1] < 1
+    assert 0 < band['clopper_pearson_simultaneous_95'][0] < .5 < band['clopper_pearson_simultaneous_95'][1] < 1
     assert result['bands']['2700+']['total'] == 1
     assert result['overall']['correct'] == 5 and result['overall']['total'] == 6
 

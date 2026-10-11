@@ -4,12 +4,11 @@ import io
 import json
 from collections import defaultdict
 from pathlib import Path
-from statistics import NormalDist
 
 import chess
 
 from play.runner import load_runner
-from eval.arena import score_interval
+from eval.statistics import binomial_interval
 
 
 def puzzle_moves(puzzle):
@@ -83,9 +82,8 @@ def evaluate_runner(runner, puzzles_path, max_puzzles=None, first_move_only=Fals
     correct = sum(s['correct'] for s in buckets.values())
     results['overall'] = {'correct': correct, 'total': total, 'accuracy': correct / total}
     results['protocol'] = 'first_response' if first_move_only else 'complete_line'
-    z = NormalDist().inv_cdf(1 - .05 / (2 * 5))
     results['bands'] = {band: {**stats, 'accuracy': stats['correct'] / stats['total'],
-        'wilson_simultaneous_95': score_interval([1.] * stats['correct'] + [0.] * (stats['total'] - stats['correct']), z)}
+        'clopper_pearson_simultaneous_95': binomial_interval(stats['correct'], stats['total'], .05 / 5)}
         for band, stats in bands.items()}
     return results
 

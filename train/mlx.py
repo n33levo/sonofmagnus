@@ -35,8 +35,11 @@ def batch_rows(rows):
     return mx.array(inputs), mx.array(mask), mx.array(target)
 
 
-def losses(graph, weights, inputs, mask, target, teacher_policy, teacher_wdl, value_weight=.25, teacher_weight=.75, sample_weight=None):
+def losses(graph, weights, inputs, mask, target, teacher_policy, teacher_wdl, value_weight=.25, teacher_weight=.75, sample_weight=None, amp=False):
+    if amp:
+        weights = {name: value.astype(mx.float16) for name, value in weights.items()}
     policy, value_logits = graph.forward(inputs, weights, raw_value=True)
+    policy, value_logits = policy.astype(mx.float32), value_logits.astype(mx.float32)
     policy = mx.where(mask, policy, -1e9)
     log_probs = policy - mx.logsumexp(policy, axis=-1, keepdims=True)
     quality = mx.ones((inputs.shape[0],)) if sample_weight is None else sample_weight
@@ -88,6 +91,7 @@ def main():
     parser.add_argument('--epochs', type=int, default=3)
     parser.add_argument('--batch-size', type=int, default=32)
     parser.add_argument('--lr', type=float, default=1e-4)
+    parser.add_argument('--amp', choices=['fp16', 'none'], default='fp16')
     parser.add_argument('--max-samples', type=int)
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--teacher-cache', help='Memory-mapped teacher outputs, shared across epochs')
@@ -131,7 +135,9 @@ def main():
                     training_data=artifact_info(args.data), seed=args.seed, learning_rate=args.lr,
                     training_epochs=args.epochs, training_samples=len(dataset), trainable_scalars=sum(p.size for p in parameters.values()),
                     objective=f'Quality-weighted {1-args.teacher_weight:g} label policy, {args.teacher_weight:g} teacher policy, 0.25 teacher WDL CE plus centred-value MSE',
-                    training_device=str(mx.default_device()), teacher_temperature=args.teacher_temperature, mode=args.mode)
+                    training_device=str(mx.default_device()), teacher_temperature=args.teacher_temperature, mode=args.mode,
+                    master_dtype='float32', compute_dtype='float16' if args.amp == 'fp16' else 'float32',
+                    loss_scale=1024 if args.amp == 'fp16' else 1)
     metadata['runtime_source'] = {path: artifact_info(path)['sha256'] for path in
         ('train/mlx.py', 'play/mlx.py', 'chessio/lc0.py', 'chessio/records.py', 'train/dataset.py')}
     if args.mode == 'policy':
@@ -140,9 +146,13 @@ def main():
     cached = cache_teacher(teacher, dataset, args.teacher_cache, args.batch_size,
                           {'teacher': metadata['teacher_source'], 'data': metadata['training_data'], 'samples': len(dataset)}) if args.teacher_cache and teacher else None
     optimizer = optim.AdamW(args.lr, weight_decay=1e-4)
-    gradient = mx.compile(mx.value_and_grad(lambda p, x, mask, target, teacher_policy, teacher_wdl, quality:
-        losses(graph, {**frozen, **p}, x, mask, target, teacher_policy, teacher_wdl,
-               value_weight=.25 if teacher else 0., teacher_weight=args.teacher_weight, sample_weight=quality)))
+    scale = metadata['loss_scale']
+    def objective(p, x, mask, target, teacher_policy, teacher_wdl, quality):
+        values = losses(graph, {**frozen, **p}, x, mask, target, teacher_policy, teacher_wdl,
+                        value_weight=.25 if teacher else 0., teacher_weight=args.teacher_weight,
+                        sample_weight=quality, amp=args.amp == 'fp16')
+        return (values[0] * scale, *values[1:])
+    gradient = mx.compile(mx.value_and_grad(objective))
     rng = np.random.default_rng(args.seed)
     with (out / 'train.jsonl').open('w') as log:
         for epoch in range(args.epochs):
@@ -164,6 +174,8 @@ def main():
                     teacher_logits, teacher_wdl = values[:, :1858], values[:, 1858:]
                 teacher_policy = mx.softmax(mx.where(mask, teacher_logits.astype(mx.float32) / args.teacher_temperature, -1e9), axis=-1) if teacher else target
                 values, grads = gradient(parameters, inputs, mask, target, teacher_policy, teacher_wdl.astype(mx.float32), mx.array(quality))
+                values = (values[0] / scale, *values[1:])
+                grads = {name: value / scale for name, value in grads.items()}
                 norm = mx.sqrt(sum(mx.sum(mx.square(g)) for g in grads.values()))
                 grads = {name: value / mx.maximum(1., norm) for name, value in grads.items()}
                 parameters = optimizer.apply_gradients(grads, parameters)

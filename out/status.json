@@ -63,7 +63,7 @@
     "The historical first-application claim conflicts with ChessBench, which explicitly studied action-value prediction.",
     "The 185M policy still exceeds the 20 ms GPU limit during real games; its isolated benchmark is faster.",
     "The new 6.67M attention policy fits the byte budget but does not meet puzzle or agreement targets.",
-    "Original puzzle depth profiles and tier-retention fractions require separate validation; rating-only puzzle point scores do not establish the depth profiles."
+    "The original 100%/100%/80%/50% tier-retention fractions have not been reproduced; quality weights are active."
   ],
   "references": {
     "ChessBench": "https://arxiv.org/abs/2402.04494",
@@ -158,7 +158,13 @@
       "neural_forward_calls": 1
     },
     "focused_q_corpus_tests": 7,
-    "native_training_regressions": 5
+    "native_training_regressions": 5,
+    "strong_policy_fresh_puzzles": {
+      "rating_stratified": "bt4_puzzles_final3000.json",
+      "depth_conditioned": "bt4_puzzles_depth3000.json",
+      "all_five_original_targets_above_simultaneous_binomial_lower_bounds": true,
+      "model": "bt4-q6.mlx"
+    }
   },
   "metal_runtime": {
     "strong_185M": {
@@ -290,6 +296,13 @@
       "graph_compaction": "compact6m_cpu_graph_compaction.json",
       "metal_q8": "compact6m_lowrank_q8_probe.json: baseline measurements",
       "cpu_agreement": "compact6m_epoch1_cpu_agreement.json"
+    },
+    "amp": {
+      "evidence": "compact6m_amp_probe.json",
+      "forward_backward_speedup": 1.5186570376581934,
+      "relative_gradient_error": 0.006006997817703127,
+      "cli_smoke_samples": 16,
+      "current_three_epoch_run": "Existing FP32 run; AMP applies to subsequent runs"
     }
   },
   "portable_attention": {

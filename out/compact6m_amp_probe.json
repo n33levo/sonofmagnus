@@ -1,0 +1,32 @@
+{
+  "model": {
+    "model_bytes": 12085959,
+    "sha256": "dc7e8f50d2bb04153e1a2b889bad794187fdf9148b9f0559a3998d167397894f"
+  },
+  "training_data": {
+    "model_bytes": 149552958,
+    "sha256": "89a4c8fdb4421d23920b7c477f2e68d7ee5fae697bd5d7477a1b93e9ff206d3b"
+  },
+  "batch_size": 32,
+  "seed": 0,
+  "protocol": "Cached real history-bearing inputs; forward/backward only, same FP32 master parameters. FP16 loss scaling 1024, FP32 losses. Training paused; CPU extraction active.",
+  "fp32": {
+    "loss": 1.2756409645080566,
+    "p50_ms": 244.5468750083819,
+    "p95_ms": 249.01095803361386,
+    "gradient_norm": 4.894782066345215
+  },
+  "fp16": {
+    "loss": 1.275742530822754,
+    "p50_ms": 161.02837503422052,
+    "p95_ms": 175.2364169806242,
+    "gradient_norm": 4.894681453704834
+  },
+  "relative_gradient_error": 0.006006997817703127,
+  "speedup": 1.5186570376581934,
+  "source": {
+    "train/mlx.py": "0ab11290caa6778230ef96b199d39c27e3f052825ca79cb9c4923af836c93be3",
+    "play/mlx.py": "af3f81aa7a15d234404c84e5909d29194b4556a6ae4a6132fe9438d30c85f30d",
+    "chessio/lc0.py": "ae0c0807bd204ced7b4534f8e18a1191a3aec6642724133389b9a24503dba09d"
+  }
+}

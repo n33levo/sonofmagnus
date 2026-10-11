@@ -40,5 +40,22 @@ def test_selection_preserves_phases_when_endgame_entropy_is_higher(tmp_path):
     source.with_suffix('.json').write_text(json.dumps({'artifact': artifact_info(source), 'positions': 40}))
     result = select(source, output, fraction=.15)
     selected = [json.loads(line) for line in output.read_text().splitlines()]
-    assert result['selected_by_phase'] == {0: 3, 3: 3}
+    assert result['selected_by_phase'] == {0: 3, 1: 0, 2: 0, 3: 3}
     assert sorted(row['policy_entropy'] for row in selected) == pytest.approx([.27, .28, .29, .97, .98, .99])
+
+
+def test_selection_spends_no_engine_budget_on_forced_moves(tmp_path):
+    source, output = tmp_path / 'source.jsonl', tmp_path / 'selected.jsonl'
+    forced = chess.Board('k7/8/1K6/8/8/8/8/R7 b - - 0 1')
+    assert forced.legal_moves.count() == 1
+    rows = []
+    for index in range(20):
+        opening = chess.Board()
+        opening.halfmove_clock = forced.halfmove_clock = index
+        rows.extend([{'fen': opening.fen(), 'policy_entropy': index / 100},
+                     {'fen': forced.fen(), 'policy_entropy': 0}])
+    source.write_text(''.join(json.dumps(row) + '\n' for row in rows))
+    source.with_suffix('.json').write_text(json.dumps({'artifact': artifact_info(source), 'positions': 40}))
+    result = select(source, output)
+    assert result['selected_positions'] == 6 and result['eligible_distinct_positions'] == 20
+    assert all(chess.Board(json.loads(line)['fen']).legal_moves.count() == 20 for line in output.read_text().splitlines())

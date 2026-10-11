@@ -6,6 +6,8 @@ import math
 from pathlib import Path
 import random
 
+import chess
+
 from chessio.records import holdout_positions
 from model.artifacts import artifact_info
 
@@ -41,11 +43,15 @@ def select(source, output, fraction=.15, seed=0, exclude=()):
                 if key in seen or ' '.join(fields[:4]) in blocked:
                     continue
                 seen.add(key)
-                yield row, line
+                legal = chess.Board(row['fen']).legal_moves.count()
+                if legal < 2:
+                    continue
+                branch = 0 if legal < 8 else 1 if legal < 20 else 2
+                yield row, line, phase(row) * 3 + branch
         if count != metadata['positions']:
             raise ValueError('Wrong source count')
 
-    counts = Counter(phase(row) for row, _ in eligible())
+    counts = Counter(group for _, _, group in eligible())
     total = sum(counts.values())
     if total < budget:
         raise ValueError('Insufficient distinct positions')
@@ -54,8 +60,7 @@ def select(source, output, fraction=.15, seed=0, exclude=()):
     for group in remainder[:budget - sum(quotas.values())]:
         quotas[group] += 1
     rng, heaps = random.Random(seed), {group: [] for group in counts}
-    for row, line in eligible():
-        group = phase(row)
+    for row, line, group in eligible():
         heap, quota = heaps[group], quotas[group]
         candidate = float(row['policy_entropy']), rng.random(), line
         if len(heap) < quota:
@@ -70,8 +75,11 @@ def select(source, output, fraction=.15, seed=0, exclude=()):
         stream.writelines(row[2] for row in sorted(selected, reverse=True))
     result = dict(source=frozen, artifact=artifact_info(output), input_positions=metadata['positions'],
                   eligible_distinct_positions=total, selected_positions=budget, fraction=budget / metadata['positions'],
-                  seed=seed, criterion='Phase-proportional highest normalized legal-policy entropy; seeded tie-breaking',
-                  phase_piece_thresholds=[24, 16, 8], eligible_by_phase=dict(counts), selected_by_phase=quotas,
+                  seed=seed, criterion='Phase and legal-branching proportional policy uncertainty; forced moves excluded; seeded tie-breaking',
+                  phase_piece_thresholds=[24, 16, 8], legal_move_thresholds=[8, 20],
+                  eligible_by_stratum=dict(counts), selected_by_stratum=quotas,
+                  eligible_by_phase={group: sum(n for key, n in counts.items() if key // 3 == group) for group in range(4)},
+                  selected_by_phase={group: sum(n for key, n in quotas.items() if key // 3 == group) for group in range(4)},
                   excluded_inputs=list(map(str, exclude)), producer_sha256=artifact_info(__file__)['sha256'])
     output.with_suffix('.json').write_text(json.dumps(result, indent=2) + '\n')
     return result

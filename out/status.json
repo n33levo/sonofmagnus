@@ -68,7 +68,7 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 97,
+    "local_tests": 98,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
@@ -525,8 +525,8 @@
   },
   "selfplay_training": {
     "requested_positions": 1000000,
-    "status": "GPU self-play running; full-corpus audit, phase-stratified 15% selection and verified depth-12 all-action relabeling follow",
-    "selection_probe": "selfplay_phase_selection_probe.json",
+    "status": "GPU self-play running; full-corpus audit, phase/branching-stratified 15% selection and verified depth-12 all-action relabeling follow",
+    "selection_probe": "selfplay_branch_selection_probe.json",
     "dagger": "Two-round CPU end-to-end smoke passed; five full on-policy rounds queued after native training",
     "dagger_smoke": "dagger_cpu_e2e.json"
   }

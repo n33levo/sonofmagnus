@@ -2,6 +2,24 @@ import numpy as np
 import pytest
 
 
+def test_verified_tactics_override_a_conflicting_teacher_without_changing_human_distillation():
+    mx = pytest.importorskip('mlx.core')
+    from train.mlx import losses, teacher_fractions
+    class Graph:
+        def forward(self, inputs, weights, raw_value=False):
+            return inputs @ weights['policy'], inputs @ weights['value']
+    weights = {'policy': mx.zeros((2, 2)), 'value': mx.zeros((2, 3))}
+    gold, teacher = mx.array([[1., 0.], [1., 0.]]), mx.array([[0., 1.], [0., 1.]])
+    fractions = teacher_fractions([{'source': 'Lichess evaluation database'},
+                                  {'source': 'lichess-puzzle-stockfish-40-meganodes', 'game_id': 'puzzle-00y2j'}])
+    def objective(parameters):
+        return losses(Graph(), parameters, mx.eye(2), mx.ones((2, 2), dtype=mx.bool_), gold, teacher,
+                      mx.zeros((2, 3)), value_weight=0., teacher_weight=fractions)[0]
+    gradient = mx.grad(objective)(weights)['policy']
+    # Descent follows the stronger teacher on human moves and the verified move on tactics.
+    np.testing.assert_allclose(np.array(gradient), [[.125, -.125], [-.125, .125]], atol=1e-6)
+
+
 def test_half_gradient_overflow_retries_the_same_batch_without_mutating_parameters():
     mx = pytest.importorskip('mlx.core')
     from train.mlx import losses, finite_gradients

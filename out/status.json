@@ -68,15 +68,15 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 86,
+    "local_tests": 87,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
-      "passed": 71,
-      "skipped_optional": 7,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38110639766",
-      "source_commit": "484d287"
+      "passed": 75,
+      "skipped_optional": 11,
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38114951280",
+      "source_commit": "7e23f02"
     },
     "clocked_match": {
       "games": 100,
@@ -409,6 +409,18 @@
     "status": "Three-epoch history-dropout distillation running; no compact Elo established",
     "learning_rate": 5e-05,
     "optimizer_bias_correction": true,
-    "overflow_handling": "Retry unchanged batch at lower scale before optimizer update; forward failures abort"
+    "overflow_handling": "Retry unchanged batch at lower scale before optimizer update; forward failures abort",
+    "epoch1": {
+      "top1": 0.51,
+      "puzzles_complete": 411,
+      "original_endgame_point_targets_met": true,
+      "training": "cnn6m_epoch1_training.json",
+      "evidence": [
+        "cnn6m_epoch1_agreement.json",
+        "cnn6m_epoch1_puzzles.json",
+        "cnn6m_epoch1_endgames.json"
+      ]
+    },
+    "next_stage": "After the third epoch, train two further passes with verified tactical labels weighted above the teacher"
   }
 }

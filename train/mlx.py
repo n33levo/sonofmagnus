@@ -42,6 +42,11 @@ def drop_history(inputs, rows, selected):
     return mx.array(result)
 
 
+def teacher_fractions(rows, default=.75, tactical=.25):
+    return mx.array([tactical if row.get('source') == 'lichess-puzzle-stockfish-40-meganodes' else default
+                     for row in rows], dtype=mx.float32)
+
+
 def losses(graph, weights, inputs, mask, target, teacher_policy, teacher_wdl, value_weight=.25, teacher_weight=.75, sample_weight=None, amp=False):
     if amp:
         weights = {name: value.astype(mx.float16) for name, value in weights.items()}
@@ -51,15 +56,18 @@ def losses(graph, weights, inputs, mask, target, teacher_policy, teacher_wdl, va
     log_probs = policy - mx.logsumexp(policy, axis=-1, keepdims=True)
     quality = mx.ones((inputs.shape[0],)) if sample_weight is None else sample_weight
     quality = quality / quality.sum()
-    policy_loss = (-(target * log_probs).sum(-1) * quality).sum()
-    distill_loss = (-(teacher_policy * log_probs).sum(-1) * quality).sum()
+    policy_rows = -(target * log_probs).sum(-1)
+    distill_rows = -(teacher_policy * log_probs).sum(-1)
+    policy_loss = (policy_rows * quality).sum()
+    distill_loss = (distill_rows * quality).sum()
     value_loss = mx.array(0.)
     if value_weight:
         value_log_probs = value_logits - mx.logsumexp(value_logits, axis=-1, keepdims=True)
         wdl = mx.exp(value_log_probs)
         value_loss = (-(teacher_wdl * value_log_probs).sum(-1) * quality).sum()
         value_loss += (mx.square(wdl[:, 0] - wdl[:, 2] - teacher_wdl[:, 0] + teacher_wdl[:, 2]) * quality).sum()
-    return (1 - teacher_weight) * policy_loss + teacher_weight * distill_loss + value_weight * value_loss, policy_loss, distill_loss, value_loss
+    blended_policy = (((1 - teacher_weight) * policy_rows + teacher_weight * distill_rows) * quality).sum()
+    return blended_policy + value_weight * value_loss, policy_loss, distill_loss, value_loss
 
 
 def cache_teacher(teacher, dataset, path, batch_size, identity):
@@ -121,10 +129,11 @@ def main():
     parser.add_argument('--teacher-cache', help='Memory-mapped teacher outputs, shared across epochs')
     parser.add_argument('--teacher-temperature', type=float, default=.25)
     parser.add_argument('--teacher-weight', type=float, default=.75, help='Policy distillation fraction; use a lower weight for verified tactical labels')
+    parser.add_argument('--tactical-teacher-weight', type=float, default=.25)
     parser.add_argument('--history-dropout', type=float, default=0., help='Train the student on FEN-only inputs for this fraction; teacher retains history')
     parser.add_argument('--mode', choices=['distill', 'policy'], default='distill', help='Distill the whole network or fit only policy heads to engine labels')
     args = parser.parse_args()
-    if not 0 <= args.teacher_weight <= 1:
+    if not 0 <= args.teacher_weight <= 1 or not 0 <= args.tactical_teacher_weight <= 1:
         parser.error('Teacher weight must be in [0, 1]')
     if not 0 <= args.history_dropout <= 1:
         parser.error('History dropout must be in [0, 1]')
@@ -168,6 +177,8 @@ def main():
     metadata['history_dropout'] = args.history_dropout
     metadata['loss_scale_policy'] = 'Halve and retry the unchanged batch on FP16 gradient overflow, before any optimizer update'
     metadata['optimizer_bias_correction'] = True
+    metadata['tactical_teacher_weight'] = args.tactical_teacher_weight
+    metadata['objective'] += f'; verified puzzle rows use {args.tactical_teacher_weight:g} teacher policy'
     metadata['runtime_source'] = {path: artifact_info(path)['sha256'] for path in
         ('train/mlx.py', 'play/mlx.py', 'chessio/lc0.py', 'chessio/records.py', 'train/dataset.py')}
     if args.mode == 'policy':
@@ -177,9 +188,9 @@ def main():
                           {'teacher': metadata['teacher_source'], 'data': metadata['training_data'], 'samples': len(dataset)}) if args.teacher_cache and teacher else None
     optimizer = optim.AdamW(args.lr, weight_decay=1e-4, bias_correction=True)
     scale = metadata['loss_scale']
-    def objective(p, x, mask, target, teacher_policy, teacher_wdl, quality, loss_scale):
+    def objective(p, x, mask, target, teacher_policy, teacher_wdl, quality, teacher_fraction, loss_scale):
         values = losses(graph, {**frozen, **p}, x, mask, target, teacher_policy, teacher_wdl,
-                        value_weight=.25 if teacher else 0., teacher_weight=args.teacher_weight,
+                        value_weight=.25 if teacher else 0., teacher_weight=teacher_fraction,
                         sample_weight=quality, amp=args.amp == 'fp16')
         return (values[0] * loss_scale, *values[1:])
     gradient = mx.compile(mx.value_and_grad(objective))
@@ -205,8 +216,9 @@ def main():
                 teacher_policy = mx.softmax(mx.where(mask, teacher_logits.astype(mx.float32) / args.teacher_temperature, -1e9), axis=-1) if teacher else target
                 if args.history_dropout:
                     inputs = drop_history(inputs, rows, rng.random(len(rows)) < args.history_dropout)
+                teacher_fraction = teacher_fractions(rows, args.teacher_weight, args.tactical_teacher_weight)
                 values, grads, norm, scale, retries = finite_gradients(gradient, parameters,
-                    (inputs, mask, target, teacher_policy, teacher_wdl.astype(mx.float32), mx.array(quality)), scale, args.amp == 'fp16')
+                    (inputs, mask, target, teacher_policy, teacher_wdl.astype(mx.float32), mx.array(quality), teacher_fraction), scale, args.amp == 'fp16')
                 overflow_retries += retries
                 if retries:
                     print(json.dumps({'epoch': epoch + 1, 'batch_offset': offset, 'overflow_retries': retries, 'loss_scale': scale}), flush=True)

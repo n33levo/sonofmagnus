@@ -212,5 +212,7 @@
     "model_bytes": 798798634,
     "sha256": "831dd3e9e197f2ee5fb61c4d5c322c30fcc8c0b9f37369cf0d7a06f56abfe390"
   },
-  "seconds": 314.0467194580706
+  "seconds": 260.99628950003535,
+  "validator_source_sha256": "b181f6973940fcf2f3219f70d4492d3e5238c86286cb5d542307489c065dca88",
+  "artifact_unchanged_during_validation": true
 }

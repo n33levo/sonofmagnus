@@ -1,0 +1,55 @@
+{
+  "games": 400,
+  "legal_plies": 41863,
+  "neural_forward_calls": 20963,
+  "terminations": {
+    "checkmate": 306,
+    "threefold_repetition": 82,
+    "stalemate": 2,
+    "fifty_moves": 4,
+    "insufficient_material": 6
+  },
+  "matches": {
+    "stash-20.0.1": {
+      "games": 100,
+      "legal_plies": 9410,
+      "engine_moves": 4720,
+      "pgn": {
+        "model_bytes": 247313,
+        "sha256": "5524a3521bdfba15f58ee9541f30cb69fae44989b8941178dd0f8ba6bb1bedd3"
+      }
+    },
+    "stash-21.0": {
+      "games": 100,
+      "legal_plies": 9610,
+      "engine_moves": 4817,
+      "pgn": {
+        "model_bytes": 252230,
+        "sha256": "724624a2c8b75b8d7a2bc3df542f5b852bb18d332369aa558058c1becf0c6b46"
+      }
+    },
+    "weiss-1.0": {
+      "games": 100,
+      "legal_plies": 12557,
+      "engine_moves": 6277,
+      "pgn": {
+        "model_bytes": 321571,
+        "sha256": "ec0c30f043a3279630bd819c5a658c0baff4dc58cd631a54c9a31aa8651f5680"
+      }
+    },
+    "stash-25.0": {
+      "games": 100,
+      "legal_plies": 10286,
+      "engine_moves": 5149,
+      "pgn": {
+        "model_bytes": 268452,
+        "sha256": "83d16228c266592ba7ff6df4b8edfb9a132f7ef10dfee7b316b9f43a0c7e770e"
+      }
+    }
+  },
+  "illegal_moves": 0,
+  "time_forfeits": 0,
+  "ply_caps": 0,
+  "outcomes_verified": true,
+  "runtime_source_hashes_verified": true
+}

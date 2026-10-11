@@ -178,6 +178,11 @@ def test_compiled_graph_gradients_update_weights_without_teacher_gradients(tmp_p
     after, _ = gradient(updated)
     assert float(after[0]) < float(before[0])
     assert not np.array_equal(np.array(updated['policy_w']), np.array(graph.weights['policy_w']))
+    x, mask, target = batch_rows([{'fen': chess.STARTING_FEN, 'move': m} for m in ('e2e4', 'd2d4')])
+    _, weighted = mx.value_and_grad(lambda p: losses(graph, p, x, mask, target, target, mx.zeros((2, 3)),
+        value_weight=0., sample_weight=mx.array([3., 1.])))(graph.weights)
+    e4, d4 = [policy_index(chess.Move.from_uci(m), chess.Board()) for m in ('e2e4', 'd2d4')]
+    assert float(weighted['policy_w'][8, e4]) < float(weighted['policy_w'][8, d4])
 
 
 def test_activation_weighted_factorization_minimizes_its_actual_metric():

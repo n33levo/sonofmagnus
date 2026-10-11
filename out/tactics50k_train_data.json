@@ -1,0 +1,26 @@
+{
+  "url": "https://database.lichess.org/lichess_db_puzzle.csv.zst",
+  "source_headers": {
+    "Server": "nginx",
+    "Date": "Sun, 11 Oct 2026 01:12:43 GMT",
+    "Content-Type": "application/octet-stream",
+    "Content-Length": "307234795",
+    "Last-Modified": "Fri, 02 Oct 2026 08:51:45 GMT",
+    "Connection": "close",
+    "ETag": "\"6abf70a1-125007eb\"",
+    "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
+    "X-Frame-Options": "DENY",
+    "Accept-Ranges": "bytes"
+  },
+  "source_license": "CC0",
+  "puzzles": 50000,
+  "positions": 134886,
+  "scanned": 324594,
+  "training": {
+    "model_bytes": 35667940,
+    "sha256": "a83797a8e03596c94c93fa79d82d3e25274a924b18ed21d9453709e85c0e5694"
+  },
+  "excluded_puzzle_ids": 4000,
+  "blocked_positions": 30978,
+  "protocol": "Verified solver replies, all own held-out positions excluded; history begins at the puzzle root"
+}

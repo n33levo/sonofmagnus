@@ -4,10 +4,12 @@ import io
 import json
 from collections import defaultdict
 from pathlib import Path
+from statistics import NormalDist
 
 import chess
 
 from play.runner import load_runner
+from eval.arena import score_interval
 
 
 def puzzle_moves(puzzle):
@@ -59,6 +61,7 @@ def read_puzzles(path):
 
 def evaluate_runner(runner, puzzles_path, max_puzzles=None, first_move_only=False):
     buckets = defaultdict(lambda: {'correct': 0, 'total': 0})
+    bands = defaultdict(lambda: {'correct': 0, 'total': 0})
     total = 0
     for puzzle in read_puzzles(puzzles_path):
         if max_puzzles is not None and total >= max_puzzles:
@@ -69,6 +72,10 @@ def evaluate_runner(runner, puzzles_path, max_puzzles=None, first_move_only=Fals
                               puzzle_moves(puzzle), first_move_only=first_move_only)
         buckets[key]['correct'] += solved
         buckets[key]['total'] += 1
+        if rating >= 1500:
+            band = ('1500-1800', '1800-2100', '2100-2400', '2400-2700', '2700+')[min((rating - 1500) // 300, 4)]
+            bands[band]['correct'] += solved
+            bands[band]['total'] += 1
         total += 1
     if not total:
         raise ValueError('Empty puzzle dataset')
@@ -76,6 +83,10 @@ def evaluate_runner(runner, puzzles_path, max_puzzles=None, first_move_only=Fals
     correct = sum(s['correct'] for s in buckets.values())
     results['overall'] = {'correct': correct, 'total': total, 'accuracy': correct / total}
     results['protocol'] = 'first_response' if first_move_only else 'complete_line'
+    z = NormalDist().inv_cdf(1 - .05 / (2 * 5))
+    results['bands'] = {band: {**stats, 'accuracy': stats['correct'] / stats['total'],
+        'wilson_simultaneous_95': score_interval([1.] * stats['correct'] + [0.] * (stats['total'] - stats['correct']), z)}
+        for band, stats in bands.items()}
     return results
 
 

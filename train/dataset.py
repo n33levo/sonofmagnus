@@ -4,7 +4,11 @@ import hashlib
 import io
 import json
 import random
+from contextlib import ExitStack
 from pathlib import Path
+import tempfile
+import urllib.request
+from urllib.parse import urlsplit
 
 import chess
 import chess.pgn
@@ -89,18 +93,26 @@ class ChessPositionDataset(Dataset):
         return position_sample(item, self.augment and random.random() < 0.5)
 
 
-def read_games(pgn_path):
-    path = Path(pgn_path)
-    if path.suffix == '.zst':
-        import zstandard
-        with path.open('rb') as raw, zstandard.ZstdDecompressor().stream_reader(raw) as reader:
-            with io.TextIOWrapper(reader, encoding='utf-8') as stream:
-                while (game := chess.pgn.read_game(stream)) is not None:
+def read_games(pgn_path, min_elo=0):
+    class Rated(chess.pgn.GameBuilder):
+        def end_headers(self):
+            try:
+                elo = min(int(self.game.headers.get('WhiteElo', 0)), int(self.game.headers.get('BlackElo', 0)))
+            except ValueError:
+                return chess.pgn.SKIP
+            if elo < min_elo:
+                return chess.pgn.SKIP
+
+    remote = str(pgn_path).startswith('https://')
+    path = Path(urlsplit(str(pgn_path)).path) if remote else Path(pgn_path)
+    with urllib.request.urlopen(str(pgn_path), timeout=60) if remote else path.open('rb') as raw:
+        if path.suffix == '.zst':
+            import zstandard
+            raw = zstandard.ZstdDecompressor().stream_reader(raw)
+        with io.TextIOWrapper(raw, encoding='utf-8-sig') as stream:
+            while (game := chess.pgn.read_game(stream, Visitor=Rated)) is not None:
+                if game.next():
                     yield game
-    else:
-        with path.open(encoding='utf-8-sig') as stream:
-            while (game := chess.pgn.read_game(stream)) is not None:
-                yield game
 
 
 class PGNStreamDataset(IterableDataset):
@@ -116,7 +128,7 @@ class PGNStreamDataset(IterableDataset):
         rng = random.Random(self.seed)
         worker = get_worker_info()
         count = 0
-        for game_idx, game in enumerate(read_games(self.pgn_path)):
+        for game_idx, game in enumerate(read_games(self.pgn_path, self.min_elo)):
             if worker and game_idx % worker.num_workers != worker.id:
                 continue
             if self.max_positions is not None and count >= self.max_positions:
@@ -125,7 +137,7 @@ class PGNStreamDataset(IterableDataset):
                 elo = min(int(game.headers.get('WhiteElo', 0)), int(game.headers.get('BlackElo', 0)))
             except ValueError:
                 continue
-            if elo < self.min_elo or game.errors or game.headers.get('Result') not in ('1-0', '0-1', '1/2-1/2'):
+            if elo < self.min_elo or game.errors or game.headers.get('Variant', 'Standard') != 'Standard' or game.headers.get('Result') not in ('1-0', '0-1', '1/2-1/2'):
                 continue
             game_value = {'1-0': 1., '0-1': -1., '1/2-1/2': 0.}[game.headers['Result']]
             line = list(game.mainline_moves())
@@ -151,21 +163,34 @@ class PGNStreamDataset(IterableDataset):
 
 def build_jsonl_from_pgn(pgn_path, output_path, min_elo=1800, sample_rate=.1,
                          max_positions=1_000_000, val_path=None, val_fraction=.1, midgame_only=False, include_history=False):
+    if not 0 <= val_fraction <= 1:
+        raise ValueError('Validation fraction must be in [0, 1]')
     dataset = PGNStreamDataset(pgn_path, min_elo, sample_rate, midgame_only, max_positions, include_history=include_history)
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-    if val_path:
-        Path(val_path).parent.mkdir(parents=True, exist_ok=True)
+    paths = [Path(output_path).resolve()] + ([Path(val_path).resolve()] if val_path else [])
+    if len(set(paths)) != len(paths) or (not str(pgn_path).startswith('https://') and Path(pgn_path).resolve() in paths):
+        raise ValueError('Input, training and validation files must differ')
+    for path in paths:
+        path.parent.mkdir(parents=True, exist_ok=True)
     count = 0
-    with Path(output_path).open('w') as out:
-        val = Path(val_path).open('w') if val_path else None
-        try:
+    temporary = []
+    try:
+        with ExitStack() as stack:
+            streams = []
+            for path in paths:
+                stream = stack.enter_context(tempfile.NamedTemporaryFile(mode='w', dir=path.parent, prefix=path.name + '.', delete=False))
+                streams.append(stream)
+                temporary.append(Path(stream.name))
             for item in dataset._parse_pgn():
-                target = val if val and int(item['game_id'], 16) / 2**64 < val_fraction else out
+                target = streams[1] if val_path and int(item['game_id'], 16) / 2**64 < val_fraction else streams[0]
                 target.write(json.dumps(item) + '\n')
                 count += 1
-        finally:
-            if val:
-                val.close()
+        if not count:
+            raise ValueError('No accepted PGN positions')
+        for source, destination in zip(temporary, paths):
+            source.replace(destination)
+    finally:
+        for path in temporary:
+            path.unlink(missing_ok=True)
     print(f'Extracted {count} positions')
 
 

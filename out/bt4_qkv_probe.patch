@@ -1,0 +1,88 @@
+diff --git a/play/mlx.py b/play/mlx.py
+index 628f1c9..628ea49 100644
+--- a/play/mlx.py
++++ b/play/mlx.py
+@@ -10,7 +10,7 @@ from chessio.policy_map import move_to_policy_index
+ 
+ 
+ class Graph:
+-    def __init__(self, directory):
++    def __init__(self, directory, fuse_projections=False):
+         directory = Path(directory)
+         specification = json.loads((directory / 'graph.json').read_text())
+         loaded = mx.load(str(directory / 'weights.safetensors'))
+@@ -21,6 +21,8 @@ class Graph:
+         if self.value_logits is None:
+             raise ValueError('Expected a WDL softmax output')
+         self.quantized = specification.get('quantized', {})
++        if fuse_projections:
++            self.nodes = fuse_qkv(self.nodes, self.weights, self.quantized, self.constants)
+         self.nodes = fuse_attention(self.nodes, self.outputs, self.weights)
+         self.run = mx.compile(self.forward)
+ 
+@@ -79,6 +81,54 @@ class Graph:
+         return (result, moments) if collect else result
+ 
+ 
++def fuse_qkv(nodes, weights, quantized, constants):
++    groups = {}
++    for node in nodes:
++        op, names, outputs, _ = node
++        if op == 'MatMul' and any(part in names[1] for part in ('/mha/Q/', '/mha/K/', '/mha/V/')):
++            if names[1] in weights or names[1] in quantized:
++                groups.setdefault(names[0], []).append(node)
++    replacements, removed = {}, set()
++    for source, projections in groups.items():
++        if len(projections) != 3:
++            continue
++        names = [node[1][1] for node in projections]
++        configurations = [quantized.get(name) for name in names]
++        configurations = [tuple(c[:2]) + (c[2] if len(c) > 2 else True,) if c else None for c in configurations]
++        if len(set(configurations)) != 1:
++            continue
++        fused = names[0] + '.qkv'
++        if configurations[0]:
++            group, bits, transpose = configurations[0]
++            axis = 0 if transpose else 1
++            widths = [weights[name + '.packed'].shape[0] if transpose else weights[name + '.scales'].shape[1] * group for name in names]
++            for suffix in ('.packed', '.scales', '.biases'):
++                weights[fused + suffix] = mx.concatenate([weights[name + suffix] for name in names], axis=axis)
++            quantized[fused] = list(configurations[0])
++        else:
++            widths = [weights[name].shape[1] for name in names]
++            weights[fused] = mx.concatenate([weights[name] for name in names], axis=1)
++        split = fused + '.split'
++        constants[split] = np.array(widths, dtype=np.int32)
++        outputs = [node[2][0] for node in projections]
++        replacements[outputs[0]] = [['MatMul', [source, fused], [fused + '.out'], {}],
++                                    ['Split', [fused + '.out', split], outputs, {'axis': -1}]]
++        removed.update(outputs)
++    result = []
++    for node in nodes:
++        if node[2][0] in replacements:
++            result.extend(replacements[node[2][0]])
++        elif node[2][0] not in removed:
++            result.append(node)
++    referenced = {name for node in result for name in node[1]}
++    for name in [node[1][1] for group in groups.values() for node in group]:
++        if name not in referenced:
++            for key in (name, name + '.packed', name + '.scales', name + '.biases'):
++                weights.pop(key, None)
++            quantized.pop(name, None)
++    return result
++
++
+ def fuse_attention(nodes, outputs, weights):
+     producers = {out: node for node in nodes for out in node[2]}
+     replaced = []
+@@ -102,8 +152,8 @@ def fuse_attention(nodes, outputs, weights):
+ 
+ 
+ class MlxRunner(ChessRunner):
+-    def __init__(self, directory):
+-        self.graph = Graph(directory)
++    def __init__(self, directory, fuse_projections=False):
++        self.graph = Graph(directory, fuse_projections)
+         self.temp_opening, self.temp_midgame, self.temp_endgame = .6, .4, .2
+         self.last_latency_ms, self.forward_calls = 0., 0
+ 

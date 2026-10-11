@@ -1,7 +1,7 @@
 torch>=2.6
 onnx>=1.14.0
 onnxscript>=0.5
-onnxruntime>=1.15.0
+onnxruntime>=1.18
 python-chess>=1.999
 numpy>=1.24.0
 pyyaml>=6.0

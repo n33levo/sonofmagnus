@@ -171,6 +171,19 @@ def test_lichess_setup_and_single_attempt():
         solve_puzzle(runner, fen, solution, max_attempts=3)
 
 
+def test_puzzle_bands_keep_counts_and_sampling_uncertainty(tmp_path):
+    from eval.puzzles import evaluate_runner
+    rows = [{'fen': chess.STARTING_FEN, 'moves': ['e2e4', 'e7e5'], 'rating': r}
+            for r in (1500, 1799, 1800, 2100, 2400, 3100)]
+    with patch('eval.puzzles.solve_puzzle', side_effect=[True, False, True, True, True, True]):
+        result = evaluate_runner(None, write_rows(tmp_path / 'puzzles.jsonl', rows))
+    band = result['bands']['1500-1800']
+    assert band['correct'] == 1 and band['total'] == 2 and band['accuracy'] == .5
+    assert 0 < band['wilson_simultaneous_95'][0] < .5 < band['wilson_simultaneous_95'][1] < 1
+    assert result['bands']['2700+']['total'] == 1
+    assert result['overall']['correct'] == 5 and result['overall']['total'] == 6
+
+
 def test_training_updates_mps_and_scheduler(tmp_path):
     device = 'mps' if torch.backends.mps.is_available() else 'cpu'
     row = {'fen': chess.STARTING_FEN, 'move': 'e2e4', 'value': .2, 'q_values': {'e2e4': .7}}
@@ -436,6 +449,23 @@ def test_training_records_keep_repetition_history():
     row['fen'] = chess.STARTING_FEN
     with pytest.raises(ValueError, match='disagree'):
         record_board(row)
+
+
+def test_failed_pgn_stream_preserves_existing_datasets(tmp_path):
+    from train.dataset import PGNStreamDataset, build_jsonl_from_pgn
+    train, val = tmp_path / 'train.jsonl', tmp_path / 'val.jsonl'
+    train.write_text('old training data')
+    val.write_text('old validation data')
+    def broken():
+        yield {'fen': chess.STARTING_FEN, 'move': 'e2e4', 'game_id': '0'}
+        raise OSError('stream interrupted')
+    with patch.object(PGNStreamDataset, '_parse_pgn', return_value=broken()):
+        with pytest.raises(OSError, match='interrupted'):
+            build_jsonl_from_pgn('https://example.org/games.pgn.zst', train, val_path=val)
+    assert train.read_text() == 'old training data' and val.read_text() == 'old validation data'
+    assert set(tmp_path.iterdir()) == {train, val}
+    with pytest.raises(ValueError, match='must differ'):
+        build_jsonl_from_pgn(train, train)
 
 
 def test_clock_forfeit_is_draw_when_opponent_cannot_mate(tmp_path):

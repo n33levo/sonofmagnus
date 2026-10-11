@@ -1,0 +1,57 @@
+{
+  "source": {
+    "data/broadcast_2026-09.pgn.zst": {
+      "model_bytes": 18414369,
+      "sha256": "27a39d035767a30901b89602f33f2a7b27d4ab5025842071165fa079f8fff1df"
+    },
+    "data/broadcast_2026-08.pgn.zst": {
+      "model_bytes": 31010232,
+      "sha256": "e227c35c3207ebade754849c1825982e2717ae82c013013d896778e27be77724"
+    },
+    "data/broadcast_2026-07.pgn.zst": {
+      "model_bytes": 24535400,
+      "sha256": "714d0eb99f99fca8d791142038b6c59b5ca6a51b3339bd3891a92f4bdffcbf0c"
+    },
+    "data/broadcast_2026-06.pgn.zst": {
+      "model_bytes": 22797518,
+      "sha256": "65905d611c0d78d90ab57cd9edd3821f4119b46c22b5489fd7e265a74c6767b3"
+    }
+  },
+  "source_urls": [
+    "https://database.lichess.org/broadcast/lichess_db_broadcast_2026-09.pgn.zst",
+    "https://database.lichess.org/broadcast/lichess_db_broadcast_2026-08.pgn.zst",
+    "https://database.lichess.org/broadcast/lichess_db_broadcast_2026-07.pgn.zst",
+    "https://database.lichess.org/broadcast/lichess_db_broadcast_2026-06.pgn.zst"
+  ],
+  "license": "CC BY-SA 4.0, Lichess official broadcasts",
+  "seed": 20261011,
+  "eligible": {
+    "King's Indian Defense": 539,
+    "Sicilian Defense": 2857,
+    "French Defense": 710,
+    "Queen's Gambit": 1247,
+    "Ruy Lopez": 1015
+  },
+  "games": 5000,
+  "minimum_both_ratings": 2300,
+  "both_titled": [
+    "FM",
+    "GM",
+    "IM",
+    "WFM",
+    "WGM",
+    "WIM"
+  ],
+  "sampled_by_family": {
+    "King's Indian Defense": 419,
+    "Sicilian Defense": 2249,
+    "French Defense": 575,
+    "Ruy Lopez": 786,
+    "Queen's Gambit": 971
+  },
+  "dataset": {
+    "model_bytes": 3104289,
+    "sha256": "72616bc3ff7df6c4480170f33f02a3f3c3de5f300f5c9cd919d769b95236b217"
+  },
+  "sampling": "Reservoir sample from all eligible complete June\u2013September 2026 master games in the five named openings"
+}

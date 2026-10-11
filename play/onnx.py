@@ -41,4 +41,6 @@ class OnnxRunner(ChessRunner):
                     logits[square // 8, square % 8, plane] = scores[policy_index(move, board)]
                 result.append((logits, float(wdl[0] - wdl[2])))
             return result
+        if policy.shape != (len(boards), 8, 8, 73) or value.size != len(boards) or not np.isfinite(policy).all():
+            raise ValueError('Invalid native policy or value outputs')
         return list(zip(policy.astype(np.float32), value.reshape(-1).tolist()))

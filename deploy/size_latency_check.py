@@ -10,7 +10,7 @@ from model.artifacts import artifact_info
 from play.onnx import OnnxRunner
 
 
-def check_model(model_path, size_limit_mb=10., latency_target_ms=100., num_warmup=10, num_runs=100, pgn_path=None):
+def check_model(model_path, size_limit_mb=8.7, latency_target_ms=100., num_warmup=10, num_runs=100, pgn_path=None):
     model = onnx.load(model_path, load_external_data=False)
     if any(weight.external_data for weight in model.graph.initializer):
         raise ValueError('Export a self-contained ONNX artifact before measuring its size')
@@ -32,7 +32,7 @@ def check_model(model_path, size_limit_mb=10., latency_target_ms=100., num_warmu
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', required=True)
-    parser.add_argument('--size-limit', type=float, default=10.)
+    parser.add_argument('--size-limit', type=float, default=8.7)
     parser.add_argument('--latency-target', type=float, default=100.)
     parser.add_argument('--warmup', type=int, default=10)
     parser.add_argument('--runs', type=int, default=100)

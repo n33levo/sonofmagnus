@@ -13,7 +13,7 @@ if [ "$CONFIG" = mini ]; then
     "$PYTHON" -m deploy.export_onnx --ckpt "$CKPT_PATH" --out "out/${CKPT_NAME}_fp32.onnx" --config "$CONFIG"
     "$PYTHON" -m deploy.quantize_int8 --in "out/${CKPT_NAME}_fp32.onnx" --out "out/${CKPT_NAME}_int8.onnx" --calibration-data "$CALIBRATION"
     FINAL_MODEL="out/${CKPT_NAME}_int8.onnx"
-    SIZE_LIMIT=10
+    SIZE_LIMIT=8.7
 else
     "$PYTHON" -m deploy.export_onnx --ckpt "$CKPT_PATH" --out "out/${CKPT_NAME}_fp16.onnx" --config "$CONFIG" --fp16
     FINAL_MODEL="out/${CKPT_NAME}_fp16.onnx"

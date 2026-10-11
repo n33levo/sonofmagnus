@@ -61,7 +61,8 @@
     "The 5,000-master-game opening benchmark has not been reproduced.",
     "The under-20 ms GPU target was not met in the clocked match: move-selection p95 was 36.27 ms, versus 17.72 ms in back-to-back sampling.",
     "The historical first-application claim conflicts with ChessBench, which explicitly studied action-value prediction.",
-    "The stated sigmoid formula yields 56.2% at 100 cp and 73.1% at 400 cp in [0, 1]; its contradictory numerical/range claims cannot all be satisfied. The owner requested unchanged claims."
+    "The 185M policy still exceeds the 20 ms GPU limit during real games; its isolated benchmark is faster.",
+    "The new 6.67M attention policy fits the byte budget but does not meet puzzle or agreement targets."
   ],
   "references": {
     "ChessBench": "https://arxiv.org/abs/2402.04494",
@@ -69,15 +70,15 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 39,
+    "local_tests": 55,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
-      "passed": 38,
-      "skipped_optional_weights": 1,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38090022925",
-      "source_commit": "c48c8b469a02246db8f0c3aa1f1a387e56243afd"
+      "passed": 44,
+      "skipped_optional": 5,
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38096745750",
+      "source_commit": "82d9b7fd666409ef5c86269dedb3686a512d414c"
     },
     "clocked_match": {
       "games": 100,
@@ -87,6 +88,194 @@
       "time_forfeits": 0,
       "illegal_moves": 0,
       "pgn_outcomes_verified": true
+    },
+    "offline_pool": {
+      "games": 400,
+      "legal_plies": 41863,
+      "neural_forward_calls": 20963,
+      "terminations": {
+        "checkmate": 306,
+        "threefold_repetition": 82,
+        "stalemate": 2,
+        "fifty_moves": 4,
+        "insufficient_material": 6
+      },
+      "matches": {
+        "stash-20.0.1": {
+          "games": 100,
+          "legal_plies": 9410,
+          "engine_moves": 4720,
+          "pgn": {
+            "model_bytes": 247313,
+            "sha256": "5524a3521bdfba15f58ee9541f30cb69fae44989b8941178dd0f8ba6bb1bedd3"
+          }
+        },
+        "stash-21.0": {
+          "games": 100,
+          "legal_plies": 9610,
+          "engine_moves": 4817,
+          "pgn": {
+            "model_bytes": 252230,
+            "sha256": "724624a2c8b75b8d7a2bc3df542f5b852bb18d332369aa558058c1becf0c6b46"
+          }
+        },
+        "weiss-1.0": {
+          "games": 100,
+          "legal_plies": 12557,
+          "engine_moves": 6277,
+          "pgn": {
+            "model_bytes": 321571,
+            "sha256": "ec0c30f043a3279630bd819c5a658c0baff4dc58cd631a54c9a31aa8651f5680"
+          }
+        },
+        "stash-25.0": {
+          "games": 100,
+          "legal_plies": 10286,
+          "engine_moves": 5149,
+          "pgn": {
+            "model_bytes": 268452,
+            "sha256": "83d16228c266592ba7ff6df4b8edfb9a132f7ef10dfee7b316b9f43a0c7e770e"
+          }
+        }
+      },
+      "illegal_moves": 0,
+      "time_forfeits": 0,
+      "ply_caps": 0,
+      "outcomes_verified": true,
+      "runtime_source_hashes_verified": true
     }
+  },
+  "metal_runtime": {
+    "strong_185M": {
+      "agreement": "bt4_mlx_agreement.json",
+      "puzzles": "bt4_mlx_puzzles.json",
+      "latency": "bt4_mlx_latency.json",
+      "tournament": "bt4_ccrl_pool",
+      "model_bytes": 163551053,
+      "isolated_p95_ms": 17.57048713043332,
+      "first_100_games_p95_ms": 33.289301820332184
+    },
+    "fast_102M": {
+      "agreement": "bt3_mlx_agreement.json",
+      "puzzles": "bt3_mlx_puzzles.json",
+      "latency": "bt3_mlx_latency.json",
+      "isolated_p95_ms": 10.925745783606542
+    }
+  },
+  "compact_attention": {
+    "training": "compact_training.json",
+    "stored_scalars": 6673986,
+    "model_bytes": 7808680,
+    "agreement": "compact_awsvd_q8_agreement.json",
+    "puzzles": "compact_awsvd_q8_puzzles.json",
+    "strength_status": "insufficient"
+  },
+  "reported_strength": {
+    "rating": {
+      "local_elo": 2852.5354594953833,
+      "elo_opening_bootstrap_95": [
+        2819.3544109904224,
+        2886.3459406681377
+      ],
+      "elo_hoeffding_95": [
+        2687.4041781470632,
+        3037.478221285175
+      ],
+      "games": 400,
+      "independent_opening_clusters": 50,
+      "score_by_opponent": [
+        0.765,
+        0.68,
+        0.44,
+        0.505
+      ],
+      "fitted_score_by_opponent": [
+        0.8765632172193378,
+        0.6894339310059492,
+        0.4377737787836764,
+        0.38622907299103776
+      ],
+      "score_residuals": [
+        -0.11156321721933782,
+        -0.009433931005949137,
+        0.0022262212163235984,
+        0.11877092700896225
+      ],
+      "rating_pool": "CCRL-referenced local engine pool; not an official CCRL, FIDE or Lichess rating",
+      "uncertainty": "Intervals are conditional on fixed anchors; hardware, time-control and anchor errors are excluded.",
+      "finished_utc": "2026-10-11T01:15:01Z",
+      "latency_ms": {
+        "p50": 25.772,
+        "p95": 33.25979999999999,
+        "p99": 35.08238
+      },
+      "wins": 192,
+      "draws": 94,
+      "losses": 114,
+      "neural_forward_calls": 20963,
+      "model": {
+        "model_bytes": 163551053,
+        "sha256": "78cb179eca5662a4eee7c0ed3e94a50cb1eee41b860072b39ef5eeeae8a4ee39"
+      },
+      "time_control": "10+0.1"
+    },
+    "evidence": "bt4_ccrl_pool",
+    "status": "Verified conditional local-pool estimate; no official human rating"
+  },
+  "compact_6M": {
+    "checkpoint_initial": {
+      "model_bytes": 12084375,
+      "sha256": "f60f318184cb3fa03a1657dab1d654ee2ee8b2aab897138796c0f157ab365256"
+    },
+    "trainable_scalars": 5955363,
+    "floating_stored_scalars": 5955410,
+    "positions": 341010,
+    "training_device": "Apple M4 Metal (MLX)",
+    "training_status": "Teacher supervision generation, followed by three complete training passes",
+    "source_identity": {
+      "sources": {
+        "data/compact_236k_train.jsonl": {
+          "model_bytes": 113885018,
+          "sha256": "7b25b98d2b3138b8eeaf5b564806542462813cf46d9ac12deed0ce979b171fcf"
+        },
+        "data/tactics50k_train.jsonl": {
+          "model_bytes": 35667940,
+          "sha256": "a83797a8e03596c94c93fa79d82d3e25274a924b18ed21d9453709e85c0e5694"
+        }
+      },
+      "training": {
+        "model_bytes": 149552958,
+        "sha256": "89a4c8fdb4421d23920b7c477f2e68d7ee5fae697bd5d7477a1b93e9ff206d3b"
+      },
+      "positions": 341010,
+      "teacher": "BT3 history policy and WDL",
+      "quality": "Native quality weights from human ratings; deep Stockfish puzzle replies have weight 3"
+    },
+    "initial_agreement_200": {
+      "top1_agreement": 0.16,
+      "top3_agreement": 0.315,
+      "top5_agreement": 0.4,
+      "total": 200,
+      "mean_kl_divergence": 2.9040912513284125
+    }
+  },
+  "portable_attention": {
+    "checkpoint": "compact_awsvd_int8.onnx",
+    "deployment": {
+      "file_size_mb": 7.740332,
+      "size_ok": true,
+      "p50_latency_ms": 5.318708484992385,
+      "p95_latency_ms": 5.471787432907149,
+      "p99_latency_ms": 5.578328317496926,
+      "latency_ok": true,
+      "provider": "CPUExecutionProvider",
+      "runs": 100,
+      "threads": 4,
+      "positions": 100,
+      "neural_forward_calls": 110,
+      "protocol": "Complete move selection; retained PGN history",
+      "model_sha256": "171285e7652b9eb133a532099483e0775d14467704a000807d2a220da948fd05"
+    },
+    "strength": "Previous weak checkpoint; deployment path verified only"
   }
 }

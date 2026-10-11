@@ -29,7 +29,7 @@ def export(directory, output):
         if op == 'Split' and len(inputs) == 1:
             attrs['num_outputs'] = len(outputs)
         nodes.append(helper.make_node(op, inputs, outputs, name=outputs[0], **attrs))
-    nodes += [helper.make_node('Identity', [name], [alias]) for name, alias in zip(graph['outputs'], ('policy', 'value'))]
+    nodes += [helper.make_node('Identity', [name], [alias]) for name, alias in zip(graph['outputs'], ('policy', 'value')) if name != alias]
     model = helper.make_model(helper.make_graph(nodes, 'sonofmagnus',
         [helper.make_tensor_value_info('board', TensorProto.FLOAT, ['batch', 112, 8, 8])],
         [helper.make_tensor_value_info('policy', TensorProto.FLOAT, ['batch', 1858]),

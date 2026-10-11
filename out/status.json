@@ -68,15 +68,15 @@
     "Stockfish rating context": "https://official-stockfish.github.io/docs/stockfish-wiki/Stockfish-FAQ.html"
   },
   "validation": {
-    "local_tests": 98,
+    "local_tests": 100,
     "training_device": "Apple M4 Metal (MPS)",
     "full_legal_move_labels": 100,
     "selfplay_batch_smoke_positions": 1024,
     "linux_ci": {
-      "passed": 81,
+      "passed": 82,
       "skipped_optional": 16,
-      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38124051754",
-      "source_commit": "223256e"
+      "url": "https://github.com/n33levo/sonofmagnus/actions/runs/38124605276",
+      "source_commit": "e814071"
     },
     "clocked_match": {
       "games": 100,
@@ -512,6 +512,14 @@
       ],
       "positions_per_test": 3000,
       "original_targets_met": false
+    },
+    "geometry_experiment": {
+      "initialization": "geometry_initialization_probe.json",
+      "cpu_deployment": "geometry_init_mixed_cpu_deployment.json",
+      "training_job": "geometry_training_job.json",
+      "trainable_scalars": 5626355,
+      "floating_stored_scalars": 5675507,
+      "status": "Initialization and CPU deployment verified; two-epoch GPU training queued; no strength gain established"
     }
   },
   "compact_20M_packing": {

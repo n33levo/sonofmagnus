@@ -1,0 +1,6 @@
+{
+  "status": "Waiting for the exact 1M self-play run, replay audit and selection to finish",
+  "initialization": "ckpts/sonofmagnus-cnn6M-geometry-init.mlx",
+  "training_epochs": 2,
+  "purpose": "Test whether fixed current-board piece geometry improves the compact policy; no strength gain assumed"
+}

@@ -64,10 +64,10 @@ def quantize_model(input_path, output_path, weight_type='int8', calibration_data
         excluded = []
         if keep_input_and_heads:
             optimized = onnx.load(prepared)
-            input_name = optimized.graph.input[0].name
+            first_conv = next(node.name for node in optimized.graph.node if node.op_type == 'Conv')
             excluded = [node.name for node in optimized.graph.node
-                        if any(name.startswith(('/inputconv/', '/policy/', '/value/')) for name in [node.name, *node.output])
-                        or (node.op_type == 'Conv' and input_name in node.input)]
+                        if any(name.startswith(('/inputconv/', '/geometry/', '/policy/', '/value/')) for name in [node.name, *node.output])
+                        or (node.op_type == 'Conv' and node.name == first_conv)]
         if classical and not cnn:
             # Recompute activation ranges per position: history includes the unbounded rule-50 clock.
             quantize_dynamic(prepared, str(output), weight_type=QuantType.QInt8 if weight_type == 'int8' else QuantType.QUInt8,

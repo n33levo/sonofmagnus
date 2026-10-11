@@ -140,6 +140,7 @@ def main():
     if args.epochs <= 0 or args.batch_size <= 0 or not np.isfinite(args.lr) or args.lr <= 0 or not np.isfinite(args.teacher_temperature) or args.teacher_temperature <= 0:
         parser.error('Positive epochs, batch size and learning rate required')
     graph = Graph(args.student)
+    source_metadata = json.loads((Path(args.student) / 'metadata.json').read_text())
     if args.mode == 'distill' and not args.teacher:
         parser.error('Distillation requires --teacher')
     teacher = Graph(args.teacher) if args.mode == 'distill' else None
@@ -156,6 +157,7 @@ def main():
             weights[name], weights[right] = weights[name] * factor, weights[right] / factor[:, None]
     matrix_names = {node[1][1] for node in graph.nodes if node[0] == 'MatMul' and node[1][1] in weights}
     parameters = {name: value.astype(mx.float32) for name, value in weights.items() if (not name.startswith('/const/') or name in matrix_names) and value.size > 1
+                  and name not in source_metadata.get('frozen_weights', ())
                   and (args.mode == 'distill' or name.startswith('/policy/'))}
     if not parameters:
         parser.error('No trainable weights for this mode')
@@ -166,7 +168,7 @@ def main():
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=False)
     shutil.copy2(Path(args.student) / 'graph.json', out / 'graph.json')
-    metadata = json.loads((Path(args.student) / 'metadata.json').read_text())
+    metadata = dict(source_metadata)
     metadata.update(student_source=artifact_info(args.student), teacher_source=artifact_info(args.teacher) if teacher else None,
                     training_data=artifact_info(args.data), seed=args.seed, learning_rate=args.lr,
                     training_epochs=args.epochs, training_samples=len(dataset), trainable_scalars=sum(p.size for p in parameters.values()),

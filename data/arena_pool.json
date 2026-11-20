@@ -1,0 +1,11 @@
+{
+  "reference": "https://computerchess.org.uk/404/rating_list_all.html",
+  "reference_date": "2026-10-10",
+  "reference_conditions": "CCRL Blitz: 2+1 equivalent on Intel i7-4770K, ponder off, opening book up to 12 moves, up to 6-piece tablebases",
+  "engines": [
+    {"name": "stash-20.0.1", "path": "out/engines/stash-20.0.1", "source": "https://github.com/mhouppin/stash-bot.git", "tag": "v20.0.1", "revision": "f1c281c26985ac31c996875540cb26594f107a51", "reference_elo": 2512, "reference_error": 23, "reference_games": 615, "build": "stash"},
+    {"name": "stash-21.0", "path": "out/engines/stash-21.0", "source": "https://github.com/mhouppin/stash-bot.git", "tag": "v21.0", "revision": "6dc8c9cdefaa43e3d82a7c59cd2a5f93bcbd9d5a", "reference_elo": 2714, "reference_error": 14, "reference_games": 1493, "build": "stash"},
+    {"name": "weiss-1.0", "path": "out/engines/weiss-1.0", "source": "https://github.com/TerjeKir/weiss.git", "tag": "v1.0", "revision": "f44a4c654c67139ecbd5f3afd9da1ebe41241464", "reference_elo": 2896, "reference_error": 17, "reference_games": 895, "build": "weiss"},
+    {"name": "stash-25.0", "path": "out/engines/stash-25.0", "source": "https://github.com/mhouppin/stash-bot.git", "tag": "v25.0", "revision": "664849453d3fa0b5b60869325a3764921c902512", "reference_elo": 2933, "reference_error": 18, "reference_games": 874, "build": "stash"}
+  ]
+}

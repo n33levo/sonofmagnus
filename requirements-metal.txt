@@ -1,0 +1,2 @@
+-r requirements.txt
+lczero-bindings @ git+https://github.com/LeelaChessZero/lc0.git@fd71a2d921b689c5f479d3227c3806c8e272d9c5

@@ -1,0 +1,52 @@
+{
+  "endgame_holdout.jsonl": {
+    "url": "https://raw.githubusercontent.com/n33levo/sonofmagnus/bdeff71e226fb1e35a68435718ea9f5697258bdf/data/endgame_holdout.jsonl",
+    "bytes": 70673,
+    "sha256": "c0662a2de81255a193b6b8f2b35d1ecf30dbcc9a85abd2ba0307cc38e849da0a"
+  },
+  "eval_holdout.jsonl": {
+    "url": "https://raw.githubusercontent.com/n33levo/sonofmagnus/bdeff71e226fb1e35a68435718ea9f5697258bdf/data/eval_holdout.jsonl",
+    "bytes": 486694,
+    "sha256": "d0d3d38197f5813765d75f4eda77fa2583b176af37f85e8b8ac8c35a6ca3afc1"
+  },
+  "puzzles_holdout.jsonl": {
+    "url": "https://raw.githubusercontent.com/n33levo/sonofmagnus/bdeff71e226fb1e35a68435718ea9f5697258bdf/data/puzzles_holdout.jsonl",
+    "bytes": 206111,
+    "sha256": "88299ef468ca752777945bce0a635976522af6d9a431d31b3a8ad1b21b0048f3"
+  },
+  "stockfish_holdout.jsonl": {
+    "url": "https://raw.githubusercontent.com/n33levo/sonofmagnus/bdeff71e226fb1e35a68435718ea9f5697258bdf/data/stockfish_holdout.jsonl",
+    "bytes": 640134,
+    "sha256": "0af73b599e4ad501024ee0d5db55305169f020027c4ee9a0be60bd3b9b977962"
+  },
+  "puzzles_final3000.jsonl": {
+    "url": "https://raw.githubusercontent.com/n33levo/sonofmagnus/bdeff71e226fb1e35a68435718ea9f5697258bdf/data/puzzles_final3000.jsonl",
+    "bytes": 577998,
+    "sha256": "13a37753c25b22ff158fb1e147b84ba82e103ccc0c45178657b83708cd1d6df8"
+  },
+  "puzzles_depth3000.jsonl": {
+    "url": "https://raw.githubusercontent.com/n33levo/sonofmagnus/bdeff71e226fb1e35a68435718ea9f5697258bdf/data/puzzles_depth3000.jsonl",
+    "bytes": 630065,
+    "sha256": "47cab2eaa9b95444a3711899623d5965513dbddc5157e362caadaff525cd67ed"
+  },
+  "master_openings5000.jsonl": {
+    "url": "https://raw.githubusercontent.com/n33levo/sonofmagnus/bdeff71e226fb1e35a68435718ea9f5697258bdf/data/master_openings5000.jsonl",
+    "bytes": 3104289,
+    "sha256": "72616bc3ff7df6c4480170f33f02a3f3c3de5f300f5c9cd919d769b95236b217"
+  },
+  "lichess_db_puzzle.csv.zst": {
+    "url": "https://database.lichess.org/lichess_db_puzzle.csv.zst",
+    "bytes": 307234795,
+    "sha256": "76335bfa7d7c4a7f93c1366d81549e53951ebb79dd43d34904cab8f22d962f8d",
+    "license": "CC0",
+    "default": false
+  },
+  "action_value-00000-of-02148_data.bag": {
+    "url": "https://storage.googleapis.com/searchless_chess/data/train/action_value-00000-of-02148_data.bag",
+    "bytes": 1341390928,
+    "sha256": "1ae3774ea5d06e48133eac8bb450a67e9d7a1451dedd4853d135805cc90f7b10",
+    "license": "CC-BY-4.0 / CC0, as specified upstream",
+    "default": false,
+    "format": "ChessBench action-value BAG; one evaluated action per record, not a best-move imitation target"
+  }
+}

@@ -1,19 +1,3 @@
-"""
-8×8×73 policy head mapping for chess moves (AlphaZero-style).
-
-Each legal move is encoded as (from_square, plane_index) where:
-- from_square: 0-63 (8×8 board)
-- plane_index: 0-72 (73 planes total)
-
-The 73 planes represent:
-  - Planes 0-55: Queen moves (8 directions × 7 distances)
-    * N, NE, E, SE, S, SW, W, NW × distances 1-7
-  - Planes 56-63: Knight moves (8 L-shaped moves)
-  - Planes 64-72: Underpromotions (3 directions × 3 pieces)
-    * N, NW, NE × {Knight, Bishop, Rook}
-    * (Queen promotions use queen-move planes)
-"""
-
 import chess
 import numpy as np
 
@@ -47,16 +31,6 @@ UNDERPROMO_PIECES = [chess.KNIGHT, chess.BISHOP, chess.ROOK]
 
 
 def move_to_policy_index(move: chess.Move, board: chess.Board) -> tuple[int, int]:
-    """
-    Convert a chess.Move to (from_square, plane_index).
-
-    Args:
-        move: python-chess Move object
-        board: Current board state (needed for context)
-
-    Returns:
-        (from_square, plane_index) tuple
-    """
     from_sq = move.from_square
     to_sq = move.to_square
 
@@ -111,6 +85,8 @@ def move_to_policy_index(move: chess.Move, board: chess.Board) -> tuple[int, int
 
     # Determine distance
     distance = max(abs(file_delta), abs(rank_delta))
+    if file_delta and rank_delta and abs(file_delta) != abs(rank_delta):
+        raise ValueError(f"Move is neither a ray nor a knight jump: {move}")
     if distance < 1 or distance > 7:
         raise ValueError(f"Invalid queen-move distance: {distance} for {move}")
 
@@ -119,19 +95,11 @@ def move_to_policy_index(move: chess.Move, board: chess.Board) -> tuple[int, int
 
 
 def policy_index_to_move(from_square: int, plane_index: int, board: chess.Board) -> chess.Move:
-    """
-    Convert (from_square, plane_index) back to a chess.Move.
-
-    Args:
-        from_square: Source square (0-63)
-        plane_index: Policy plane index (0-72)
-        board: Current board state
-
-    Returns:
-        chess.Move object
-    """
     from_file = chess.square_file(from_square)
     from_rank = chess.square_rank(from_square)
+
+    if not 0 <= from_square < 64 or not 0 <= plane_index < 73:
+        raise ValueError("Policy index out of range")
 
     # Underpromotions (planes 64-72)
     if plane_index >= 64:
@@ -148,6 +116,8 @@ def policy_index_to_move(from_square: int, plane_index: int, board: chess.Board)
 
         to_file = from_file + direction[0]
         to_rank = from_rank + direction[1]
+        if not 0 <= to_file < 8 or not 0 <= to_rank < 8:
+            raise ValueError("Policy move leaves the board")
         to_square = chess.square(to_file, to_rank)
 
         return chess.Move(from_square, to_square, promotion=promotion_piece)
@@ -159,6 +129,8 @@ def policy_index_to_move(from_square: int, plane_index: int, board: chess.Board)
 
         to_file = from_file + delta[0]
         to_rank = from_rank + delta[1]
+        if not 0 <= to_file < 8 or not 0 <= to_rank < 8:
+            raise ValueError("Policy move leaves the board")
         to_square = chess.square(to_file, to_rank)
 
         return chess.Move(from_square, to_square)
@@ -172,6 +144,8 @@ def policy_index_to_move(from_square: int, plane_index: int, board: chess.Board)
 
         to_file = from_file + direction[0] * distance
         to_rank = from_rank + direction[1] * distance
+        if not 0 <= to_file < 8 or not 0 <= to_rank < 8:
+            raise ValueError("Policy move leaves the board")
         to_square = chess.square(to_file, to_rank)
 
         # Check for queen promotion (pawn reaching last rank)
@@ -185,17 +159,9 @@ def policy_index_to_move(from_square: int, plane_index: int, board: chess.Board)
 
 
 def build_policy_target(move: chess.Move, board: chess.Board) -> np.ndarray:
-    """
-    Build a one-hot encoded policy target for a single move.
-
-    Args:
-        move: The target move
-        board: Current board state
-
-    Returns:
-        numpy array of shape (8, 8, 73) with one-hot encoding
-    """
     policy = np.zeros((8, 8, 73), dtype=np.float32)
+    if move not in board.legal_moves:
+        raise ValueError(f"Illegal policy target: {move}")
     from_sq, plane = move_to_policy_index(move, board)
     rank = chess.square_rank(from_sq)
     file = chess.square_file(from_sq)
@@ -204,106 +170,26 @@ def build_policy_target(move: chess.Move, board: chess.Board) -> np.ndarray:
 
 
 def build_policy_distribution(move_probs: dict[chess.Move, float], board: chess.Board) -> np.ndarray:
-    """
-    Build a policy distribution from move probabilities.
-
-    Args:
-        move_probs: Dictionary mapping moves to probabilities
-        board: Current board state
-
-    Returns:
-        numpy array of shape (8, 8, 73) with probability distribution
-    """
     policy = np.zeros((8, 8, 73), dtype=np.float32)
     for move, prob in move_probs.items():
+        if move not in board.legal_moves or not np.isfinite(prob) or prob < 0:
+            raise ValueError(f"Invalid policy target: {move}: {prob}")
         from_sq, plane = move_to_policy_index(move, board)
         rank = chess.square_rank(from_sq)
         file = chess.square_file(from_sq)
         policy[rank, file, plane] = prob
+    mass = policy.sum()
+    if mass <= 0:
+        raise ValueError("Empty policy distribution")
+    policy /= mass
     return policy
 
 
 def build_q_value_target(q_values: dict[chess.Move, float], board: chess.Board) -> np.ndarray:
-    """
-    Build Q-value targets for all legal moves.
-
-    Args:
-        q_values: Dictionary mapping moves to Q-values (win probabilities [0, 1])
-        board: Current board state
-
-    Returns:
-        numpy array of shape (8, 8, 73) with Q-values, -999 for illegal moves
-    """
     q_target = np.full((8, 8, 73), -999.0, dtype=np.float32)
     for move, q_val in q_values.items():
-        try:
-            from_sq, plane = move_to_policy_index(move, board)
-            rank = chess.square_rank(from_sq)
-            file = chess.square_file(from_sq)
-            q_target[rank, file, plane] = q_val
-        except ValueError:
-            # Skip invalid moves
-            continue
+        if move not in board.legal_moves or not np.isfinite(q_val) or not 0 <= q_val <= 1:
+            raise ValueError(f"Invalid Q target: {move}: {q_val}")
+        from_sq, plane = move_to_policy_index(move, board)
+        q_target[from_sq // 8, from_sq % 8, plane] = q_val
     return q_target
-
-
-def test_round_trip():
-    """Test that move encoding/decoding is bijective."""
-    board = chess.Board()
-    errors = []
-
-    for move in board.legal_moves:
-        try:
-            from_sq, plane = move_to_policy_index(move, board)
-            reconstructed = policy_index_to_move(from_sq, plane, board)
-
-            if reconstructed != move:
-                errors.append(f"Round-trip failed: {move} -> ({from_sq},{plane}) -> {reconstructed}")
-        except Exception as e:
-            errors.append(f"Error encoding {move}: {e}")
-
-    if errors:
-        print("ERRORS:")
-        for err in errors:
-            print(f"  {err}")
-        return False
-    else:
-        print(f"✓ All {board.legal_moves.count()} starting moves round-trip successfully")
-        return True
-
-
-def test_coverage():
-    """Test that all 73 planes can be used."""
-    board = chess.Board()
-
-    # Test a variety of positions
-    test_positions = [
-        "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",  # Starting
-        "r3k2r/8/8/8/8/8/8/R3K2R w KQkq - 0 1",  # Castling
-        "8/8/8/4N3/8/8/8/8 w - - 0 1",  # Knight
-        "8/P7/8/8/8/8/8/8 w - - 0 1",  # Promotion
-    ]
-
-    used_planes = set()
-
-    for fen in test_positions:
-        b = chess.Board(fen)
-        for move in b.legal_moves:
-            try:
-                _, plane = move_to_policy_index(move, b)
-                used_planes.add(plane)
-            except Exception as e:
-                print(f"Error in position {fen}, move {move}: {e}")
-
-    print(f"✓ Coverage: {len(used_planes)}/73 planes can be generated")
-    return True
-
-
-if __name__ == "__main__":
-    print("Testing 8×8×73 policy mapping...")
-    print()
-    test_round_trip()
-    print()
-    test_coverage()
-    print()
-    print("Policy mapping tests complete.")

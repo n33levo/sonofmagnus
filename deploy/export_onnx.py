@@ -1,113 +1,51 @@
-"""
-Export trained PyTorch model to ONNX format.
-
-Supports:
-- FP32/FP16 export
-- Opset version selection
-- Model verification
-"""
-
 import argparse
 from pathlib import Path
 
-import torch
+import chess
+import numpy as np
 import onnx
+import onnxruntime as ort
+import torch
 
-from model import create_model_main, create_model_mini
+from chessio.encode import encode_board_batch
+from model import load_model
 
 
-def export_to_onnx(
-    checkpoint_path: str,
-    output_path: str,
-    config: str = "main",
-    fp16: bool = False,
-    opset_version: int = 14,
-):
-    """
-    Export PyTorch model to ONNX.
-
-    Args:
-        checkpoint_path: Path to PyTorch checkpoint
-        output_path: Output ONNX file path
-        config: Model config (main/mini)
-        fp16: Export in FP16 (reduces size)
-        opset_version: ONNX opset version
-    """
-    print(f"Loading checkpoint from {checkpoint_path}")
-
-    # Load model
-    if config == "main":
-        model = create_model_main()
-    else:
-        model = create_model_mini()
-
-    checkpoint = torch.load(checkpoint_path, map_location="cpu")
-    model.load_state_dict(checkpoint["model_state_dict"])
-    model.eval()
-
-    # Convert to FP16 if requested
+def export_to_onnx(checkpoint_path, output_path, config='main', fp16=False, opset_version=18):
+    if opset_version < 18:
+        raise ValueError('GroupNorm export requires ONNX opset 18 or later')
+    model = load_model(checkpoint_path, config)
     if fp16:
-        print("Converting to FP16...")
-        model = model.half()
-
-    # Create dummy input
-    dummy_input = torch.randn(1, 18, 8, 8)
-    if fp16:
-        dummy_input = dummy_input.half()
-
-    print(f"Exporting to ONNX (opset {opset_version})...")
-
-    # Export
-    torch.onnx.export(
-        model,
-        dummy_input,
-        output_path,
-        export_params=True,
-        opset_version=opset_version,
-        do_constant_folding=True,
-        input_names=["board"],
-        output_names=["policy", "value"],
-        dynamic_axes={
-            "board": {0: "batch_size"},
-            "policy": {0: "batch_size"},
-            "value": {0: "batch_size"},
-        },
-    )
-
-    # Verify
-    print("Verifying ONNX model...")
-    onnx_model = onnx.load(output_path)
-    onnx.checker.check_model(onnx_model)
-
-    # Get file size
-    file_size_mb = Path(output_path).stat().st_size / (1024 * 1024)
-    print(f"\n✓ Export successful!")
-    print(f"  Output: {output_path}")
-    print(f"  Size: {file_size_mb:.2f} MB")
-    print(f"  Format: {'FP16' if fp16 else 'FP32'}")
+        model.half()
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    dtype = torch.float16 if fp16 else torch.float32
+    boards = [chess.Board(), chess.Board('7k/8/8/3pP3/8/8/8/K7 w - d6 0 1')]
+    sample = torch.from_numpy(encode_board_batch(boards)).to(dtype)
+    torch.onnx.export(model, (sample,), str(output), opset_version=opset_version, dynamo=True, external_data=False,
+                      input_names=['board'], output_names=['policy', 'value'],
+                      dynamic_shapes={'x': {0: torch.export.Dim('batch', min=1)}})
+    onnx.checker.check_model(onnx.load(output))
+    session = ort.InferenceSession(str(output), providers=['CPUExecutionProvider'])
+    with torch.inference_mode():
+        expected = model(sample)
+    actual = session.run(None, {'board': sample.numpy()})
+    tolerance = 1e-2 if fp16 else 1e-4
+    for reference, value in zip(expected, actual):
+        np.testing.assert_allclose(value, reference.numpy(), rtol=tolerance, atol=tolerance)
+    print(f'Exported and verified {output}: {output.stat().st_size / 1e6:.2f} MB')
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Export model to ONNX")
-    parser.add_argument("--ckpt", type=str, required=True, help="PyTorch checkpoint")
-    parser.add_argument("--out", type=str, required=True, help="Output ONNX file")
-    parser.add_argument("--config", type=str, choices=["main", "mini"], default="main")
-    parser.add_argument("--fp16", action="store_true", help="Export in FP16")
-    parser.add_argument("--opset", type=int, default=14, help="ONNX opset version")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--ckpt', required=True)
+    parser.add_argument('--out', required=True)
+    parser.add_argument('--config', choices=['main', 'mini'], default='main')
+    parser.add_argument('--fp16', action='store_true')
+    parser.add_argument('--opset', type=int, default=18)
     args = parser.parse_args()
-
-    # Create output directory
-    output_dir = Path(args.out).parent
-    output_dir.mkdir(exist_ok=True, parents=True)
-
-    export_to_onnx(
-        checkpoint_path=args.ckpt,
-        output_path=args.out,
-        config=args.config,
-        fp16=args.fp16,
-        opset_version=args.opset,
-    )
+    export_to_onnx(args.ckpt, args.out, args.config, args.fp16, args.opset)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

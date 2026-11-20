@@ -101,3 +101,7 @@ htmlcov/
 **.pem
 
 out/*.onnx.data
+
+# Experiment outputs stay private; public measurements live in results/.
+out/*
+!out/.gitkeep

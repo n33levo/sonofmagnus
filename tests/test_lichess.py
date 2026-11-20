@@ -22,7 +22,7 @@ def test_live_play_hold_blocks_launch_before_reading_credentials(tmp_path, conte
     hold.write_text(contents)
     output = tmp_path / 'run'
     result = subprocess.run([sys.executable, '-m', 'scripts.lichess_run', '--ckpt', str(tmp_path / 'absent.mlx'),
-                             '--account', 'n33levo', '--out', str(output)],
+                             '--account', 'example-bot', '--out', str(output)],
                             env={**os.environ, 'HOME': str(tmp_path)}, capture_output=True, text=True, timeout=20)
     assert result.returncode != 0
     assert 'New rated games are disabled by the user' in result.stderr

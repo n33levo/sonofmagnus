@@ -10,8 +10,8 @@ from model.artifacts import artifact_info
 from scripts.check_history_rating import reconstruct
 
 
-def summarize(games, account, quality):
-    rating = reconstruct(games, account)
+def summarize(games, account, quality, expected_account):
+    rating = reconstruct(games, account, expected_account)
     records = {row['game_id']: row for row in games}
     details = quality['game_diagnostics']
     if (len(details) != len(records) or {row['game_id'] for row in details} != records.keys()
@@ -67,7 +67,7 @@ def summarize(games, account, quality):
               'The account used multiple models, so this is not a rating for one checkpoint.')
 
 
-def run(snapshot, history_score, transfer, forecast_outcome, output):
+def run(snapshot, history_score, transfer, forecast_outcome, output, expected_account):
     paths = [snapshot / name for name in ('games.jsonl', 'positions.jsonl', 'account.json')]
     paths += [history_score, transfer, forecast_outcome, Path(__file__),
               Path(__file__).parents[1] / 'scripts/check_history_rating.py']
@@ -90,7 +90,7 @@ def run(snapshot, history_score, transfer, forecast_outcome, output):
         if first is not None and roots.get((row['game_id'], first['ply']), {}).get('played_move') != first['move']:
             raise ValueError('The first-drop action does not match the real game')
     result = summarize(list(map(json.loads, (snapshot / 'games.jsonl').open())),
-                       json.loads((snapshot / 'account.json').read_text()), quality)
+                       json.loads((snapshot / 'account.json').read_text()), quality, expected_account)
     transfer_review = json.loads(transfer.read_text())
     outcome = json.loads(forecast_outcome.read_text())
     result['checkpoint_transfer'] = dict(models=transfer_review['completed_models'],
@@ -116,5 +116,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('snapshot', 'history-score', 'transfer', 'forecast-outcome', 'out'):
         parser.add_argument('--' + name, type=Path, required=True)
+    parser.add_argument('--account', required=True)
     args = parser.parse_args()
-    run(args.snapshot, args.history_score, args.transfer, args.forecast_outcome, args.out)
+    run(args.snapshot, args.history_score, args.transfer, args.forecast_outcome, args.out, args.account)

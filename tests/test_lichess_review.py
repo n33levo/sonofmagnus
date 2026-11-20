@@ -19,7 +19,7 @@ def test_server_games_replay_against_every_neural_decision(failure):
                 'neural_forward_calls': 1, 'latency_ms': 10.})
         board.push(move)
     game = {'id': 'testgame', 'status': 'mate', 'rated': True, 'variant': 'standard', 'speed': 'blitz',
-            'winner': 'black', 'players': {'white': {'user': {'id': 'opponent'}}, 'black': {'user': {'id': 'n33levo'}}},
+            'winner': 'black', 'players': {'white': {'user': {'id': 'opponent'}}, 'black': {'user': {'id': 'example-bot'}}},
             'clock': {'initial': 180, 'increment': 2},
             'moves': 'f3 e5 g4 Qh4#',
             'pgn': '[Result "0-1"]\n\n1. f3 e5 2. g4 Qh4# 0-1\n'}
@@ -34,9 +34,9 @@ def test_server_games_replay_against_every_neural_decision(failure):
         games.append(copy.deepcopy(game))
     if failure:
         with pytest.raises(ValueError):
-            review(games, records, 'n33levo')
+            review(games, records, 'example-bot')
     else:
-        result = review(games, records, 'n33levo')
+        result = review(games, records, 'example-bot')
         assert result['games'] == result['wins'] == 1
         assert result['legal_plies'] == 4
         assert result['neural_moves_verified'] == 2
@@ -56,7 +56,7 @@ def draw_game():
         node = node.add_variation(move)
         board.push(move)
     item = {'id': 'drawgame', 'status': 'draw', 'rated': True, 'variant': 'standard', 'speed': 'blitz',
-        'players': {'white': {'user': {'id': 'n33levo'}}, 'black': {'user': {'id': 'opponent'}}},
+        'players': {'white': {'user': {'id': 'example-bot'}}, 'black': {'user': {'id': 'opponent'}}},
         'clock': {'initial': 180, 'increment': 2}, 'createdAt': 100000, 'lastMoveAt': 108000,
         'moves': 'Nf3 Nf6 Ng1 Ng8 Nf3 Nf6 Ng1 Ng8', 'pgn': str(game)}
     return item, records, board
@@ -70,7 +70,7 @@ def test_only_exact_finished_root_requests_are_classified(known_root):
     extra = {'root_fen': chess.STARTING_FEN, 'fen': board.fen(),
         'history': [move.uci() for move in board.move_stack], 'move': next(iter(board.legal_moves)).uci(),
         'neural_forward_calls': 1, 'latency_ms': 10., 'utc_seconds': 108.1}
-    result = review([game], [*records, extra], 'n33levo')
+    result = review([game], [*records, extra], 'example-bot')
     assert result['games'] == result['draws'] == 1
     assert result['neural_moves_verified'] == 4
     assert len(result['cancelled_decisions']) == int(known_root)
@@ -85,7 +85,7 @@ def test_game_windows_separate_an_aborted_first_move_from_the_same_later_move():
     aborted.update(id='aborted', status='aborted', rated=False, createdAt=90000,
                    lastMoveAt=90000, moves='Nf3', pgn=str(partial))
     cancelled = {**records[0], 'utc_seconds': 90.1}
-    result = review([aborted, game], [cancelled, *records], 'n33levo')
+    result = review([aborted, game], [cancelled, *records], 'example-bot')
     assert result['games'] == result['draws'] == 1
     assert result['aborted_game_ids'] == ['aborted']
     assert result['neural_moves_verified'] == 4
@@ -95,7 +95,7 @@ def test_game_windows_separate_an_aborted_first_move_from_the_same_later_move():
 
 def test_live_sample_counts_finished_exports_instead_of_profile_games(monkeypatch):
     rows = [{'rated': rated, 'variant': 'standard', 'speed': 'blitz', 'status': status,
-             'players': {'white': {'user': {'id': 'n33levo'}, 'ratingDiff': diff}}}
+             'players': {'white': {'user': {'id': 'example-bot'}, 'ratingDiff': diff}}}
             for rated, status, diff in [(True, 'mate', -12), (True, 'draw', 0), (True, 'started', 1),
                                       (False, 'mate', 1), (True, 'aborted', 1), (True, 'mate', None)]]
     def response(request, timeout, context):
@@ -104,14 +104,14 @@ def test_live_sample_counts_finished_exports_instead_of_profile_games(monkeypatc
         assert request.headers['Authorization'] == 'Bearer test-token'
         return io.BytesIO('\n'.join(json.dumps(row) for row in rows).encode())
     monkeypatch.setattr('scripts.review_lichess.urllib.request.urlopen', response)
-    assert rated_game_count('n33levo', 12345, 'test-token') == 2
+    assert rated_game_count('example-bot', 12345, 'test-token') == 2
 
 
 @pytest.mark.parametrize('diff, expected', [(None, False), (0, True), (-12, True), (False, False)])
 def test_rating_update_requires_the_accounts_explicit_numeric_difference(diff, expected):
-    game = {'players': {'white': {'user': {'id': 'n33levo'}, 'ratingDiff': diff},
+    game = {'players': {'white': {'user': {'id': 'example-bot'}, 'ratingDiff': diff},
                         'black': {'user': {'id': 'opponent'}, 'ratingDiff': 10}}}
-    assert has_rating_update(game, 'N33LEVO') is expected
+    assert has_rating_update(game, 'EXAMPLE-BOT') is expected
 
 
 def test_training_replay_contains_only_accepted_moves_in_completed_games():
@@ -119,7 +119,7 @@ def test_training_replay_contains_only_accepted_moves_in_completed_games():
     extra = {**records[0], 'fen': board.fen(), 'history': [m.uci() for m in board.move_stack],
              'utc_seconds': 108.1}
     played = []
-    audit = review([game], [*records, extra], 'n33levo', played_records=played)
+    audit = review([game], [*records, extra], 'example-bot', played_records=played)
     assert audit['unmatched_decisions'] == 0 and len(audit['cancelled_decisions']) == 1
     assert played == [('drawgame', row) for row in records]
 
@@ -132,7 +132,7 @@ def test_training_replay_excludes_aborted_moves_even_when_the_opening_is_identic
                'createdAt': 90000, 'lastMoveAt': 90000, 'moves': 'Nf3', 'pgn': str(partial)}
     played = []
     audit = review([aborted, game], [{**records[0], 'utc_seconds': 90.1}, *records],
-                   'n33levo', played_records=played)
+                   'example-bot', played_records=played)
     assert audit['unmatched_decisions'] == 0
     assert played == [('drawgame', row) for row in records]
 
@@ -151,7 +151,7 @@ def test_live_replay_binds_serving_artifacts_and_excludes_holdout_positions(tmp_
     source.write_text('frozen serving code')
     model.write_bytes(b'frozen test weights')
     manifest = dict(runtime_directory='runtime', runtime_source={'source.py': artifact_info(source)['sha256']},
-                    source_checkpoint='ckpts/model.mlx', model=artifact_info(model), account='n33levo')
+                    source_checkpoint='ckpts/model.mlx', model=artifact_info(model), account='example-bot')
     (run / 'manifest.json').write_text(json.dumps(manifest))
     (run / 'server_games.jsonl').write_text(json.dumps(game) + '\n')
     (run / 'moves.jsonl').write_text('\n'.join(json.dumps(row) for row in [*records, extra]) + '\n')

@@ -7,27 +7,27 @@ import urllib.request
 
 from model.artifacts import artifact_info
 from scripts.check_history_rating import reconstruct
-from scripts.lichess_history import ACCOUNT, prepare
+from scripts.lichess_history import prepare
 
 
-def refresh(baseline, output):
+def refresh(baseline, output, username):
     if output.exists():
         raise ValueError('Use a new snapshot folder')
     baseline = baseline.resolve()
     frozen = artifact_info(baseline)
-    prepare(output)
-    request = urllib.request.Request(f'https://lichess.org/api/user/{ACCOUNT}',
+    prepare(output, username)
+    request = urllib.request.Request(f'https://lichess.org/api/user/{username}',
         headers={'User-Agent': 'sonofmagnus-local-benchmark'})
     with urllib.request.urlopen(request, timeout=30) as response:
         public = json.load(response)
-    if public['id'] != ACCOUNT or public.get('title') != 'BOT':
+    if public['id'] != username.lower() or public.get('title') != 'BOT':
         raise ValueError('Unexpected Lichess account')
     utc = datetime.now(timezone.utc).isoformat()
-    account = dict(utc=utc, account=ACCOUNT, title=public['title'], blitz=public['perfs']['blitz'])
+    account = dict(utc=utc, account=username, title=public['title'], blitz=public['perfs']['blitz'])
     (output / 'account.json').write_text(json.dumps(account, indent=2) + '\n')
     before = {row['game_id']: row for row in map(json.loads, baseline.open())}
     after = {row['game_id']: row for row in map(json.loads, (output / 'games.jsonl').open())}
-    rating = reconstruct(list(after.values()), account)
+    rating = reconstruct(list(after.values()), account, username)
     (output / 'rating-reconciliation.json').write_text(json.dumps(rating, indent=2) + '\n')
     report = dict(utc=utc, folder=str(output), official=account, old_games=len(before), new_games=len(after),
         added_games=sorted(after.keys() - before.keys()), removed_games=sorted(before.keys() - after.keys()),
@@ -48,5 +48,6 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--baseline', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
+    parser.add_argument('--account', required=True)
     args = parser.parse_args()
-    refresh(args.baseline, args.out)
+    refresh(args.baseline, args.out, args.account)

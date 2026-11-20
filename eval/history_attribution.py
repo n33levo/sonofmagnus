@@ -7,14 +7,14 @@ from pathlib import Path
 from model.artifacts import artifact_info
 
 
-def assign(games, reviews):
+def assign(games, reviews, account):
     records = {row['game_id']: row for row in games}
     if len(records) != len(games):
         raise ValueError('Duplicate public game IDs')
     claims, rejected = defaultdict(dict), []
     for path, review in reviews:
         rows = review.get('games_reviewed')
-        if review.get('account') != 'n33levo' or not isinstance(rows, list):
+        if review.get('account') != account or not isinstance(rows, list):
             continue
         reason = None
         model = review.get('model', {})
@@ -66,11 +66,11 @@ def assign(games, reviews):
               'models or assigning the current account rating to a checkpoint.')
 
 
-def run(games_path, review_paths, output):
+def run(games_path, review_paths, output, account):
     paths = list(dict.fromkeys([games_path, *review_paths, Path(__file__).resolve()]))
     frozen = {str(path.resolve()): artifact_info(path) for path in paths}
     reviews = [(str(path.resolve()), json.loads(path.read_text())) for path in review_paths]
-    result = assign(list(map(json.loads, games_path.open())), reviews)
+    result = assign(list(map(json.loads, games_path.open())), reviews, account)
     if any(artifact_info(path) != identity for path, identity in frozen.items()):
         raise ValueError('Attribution inputs changed during review')
     result['inputs'] = frozen
@@ -83,5 +83,6 @@ if __name__ == '__main__':
     parser.add_argument('--games', type=Path, required=True)
     parser.add_argument('--reviews', type=Path, nargs='+', required=True)
     parser.add_argument('--out', type=Path, required=True)
+    parser.add_argument('--account', required=True)
     args = parser.parse_args()
-    run(args.games, args.reviews, args.out)
+    run(args.games, args.reviews, args.out, args.account)

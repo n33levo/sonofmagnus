@@ -6,9 +6,9 @@ from pathlib import Path
 from model.artifacts import artifact_info
 
 
-def reconstruct(games, account):
-    if account['account'] != 'n33levo' or account['title'] != 'BOT':
-        raise ValueError('Expected the n33levo BOT account snapshot')
+def reconstruct(games, account, expected_account):
+    if not expected_account or account.get('account') != expected_account or account['title'] != 'BOT':
+        raise ValueError('Expected a named BOT account snapshot')
     ordered = sorted(games, key=lambda row: (row['finished_ms'], row['game_id']))
     known = [row for row in ordered if row['rating_diff'] is not None]
     if not known or len({row['game_id'] for row in ordered}) != len(ordered):
@@ -40,10 +40,11 @@ if __name__ == '__main__':
     parser.add_argument('--games', type=Path, default=Path('data/lichess-history/games.jsonl'))
     parser.add_argument('--account', type=Path, required=True)
     parser.add_argument('--out', type=Path, required=True)
+    parser.add_argument('--expected-account', required=True)
     args = parser.parse_args()
     paths = [args.games, args.account, Path(__file__)]
     frozen = {str(path.resolve()): artifact_info(path) for path in paths}
-    result = reconstruct(list(map(json.loads, args.games.open())), json.loads(args.account.read_text()))
+    result = reconstruct(list(map(json.loads, args.games.open())), json.loads(args.account.read_text()), args.expected_account)
     assert all(artifact_info(path) == info for path, info in frozen.items())
     args.out.write_text(json.dumps(dict(result, inputs=frozen), indent=2) + '\n')
     print(json.dumps({key: value for key, value in result.items() if key != 'trace'}))

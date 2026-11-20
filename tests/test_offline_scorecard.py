@@ -20,7 +20,7 @@ def evidence():
             opponent_rating=2200, errors100=1, errors300=0,
             recoverable_large_point_drops=1, first_large_drop=dict(ply=2, move='e2e4'),
             features=dict(mean_point_loss=.1, max_point_loss=.3, fraction_100cp=.5, fraction_300cp=0.)))
-    account = dict(account='n33levo', title='BOT', utc='2026-10-19T12:00:00Z',
+    account = dict(account='example-bot', title='BOT', utc='2026-10-19T12:00:00Z',
                    blitz=dict(games=2, rating=rating, rd=45))
     quality = dict(game_diagnostics=details, games=3, decisions=6, new_rated_games=2,
                    calibration_training_games=104, calibration_refitted_on_new_games=False,
@@ -29,7 +29,7 @@ def evidence():
 
 
 def test_all_results_remain_and_no_elo_is_invented():
-    result = summarize(*evidence())
+    result = summarize(*evidence(), 'example-bot')
     assert result['outcomes'] == dict(win=1, draw=1, loss=1)
     assert result['actual_match_score'] == .5
     assert result['games_without_recorded_delta'] == ['1']
@@ -57,7 +57,7 @@ def test_corrupted_or_leaking_evidence_is_rejected(change):
     elif change == 'missing-first-drop': row['first_large_drop'] = None
     else: quality['calibration_refitted_on_new_games'] = True
     with pytest.raises(ValueError):
-        summarize(games, account, quality)
+        summarize(games, account, quality, 'example-bot')
 
 
 def test_file_review_checks_fresh_actions_and_rejects_stale_snapshots(tmp_path):
@@ -81,18 +81,18 @@ def test_file_review_checks_fresh_actions_and_rejects_stale_snapshots(tmp_path):
         checkpoint_ranking_established=False, predictions=dict(recoverable_sum=dict(
             predicted_development_score=.627, beats_mean_baseline=False)))))
     output = tmp_path / 'scorecard.json'
-    run(snapshot, score, transfer, outcome, output)
+    run(snapshot, score, transfer, outcome, output, 'example-bot')
     assert json.loads(output.read_text())['decisions'] == 6
     with pytest.raises(FileExistsError):
-        run(snapshot, score, transfer, outcome, output)
+        run(snapshot, score, transfer, outcome, output, 'example-bot')
     # A changed action cannot reuse earlier quality observations, even if the
     # snapshot hashes are copied into the claimed input manifest.
     quality['game_diagnostics'][0]['first_large_drop']['move'] = 'd2d4'
     score.write_text(json.dumps(quality))
     with pytest.raises(ValueError, match='real game'):
-        run(snapshot, score, transfer, outcome, tmp_path / 'bad-action.json')
+        run(snapshot, score, transfer, outcome, tmp_path / 'bad-action.json', 'example-bot')
     assert not (tmp_path / 'bad-action.json').exists()
     (snapshot / 'positions.jsonl').write_text('[]\n')
     with pytest.raises(ValueError, match='Changed quality evidence'):
-        run(snapshot, score, transfer, outcome, tmp_path / 'stale.json')
+        run(snapshot, score, transfer, outcome, tmp_path / 'stale.json', 'example-bot')
     assert not (tmp_path / 'stale.json').exists()

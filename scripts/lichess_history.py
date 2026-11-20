@@ -1,4 +1,4 @@
-"""Download and replay n33levo's completed public Lichess games."""
+"""Download and replay completed public Lichess games."""
 import argparse
 from collections import Counter
 from datetime import datetime, timezone
@@ -12,14 +12,10 @@ import chess.pgn
 from model.artifacts import artifact_info
 
 
-ACCOUNT = 'n33levo'
-URL = f'https://lichess.org/api/games/user/{ACCOUNT}?clocks=true&evals=true&opening=true&pgnInJson=true&accuracy=true'
-
-
-def replay(record):
+def replay(record, account):
     if record['variant'] != 'standard' or record['status'] in ('created', 'started', 'aborted'):
         raise ValueError('Expected a completed standard game')
-    colors = [color for color in ('white', 'black') if record['players'][color].get('user', {}).get('id') == ACCOUNT]
+    colors = [color for color in ('white', 'black') if record['players'][color].get('user', {}).get('id') == account.lower()]
     if len(colors) != 1:
         raise ValueError('Account must occupy exactly one side')
     color = colors[0]
@@ -58,7 +54,8 @@ def replay(record):
     return summary, positions
 
 
-def fetch(folder):
+def fetch(folder, account):
+    url = f'https://lichess.org/api/games/user/{account}?clocks=true&evals=true&opening=true&pgnInJson=true&accuracy=true'
     folder.mkdir(parents=True, exist_ok=True)
     data, manifest = folder / 'games.ndjson', folder / 'manifest.json'
     if data.exists():
@@ -67,7 +64,7 @@ def fetch(folder):
         if actual['sha256'] != saved['sha256']:
             raise ValueError('Downloaded game snapshot changed')
         return
-    request = urllib.request.Request(URL, headers={'Accept': 'application/x-ndjson', 'User-Agent': 'sonofmagnus-local-benchmark'})
+    request = urllib.request.Request(url, headers={'Accept': 'application/x-ndjson', 'User-Agent': 'sonofmagnus-local-benchmark'})
     rows = []
     with urllib.request.urlopen(request, timeout=60) as response:
         for line in response:
@@ -81,26 +78,26 @@ def fetch(folder):
     temporary = data.with_suffix('.tmp')
     temporary.write_text(''.join(json.dumps(row, separators=(',', ':')) + '\n' for row in rows))
     temporary.replace(data)
-    manifest.write_text(json.dumps(dict(account=ACCOUNT, url=URL, downloaded_utc=datetime.now(timezone.utc).isoformat(),
+    manifest.write_text(json.dumps(dict(account=account, url=url, downloaded_utc=datetime.now(timezone.utc).isoformat(),
         games=len(rows), sha256=artifact_info(data)['sha256'], bytes=data.stat().st_size,
         automatic_rated=False), indent=2) + '\n')
 
 
-def prepare(folder):
-    fetch(folder)
+def prepare(folder, account):
+    fetch(folder, account)
     data = folder / 'games.ndjson'
     records = sorted(map(json.loads, data.open()), key=lambda row: (row['createdAt'], row['id']))
     if len(records) != len({row['id'] for row in records}):
         raise ValueError('Duplicate game IDs')
     games, positions = [], []
     for record in records:
-        game, roots = replay(record)
+        game, roots = replay(record, account)
         games.append(game)
         positions.extend(roots)
     for name, rows in [('games.jsonl', games), ('positions.jsonl', positions)]:
         (folder / name).write_text(''.join(json.dumps(row, separators=(',', ':')) + '\n' for row in rows))
     outcomes = Counter('win' if row['score'] == 1 else 'loss' if row['score'] == 0 else 'draw' for row in games)
-    report = dict(account=ACCOUNT, games=len(games), outcomes=dict(outcomes),
+    report = dict(account=account, games=len(games), outcomes=dict(outcomes),
         score=sum(row['score'] for row in games) / len(games), own_positions=len(positions),
         rating_change_recorded=sum(row['rating_diff'] is not None for row in games),
         no_recorded_rating_change=[row['game_id'] for row in games if row['rating_diff'] is None],
@@ -117,4 +114,6 @@ def prepare(folder):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--out', type=Path, default=Path('data/lichess-history'))
-    prepare(parser.parse_args().out)
+    parser.add_argument('--account', required=True)
+    args = parser.parse_args()
+    prepare(args.out, args.account)

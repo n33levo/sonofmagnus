@@ -1,4 +1,5 @@
 import json
+import importlib.util
 import subprocess
 import sys
 
@@ -9,7 +10,8 @@ import pytest
 
 @pytest.mark.parametrize('imports', [
     'from model.artifacts import artifact_info; from chessio.records import record_board',
-    'import play.mlx; import play.chessbench',
+    pytest.param('import play.mlx; import play.chessbench',marks=pytest.mark.skipif(
+        importlib.util.find_spec('mlx') is None,reason='MLX is an optional Apple Silicon backend')),
     'from chessio import encode_board, build_legal_mask, apply_legal_mask, move_to_policy_index',
 ])
 def test_non_torch_paths_do_not_import_torch(imports):

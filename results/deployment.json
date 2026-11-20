@@ -1,0 +1,15 @@
+{
+  "platform": "Lichess BOT blitz",
+  "time_control": "3+2",
+  "account_rating": 2258,
+  "blitz_games": 172,
+  "rating_deviation": 59,
+  "snapshot_date": "2026-11-20",
+  "completed_controlled_games": 10,
+  "neural_moves_matched": 492,
+  "unmatched_decisions": 0,
+  "aborted_starts": 1,
+  "model_sha256": "0e398895ceb43373c4873b71f8b250f9db89bb6387db561fcbdc2b9e5166acb1",
+  "account_history_mixes_models": true,
+  "scope": "Aggregate deployment record. Account handles, game identifiers and individual outcomes are intentionally private. This is a mixed-model account rating, not a standalone model rating. The controlled model differs from the185M local benchmark."
+}

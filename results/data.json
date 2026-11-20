@@ -1,0 +1,14 @@
+{
+  "collected_human_positions": 70000000,
+  "retained_after_tier_sampling": 41765559,
+  "parameters": 5827283,
+  "source": "https://database.lichess.org/",
+  "monthly_counts": [
+    15000000,
+    15000000,
+    15000000,
+    15000000,
+    10000000
+  ],
+  "scope": "Collected human-game pipeline input, not70M Stockfish-labelled examples or training provenance for the pretrained185M policy. Training completion is not inferred from the input record."
+}

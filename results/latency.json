@@ -1,0 +1,30 @@
+{
+  "185M_isolated_GPU": {
+    "runs": 200,
+    "warmup": 20,
+    "positions": 200,
+    "protocol": "full move selection, deterministic, PGN history retained",
+    "p50_ms": 13.731812534388155,
+    "p95_ms": 17.57048713043332,
+    "p99_ms": 18.922696169465777,
+    "model_sha256": "78cb179eca5662a4eee7c0ed3e94a50cb1eee41b860072b39ef5eeeae8a4ee39"
+  },
+  "185M_in_game_GPU": {
+    "p50": 25.772,
+    "p95": 33.25979999999999,
+    "p99": 35.08238
+  },
+  "6M_ONNX_CPU": {
+    "file_size_mb": 6.542242,
+    "p50_latency_ms": 14.291812491137534,
+    "p95_latency_ms": 51.379456231370554,
+    "p99_latency_ms": 77.64329617959447,
+    "provider": "CPUExecutionProvider",
+    "runs": 200,
+    "threads": 4,
+    "positions": 200,
+    "protocol": "Complete move selection; retained PGN history",
+    "model_sha256": "c6905c045bc237a12fe1d47fca958ecab42f4cc34b84ad7fbfde860497e97993"
+  },
+  "scope": "Historical Apple Silicon measurements of complete move selection; warm inference, startup excluded. Different serving configurations are separate."
+}

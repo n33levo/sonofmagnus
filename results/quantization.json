@@ -1,0 +1,17 @@
+{
+  "games": 1000,
+  "elo_difference": 1.7371924043128577,
+  "elo_difference_pair_bootstrap_95": [
+    -14.252848935949016,
+    17.734601440379787
+  ],
+  "model_a": {
+    "model_bytes": 22474422,
+    "sha256": "e001acfaff93f80c75db09caa1b3426eb6c0ea8382ac41dc1747909ead22284c"
+  },
+  "opponent_artifact": {
+    "model_bytes": 6542242,
+    "sha256": "c6905c045bc237a12fe1d47fca958ecab42f4cc34b84ad7fbfde860497e97993"
+  },
+  "rating_pool": "local engine match; not FIDE or Lichess Elo"
+}

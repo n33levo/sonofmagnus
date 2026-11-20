@@ -1,0 +1,8 @@
+{
+  "offline_games_replayed": 1800,
+  "offline_legal_plies": 154725,
+  "controlled_online_games_replayed": 10,
+  "online_neural_moves_rematched": 492,
+  "local_pool_estimates_recomputed": true,
+  "scope": "Performed locally from the original PGNs and neural logs before publication. Public files contain aggregate metrics; original individual outcomes and identities remain private."
+}

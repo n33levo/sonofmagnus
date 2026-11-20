@@ -1,0 +1,84 @@
+{
+  "overall": {
+    "correct": 2190,
+    "total": 3000,
+    "accuracy": 0.73
+  },
+  "protocol": "complete_line",
+  "bands": {
+    "1500-1800": {
+      "correct": 590,
+      "total": 600,
+      "accuracy": 0.9833333333333333,
+      "wilson_simultaneous_95": [
+        0.9636527776255334,
+        0.9924412473798584
+      ],
+      "clopper_pearson_simultaneous_95": [
+        0.9646748774426706,
+        0.993777659461244
+      ]
+    },
+    "1800-2100": {
+      "correct": 558,
+      "total": 600,
+      "accuracy": 0.93,
+      "wilson_simultaneous_95": [
+        0.8982021460861878,
+        0.9523918485737815
+      ],
+      "clopper_pearson_simultaneous_95": [
+        0.8987709286991987,
+        0.9541581219419617
+      ]
+    },
+    "2100-2400": {
+      "correct": 471,
+      "total": 600,
+      "accuracy": 0.785,
+      "wilson_simultaneous_95": [
+        0.7388056965902841,
+        0.8249600905680676
+      ],
+      "clopper_pearson_simultaneous_95": [
+        0.7387662570899916,
+        0.8266141616325542
+      ]
+    },
+    "2400-2700": {
+      "correct": 378,
+      "total": 600,
+      "accuracy": 0.63,
+      "wilson_simultaneous_95": [
+        0.5780659203076877,
+        0.6790904036592798
+      ],
+      "clopper_pearson_simultaneous_95": [
+        0.5775081132901076,
+        0.6803924169003204
+      ]
+    },
+    "2700+": {
+      "correct": 193,
+      "total": 600,
+      "accuracy": 0.32166666666666666,
+      "wilson_simultaneous_95": [
+        0.27472670439855146,
+        0.37250756913394195
+      ],
+      "clopper_pearson_simultaneous_95": [
+        0.27330454244572844,
+        0.3729108692378047
+      ]
+    }
+  },
+  "model": {
+    "model_bytes": 163551053,
+    "sha256": "78cb179eca5662a4eee7c0ed3e94a50cb1eee41b860072b39ef5eeeae8a4ee39"
+  },
+  "dataset": {
+    "model_bytes": 630065,
+    "sha256": "47cab2eaa9b95444a3711899623d5965513dbddc5157e362caadaff525cd67ed"
+  },
+  "interval_method": "Exact Clopper-Pearson binomial intervals, Bonferroni alpha=0.01 per band across five bands"
+}

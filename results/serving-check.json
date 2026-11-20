@@ -1,0 +1,18 @@
+{
+  "complete": true,
+  "models": {
+    "6M": {
+      "cases": 22,
+      "nonterminal_calls": 20,
+      "terminal_cases": 2,
+      "legal_UCI_history_and_actual_B1_counters": true
+    },
+    "185M": {
+      "cases": 22,
+      "nonterminal_calls": 20,
+      "terminal_cases": 2,
+      "legal_UCI_history_and_actual_B1_counters": true
+    }
+  },
+  "scope": "Actual released weight files loaded through the published runtime/UCI; conformance only, not a rating or latency measurement."
+}

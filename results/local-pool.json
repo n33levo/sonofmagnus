@@ -1,0 +1,84 @@
+{
+  "185M": {
+    "local_elo": 2852.5354594953833,
+    "elo_opening_bootstrap_95": [
+      2819.3544109904224,
+      2886.3459406681377
+    ],
+    "games": 400,
+    "independent_opening_clusters": 50,
+    "score_by_opponent": [
+      0.765,
+      0.68,
+      0.44,
+      0.505
+    ],
+    "rating_pool": "CCRL-referenced local engine pool; not an official CCRL, FIDE or Lichess rating",
+    "uncertainty": "Intervals are conditional on fixed anchors; hardware, time-control and anchor errors are excluded.",
+    "time_control": "10+0.1",
+    "anchors": [
+      {
+        "name": "stash-20.0.1",
+        "reference_elo": 2512,
+        "revision": "f1c281c26985ac31c996875540cb26594f107a51"
+      },
+      {
+        "name": "stash-21.0",
+        "reference_elo": 2714,
+        "revision": "6dc8c9cdefaa43e3d82a7c59cd2a5f93bcbd9d5a"
+      },
+      {
+        "name": "weiss-1.0",
+        "reference_elo": 2896,
+        "revision": "f44a4c654c67139ecbd5f3afd9da1ebe41241464"
+      },
+      {
+        "name": "stash-25.0",
+        "reference_elo": 2933,
+        "revision": "664849453d3fa0b5b60869325a3764921c902512"
+      }
+    ],
+    "model_sha256": "78cb179eca5662a4eee7c0ed3e94a50cb1eee41b860072b39ef5eeeae8a4ee39"
+  },
+  "6M": {
+    "local_elo": 2123.7374200917484,
+    "elo_opening_bootstrap_95": [
+      2039.5725515500194,
+      2187.5153546117645
+    ],
+    "games": 400,
+    "independent_opening_clusters": 50,
+    "score_by_opponent": [
+      0.07,
+      0.045,
+      0.03,
+      0.005
+    ],
+    "rating_pool": "CCRL-referenced local engine pool; not an official CCRL, FIDE or Lichess rating",
+    "uncertainty": "Intervals are conditional on fixed anchors; hardware, time-control and anchor errors are excluded.",
+    "time_control": "10+0.1",
+    "anchors": [
+      {
+        "name": "stash-20.0.1",
+        "reference_elo": 2512,
+        "revision": "f1c281c26985ac31c996875540cb26594f107a51"
+      },
+      {
+        "name": "stash-21.0",
+        "reference_elo": 2714,
+        "revision": "6dc8c9cdefaa43e3d82a7c59cd2a5f93bcbd9d5a"
+      },
+      {
+        "name": "weiss-1.0",
+        "reference_elo": 2896,
+        "revision": "f44a4c654c67139ecbd5f3afd9da1ebe41241464"
+      },
+      {
+        "name": "stash-25.0",
+        "reference_elo": 2933,
+        "revision": "664849453d3fa0b5b60869325a3764921c902512"
+      }
+    ],
+    "model_sha256": "d60fc0595d443baa6e8305a9fc0b357584c0e9d99d938bbaa5e57be6c78b25ff"
+  }
+}

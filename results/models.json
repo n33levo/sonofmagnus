@@ -1,0 +1,20 @@
+{
+  "185M": {
+    "file": "sonofmagnus-185M-q6.tar.gz",
+    "bytes": 157865379,
+    "sha256": "85b718651970ce1f7e32be6ded1b60a6b5738a6bcdc6a8e62f440ef23896ad23",
+    "url": "https://github.com/n33levo/sonofmagnus/releases/download/v0.2.0/sonofmagnus-185M-q6.tar.gz",
+    "source_network": "BT4-1024x15x32h-swa-6147500-policytune-332",
+    "upstream_terms": "LC0 weights retain upstream terms; see ckpts/pretrained.json",
+    "directory": "bt4-q6.mlx",
+    "artifact_sha256": "78cb179eca5662a4eee7c0ed3e94a50cb1eee41b860072b39ef5eeeae8a4ee39"
+  },
+  "6M": {
+    "file": "sonofmagnus-6M-weight8.onnx",
+    "bytes": 6542242,
+    "sha256": "c6905c045bc237a12fe1d47fca958ecab42f4cc34b84ad7fbfde860497e97993",
+    "url": "https://github.com/n33levo/sonofmagnus/releases/download/v0.2.0/sonofmagnus-6M-weight8.onnx",
+    "source_network": "744706_spsa072024",
+    "upstream_terms": "LC0 weights retain upstream terms; see ckpts/pretrained.json"
+  }
+}

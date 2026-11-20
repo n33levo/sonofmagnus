@@ -35,10 +35,10 @@ download_data:
 	bash scripts/download_lichess.sh
 
 train_bc:
-	python -m train.train --config configs/main.yaml --phase bc --epochs 2 --amp bf16
+	python -m train.train --config configs/main.yaml --data data/positions.jsonl --epochs 2
 
 train_distill:
-	python -m train.train --config configs/main.yaml --phase distill --epochs 1 --amp bf16
+	python -m train.train --config configs/main.yaml --data data/labels_fast.jsonl --resume ckpts/latest.pt --epochs 1 --q-value-weight 0.4
 
 eval_puzzles:
 	python -m eval.puzzles --puzzles data/puzzles.jsonl --ckpt ckpts/latest.pt

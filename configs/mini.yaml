@@ -1,4 +1,4 @@
-# Mini model configuration (~2-4M params)
+# Mini model configuration (0.66M parameters)
 # Target: Knight's Edge track (≤10 MB with INT8 quantization)
 
 model_size: mini

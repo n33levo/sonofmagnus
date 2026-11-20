@@ -1,9 +1,9 @@
-# Main model configuration (~6-8M params)
+# Main model configuration (5.83M parameters)
 # Target: Queen's Crown track (best overall strength)
 
 model_size: main
 input_channels: 18
-hidden_channels: 128
+hidden_channels: 160
 num_blocks: 12
 num_groups: 8
 

@@ -4,7 +4,7 @@
 
 set -e
 
-DATA_DIR="data"
+DATA_DIR="${DATA_DIR:-data}"
 mkdir -p "$DATA_DIR"
 
 echo "Downloading Lichess CC0 database..."
@@ -13,12 +13,13 @@ echo ""
 
 # URL for latest standard rated games (change YYYY-MM as needed)
 # See https://database.lichess.org/ for available archives
-YEAR_MONTH="2024-01"
+YEAR_MONTH="${YEAR_MONTH:-2024-01}"
 URL="https://database.lichess.org/standard/lichess_db_standard_rated_${YEAR_MONTH}.pgn.zst"
 
-OUTPUT_FILE="$DATA_DIR/lichess_${YEAR_MONTH}.pgn.zst"
+OUTPUT_FILE="${OUTPUT_FILE:-$DATA_DIR/lichess_${YEAR_MONTH}.pgn.zst}"
+mkdir -p "$(dirname "$OUTPUT_FILE")"
 
-if [ -f "$OUTPUT_FILE" ]; then
+if [ -f "$OUTPUT_FILE" ] && [ "${FORCE_DOWNLOAD:-0}" != 1 ]; then
     echo "File already exists: $OUTPUT_FILE"
     echo "Skipping download. Delete the file to re-download."
 else
@@ -27,7 +28,8 @@ else
     echo ""
 
     # Download with progress bar
-    curl -L --progress-bar "$URL" -o "$OUTPUT_FILE"
+    curl -fL --retry 3 --progress-bar "$URL" -o "$OUTPUT_FILE.part"
+    mv "$OUTPUT_FILE.part" "$OUTPUT_FILE"
 
     echo ""
     echo "Download complete!"

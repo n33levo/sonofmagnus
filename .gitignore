@@ -36,10 +36,39 @@ ENV/
 # Data & checkpoints
 data/*.pgn
 data/*.pgn.zst
+data/*.part
+data/*.tmp
+data/*calibration*.npz
+data/*.recover
+data/*.sqlite*
 data/*.jsonl
 data/*.json
+data/lichess-history/*.json
+data/lichess-history/*.jsonl
+data/lichess-history/*.ndjson
+!data/arena_pool.json
+!data/downloads.json
 ckpts/*.pt
+ckpts/*.pb.gz
+ckpts/*/*.pt
+ckpts/*/*.jsonl
+ckpts/*/run_*.json
+ckpts/**/*.pt
+ckpts/**/*.jsonl
+ckpts/**/run_*.json
+ckpts/*.onnx
+ckpts/*.mlx/
+ckpts/*.cbmlx/
+*.bt5mlx/
+data/*.zst
+data/*.npy
+data/*.safetensors
+data/*.csv
+data/*.fen
 out/*.onnx
+out/engines/
+out/lichess-*/
+out/lichess_bridge_*/
 data/twic
 
 # But keep directories and examples
@@ -70,3 +99,5 @@ htmlcov/
 *.ipynb
 
 **.pem
+
+out/*.onnx.data

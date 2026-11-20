@@ -1,160 +1,60 @@
-"""
-Curate "hard" positions for distillation.
-
-Hard positions include:
-- Tactical positions (captures, checks, pins)
-- Complex middlegames (high branching factor)
-- Endgames with few pieces
-"""
-
 import argparse
-import io
 import json
-import random
+from pathlib import Path
 
-import chess
-import chess.pgn
-from tqdm import tqdm
+from train.dataset import read_games
 
 
-def is_tactical(board: chess.Board) -> bool:
-    """Check if position has tactical elements."""
-    # Has captures or checks available
-    has_captures = any(board.is_capture(m) for m in board.legal_moves)
-    has_checks = any(board.gives_check(m) for m in board.legal_moves)
-    return has_captures or has_checks
+def is_tactical(board):
+    return any(board.is_capture(move) or board.gives_check(move) for move in board.legal_moves)
 
 
-def is_complex(board: chess.Board, threshold: int = 40) -> bool:
-    """Check if position has high branching factor."""
+def is_complex(board, threshold=40):
     return board.legal_moves.count() >= threshold
 
 
-def is_endgame(board: chess.Board, max_pieces: int = 10) -> bool:
-    """Check if position is an endgame."""
-    num_pieces = len(board.piece_map())
-    return num_pieces <= max_pieces
+def is_endgame(board, max_pieces=10):
+    return len(board.piece_map()) <= max_pieces
 
 
-def extract_hard_positions(
-    pgn_path: str,
-    output_path: str,
-    max_games: int = 10000,
-    max_positions: int = 100000,
-    min_elo: int = 2000,
-):
-    """
-    Extract hard positions from PGN file.
-
-    Args:
-        pgn_path: Input PGN file
-        output_path: Output JSONL file
-        max_games: Max games to process
-        max_positions: Max positions to extract
-        min_elo: Minimum Elo for games
-    """
-    positions = []
-    games_processed = 0
-
-    print(f"Extracting hard positions from {pgn_path}...")
-
-    def game_iterator():
-        if pgn_path.endswith(".zst"):
-            import zstandard as zstd
-
-            with open(pgn_path, "rb") as fh:
-                dctx = zstd.ZstdDecompressor()
-                with dctx.stream_reader(fh) as reader:
-                    text_stream = io.TextIOWrapper(reader, encoding="utf-8", errors="ignore")
-                    while True:
-                        game = chess.pgn.read_game(text_stream)
-                        if game is None:
-                            break
-                        yield game
-        else:
-            with open(pgn_path, encoding="utf-8", errors="ignore") as fh:
-                while True:
-                    game = chess.pgn.read_game(fh)
-                    if game is None:
-                        break
-                    yield game
-
-    for game in game_iterator():
-        if games_processed >= max_games or len(positions) >= max_positions:
-            break
-
-        # Check Elo
-        white_elo = int(game.headers.get("WhiteElo", 0))
-        black_elo = int(game.headers.get("BlackElo", 0))
-        avg_elo = (white_elo + black_elo) / 2
-
-        if avg_elo < min_elo:
-            continue
-
-        games_processed += 1
-
-        # Traverse game
-        board = game.board()
-        for move in game.mainline_moves():
-            # Skip early opening
-            if board.fullmove_number < 10:
-                board.push(move)
+def extract_hard_positions(pgn_path, output_path, max_games=10000, max_positions=100000, min_elo=2000):
+    output = Path(output_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    games, count = 0, 0
+    with output.open('w') as stream:
+        for game in read_games(pgn_path):
+            if games >= max_games or count >= max_positions:
+                break
+            try:
+                elo = min(int(game.headers.get('WhiteElo', 0)), int(game.headers.get('BlackElo', 0)))
+            except ValueError:
                 continue
-
-            # Check if position is "hard"
-            if is_tactical(board) or is_complex(board) or is_endgame(board):
-                positions.append({
-                    "fen": board.fen(),
-                    "tags": {
-                        "tactical": is_tactical(board),
-                        "complex": is_complex(board),
-                        "endgame": is_endgame(board),
-                    }
-                })
-
-            board.push(move)
-
-        if games_processed % 100 == 0:
-            print(f"  Processed {games_processed} games, found {len(positions)} hard positions")
-
-    # Shuffle and limit
-    random.shuffle(positions)
-    positions = positions[:max_positions]
-
-    # Write to file
-    with open(output_path, "w") as f:
-        for pos in positions:
-            f.write(json.dumps(pos) + "\n")
-
-    print(f"\nWrote {len(positions)} hard positions to {output_path}")
-
-    # Statistics
-    tactical_count = sum(1 for p in positions if p["tags"]["tactical"])
-    complex_count = sum(1 for p in positions if p["tags"]["complex"])
-    endgame_count = sum(1 for p in positions if p["tags"]["endgame"])
-
-    print(f"  Tactical: {tactical_count}")
-    print(f"  Complex: {complex_count}")
-    print(f"  Endgame: {endgame_count}")
+            if elo < min_elo or game.errors:
+                continue
+            games += 1
+            board = game.board()
+            for move in game.mainline_moves():
+                if board.fullmove_number >= 10:
+                    tags = {'tactical': is_tactical(board), 'complex': is_complex(board), 'endgame': is_endgame(board)}
+                    if any(tags.values()):
+                        stream.write(json.dumps({'fen': board.fen(), 'tags': tags}) + '\n')
+                        count += 1
+                        if count >= max_positions:
+                            break
+                board.push(move)
+    print(f'Curated {count} positions from {games} games')
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Curate hard positions for distillation")
-    parser.add_argument("--pgn", type=str, required=True, help="Input PGN file")
-    parser.add_argument("--out", type=str, required=True, help="Output JSONL file")
-    parser.add_argument("--max-games", type=int, default=10000, help="Max games to process")
-    parser.add_argument("--max-positions", type=int, default=100000, help="Max positions")
-    parser.add_argument("--min-elo", type=int, default=2000, help="Minimum Elo")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--pgn', required=True)
+    parser.add_argument('--out', required=True)
+    parser.add_argument('--max-games', type=int, default=10000)
+    parser.add_argument('--max-positions', type=int, default=100000)
+    parser.add_argument('--min-elo', type=int, default=2000)
     args = parser.parse_args()
-
-    extract_hard_positions(
-        pgn_path=args.pgn,
-        output_path=args.out,
-        max_games=args.max_games,
-        max_positions=args.max_positions,
-        min_elo=args.min_elo,
-    )
+    extract_hard_positions(args.pgn, args.out, args.max_games, args.max_positions, args.min_elo)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
